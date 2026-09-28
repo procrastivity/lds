@@ -34,7 +34,10 @@ CHANGELOG.md is generated per release, never committed.
 
 ## Design of record
 
-The LDS design of record is not in this scaffold yet. The intended two-track
-layout is `engineering/` for implementation decisions and `docs/` for
-Diátaxis user-facing documentation. The generated CI and release workflows
-target GitHub and need review before use with this Amp-hosted repository.
+The [engineering documentation](engineering/README.md) is the design of
+record, starting with the [adoption decision](engineering/decisions/0001-adopt-two-track-documentation.md),
+[source-repository map](engineering/architecture/source-repositories.md),
+and [roadmap](engineering/product/roadmap.md). User-facing Diátaxis
+documentation will live in `docs/` once there is LDS behavior to document.
+The GitHub CI workflow runs; the generated release workflow has not been
+exercised yet.
