@@ -1,1 +1,18 @@
 .amp/portals/*
+
+# Private project instructions
+/CLAUDE.local.md
+
+# Build artifacts
+/bin/
+/dist/
+
+# Nix
+/result
+/result-*
+.direnv/
+
+.DS_Store
+
+# The Nix package uses committed vendored Go dependencies.
+!vendor/**

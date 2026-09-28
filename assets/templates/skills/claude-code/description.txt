@@ -1,0 +1,1 @@
+Use when inspecting or maintaining the installed LDS CLI and its generated agent skill; documentation workflows are not implemented yet.
