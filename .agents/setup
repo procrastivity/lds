@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ ! -x /nix/var/nix/profiles/default/bin/nix ]]; then
+  curl --proto '=https' --tlsv1.2 -fsSL https://install.determinate.systems/nix |
+    sh -s -- install linux --no-confirm
+fi
+
+# The installer cannot change the environment of this running script.
+# shellcheck disable=SC1091
+source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
+# The orb's shell profile resets PATH after /etc/profile.d has loaded Nix.
+# shellcheck disable=SC2016
+nix_path='export PATH="$HOME/.local/state/nix/profile/bin:/nix/var/nix/profiles/default/bin:$PATH"'
+if ! grep -Fqx "$nix_path" "$HOME/.bash_profile"; then
+  printf '\n%s\n' "$nix_path" >> "$HOME/.bash_profile"
+fi
+
+toolsmith_repo="$(realpath ../repos/toolsmith)"
+toolsmith_link="$HOME/.local/share/toolsmith"
+mkdir -p "$(dirname "$toolsmith_link")"
+
+(
+  cd "$toolsmith_repo"
+  nix build --out-link "$toolsmith_link" .#default
+)
+
+sudo ln -sfn "$toolsmith_link/bin/toolsmith" /usr/local/bin/toolsmith
+toolsmith version --json
+
+if ! command -v direnv >/dev/null 2>&1; then
+  sudo apt-get update -qq
+  sudo apt-get install -y -qq direnv
+fi
+
+nix_direnv_link="$HOME/.local/share/nix-direnv"
+if [[ ! -f "$nix_direnv_link/share/nix-direnv/direnvrc" ]]; then
+  nix build --out-link "$nix_direnv_link" nixpkgs#nix-direnv
+fi
+
+mkdir -p "$HOME/.config/direnv"
+direnv_line="source $nix_direnv_link/share/nix-direnv/direnvrc"
+if ! grep -Fqx "$direnv_line" "$HOME/.config/direnv/direnvrc" 2>/dev/null; then
+  printf '%s\n' "$direnv_line" >> "$HOME/.config/direnv/direnvrc"
+fi
+# shellcheck disable=SC2016
+hook='eval "$(direnv hook bash)"'
+if ! grep -Fqx "$hook" "$HOME/.bashrc"; then
+  printf '\n%s\n' "$hook" >> "$HOME/.bashrc"
+fi
+direnv allow "$toolsmith_repo"
