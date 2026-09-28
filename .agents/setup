@@ -18,16 +18,7 @@ if ! grep -Fqx "$nix_path" "$HOME/.bash_profile"; then
 fi
 
 toolsmith_repo="$(realpath ../repos/toolsmith)"
-toolsmith_link="$HOME/.local/share/toolsmith"
-mkdir -p "$(dirname "$toolsmith_link")"
-
-(
-  cd "$toolsmith_repo"
-  nix build --out-link "$toolsmith_link" .#default
-)
-
-sudo ln -sfn "$toolsmith_link/bin/toolsmith" /usr/local/bin/toolsmith
-toolsmith version --json
+"$(dirname "$0")/update-toolsmith" --install-only
 
 if ! command -v direnv >/dev/null 2>&1; then
   sudo apt-get update -qq
