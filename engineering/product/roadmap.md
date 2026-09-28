@@ -13,6 +13,28 @@ resolution, a manifest, and harness-management plumbing: `version`,
 and projected agent skills. They do **not** create, assess, or reconcile
 project documentation yet.
 
+## Planning constraints and open decisions
+
+Settled: the two-track layout is the intended default, and within-project
+documentation maintenance is distinct from cross-project reconciliation.
+For any LLM workflow LDS ships, [Toolsmith's shape contract](https://github.com/procrastivity/toolsmith/blob/main/CONTRACT.md#c8--shapes)
+requires one flow asset shared by the CLI verb and projected skill; every
+deterministic step must be available through plumbing. Do not design the
+two forms as independently maintained workflows.
+
+Resolve these questions before specifying the corresponding verbs:
+
+- **First usable release:** Which project is the pilot? What must `lds init`
+  produce or preserve to count as useful, and how much partial adoption is
+  supported?
+- **Write safety:** When may LDS create, update, or replace existing files?
+  Which actions need a reviewable plan or human approval?
+- **LLM execution:** Will the first release include a CLI-side LLM workflow
+  as well as a projected skill? If so, how will the CLI obtain an LLM?
+- **Reconciliation authority:** Who owns the journal, how are unresolved
+  ports/backports distinguished from accepted divergences, and when must a
+  divergence be reconsidered? Xcind's ledger is evidence, not LDS's schema.
+
 ## Candidate work, in dependency order
 
 1. Specify the initial two-track project layout and select/adapt templates
