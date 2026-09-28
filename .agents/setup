@@ -19,6 +19,8 @@ fi
 
 toolsmith_repo="$(realpath ../repos/toolsmith)"
 "$(dirname "$0")/update-toolsmith" --install-only
+wip_repo="$(realpath ../repos/wip)"
+"$(dirname "$0")/update-wip" --install-only
 
 if ! command -v direnv >/dev/null 2>&1; then
   sudo apt-get update -qq
@@ -41,3 +43,4 @@ if ! grep -Fqx "$hook" "$HOME/.bashrc"; then
   printf '\n%s\n' "$hook" >> "$HOME/.bashrc"
 fi
 direnv allow "$toolsmith_repo"
+direnv allow "$wip_repo"
