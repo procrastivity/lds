@@ -9,9 +9,6 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-	"text/template"
-
-	rootassets "github.com/procrastivity/lds/assets"
 )
 
 const greenfieldFixture = "testdata/adoption/greenfield"
@@ -126,8 +123,6 @@ func TestGreenfieldFixture_OperationAndApprovalEvidence(t *testing.T) {
 
 func TestGreenfieldFixture_ExpectedFilesAndRunPlans(t *testing.T) {
 	root := filepath.Join(greenfieldFixture)
-	var facts greenfieldFacts
-	readJSONFixture(t, filepath.Join(root, "facts.json"), &facts)
 	var scenario greenfieldCase
 	readJSONFixture(t, filepath.Join(root, "case.json"), &scenario)
 
@@ -157,40 +152,7 @@ func TestGreenfieldFixture_ExpectedFilesAndRunPlans(t *testing.T) {
 		}
 	}
 
-	cases := []struct {
-		assetPath string
-		output    string
-	}{
-		{"templates/adoption/engineering/README.md", "engineering/README.md"},
-		{"templates/adoption/engineering/product/overview.md", "engineering/product/overview.md"},
-		{"templates/adoption/docs/README.md", "docs/README.md"},
-		{"templates/adoption/docs/reference/usage.md", "docs/reference/usage.md"},
-	}
 	expectedRoot := filepath.Join(root, "expected")
-	for _, tc := range cases {
-		t.Run(tc.output, func(t *testing.T) {
-			assetBytes, err := rootassets.FS.ReadFile(tc.assetPath)
-			if err != nil {
-				t.Fatalf("read template %q: %v", tc.assetPath, err)
-			}
-			tmpl, err := template.New(tc.assetPath).Parse(string(assetBytes))
-			if err != nil {
-				t.Fatalf("parse template %q: %v", tc.assetPath, err)
-			}
-			var rendered bytes.Buffer
-			if err := tmpl.Execute(&rendered, facts); err != nil {
-				t.Fatalf("render template %q: %v", tc.assetPath, err)
-			}
-			want, err := os.ReadFile(filepath.Join(expectedRoot, filepath.FromSlash(tc.output)))
-			if err != nil {
-				t.Fatalf("read independent expected output %q: %v", tc.output, err)
-			}
-			if !bytes.Equal(rendered.Bytes(), want) {
-				t.Fatalf("rendered %q differs from independently-authored expected file", tc.output)
-			}
-		})
-	}
-
 	assertOnlyRelativeLink(t, filepath.Join(expectedRoot, "engineering", "README.md"), "product/overview.md")
 	assertOnlyRelativeLink(t, filepath.Join(expectedRoot, "docs", "README.md"), "reference/usage.md")
 }

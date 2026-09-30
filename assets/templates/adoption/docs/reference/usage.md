@@ -10,7 +10,7 @@
 
 ### Invocation and input
 
-`{{.Invocation}}`
+{{.Invocation}}
 
 Input: {{.Input}}
 

@@ -9,9 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"text/template"
-
-	rootassets "github.com/procrastivity/lds/assets"
 )
 
 const adoptionFixtureRoot = "testdata/adoption"
@@ -94,7 +91,7 @@ func TestAdoptionPreservationFixtures(t *testing.T) {
 		!strings.Contains(facts.OutputEvidence, "exit status was 0") {
 		t.Fatalf("shared baseline must carry test-only approval and sourced/observed operation evidence: %+v", facts)
 	}
-	renderedOutputs := renderAdoptionOutputs(t, facts)
+	renderedOutputs := readExpectedAdoptionOutputs(t)
 
 	want := map[string]struct {
 		preflight       string
@@ -250,32 +247,21 @@ func TestAdoptionPreservationFixtures(t *testing.T) {
 	}
 }
 
-func renderAdoptionOutputs(t *testing.T, facts greenfieldFacts) map[string][]byte {
+func readExpectedAdoptionOutputs(t *testing.T) map[string][]byte {
 	t.Helper()
-	cases := []struct {
-		assetPath string
-		output    string
-	}{
-		{"templates/adoption/engineering/README.md", "engineering/README.md"},
-		{"templates/adoption/engineering/product/overview.md", "engineering/product/overview.md"},
-		{"templates/adoption/docs/README.md", "docs/README.md"},
-		{"templates/adoption/docs/reference/usage.md", "docs/reference/usage.md"},
+	outputs := []string{
+		"engineering/README.md",
+		"engineering/product/overview.md",
+		"docs/README.md",
+		"docs/reference/usage.md",
 	}
-	rendered := make(map[string][]byte, len(cases))
-	for _, file := range cases {
-		assetBytes, err := rootassets.FS.ReadFile(file.assetPath)
+	rendered := make(map[string][]byte, len(outputs))
+	for _, output := range outputs {
+		data, err := os.ReadFile(filepath.Join(adoptionFixtureRoot, "greenfield", "expected", filepath.FromSlash(output)))
 		if err != nil {
-			t.Fatalf("read adoption template %q: %v", file.assetPath, err)
+			t.Fatalf("read independently-authored expected output %q: %v", output, err)
 		}
-		tmpl, err := template.New(file.assetPath).Parse(string(assetBytes))
-		if err != nil {
-			t.Fatalf("parse adoption template %q: %v", file.assetPath, err)
-		}
-		var output bytes.Buffer
-		if err := tmpl.Execute(&output, facts); err != nil {
-			t.Fatalf("render adoption template %q: %v", file.assetPath, err)
-		}
-		rendered[file.output] = output.Bytes()
+		rendered[output] = data
 	}
 	return rendered
 }

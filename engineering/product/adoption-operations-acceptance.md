@@ -75,8 +75,9 @@ canonicalizer test value, **not** a plan digest. Rendered output hashes point
 to Step 7's independent expected files; asset hashes point to selected asset
 bytes. Result arrays must be sorted by slash-separated path even where fixture
 input files were authored in another order.
-Keep the independently authored expected-output hashes as this baseline;
-update them when incorporating the Step 6 invocation-template byte change.
+The independent expected-output files and projection hashes now include the
+Step 6 escaped-Markdown text and variable-length invocation fence; those
+expected files remain separate from renderer output.
 
 Existing CLI sources establish the conventions to reuse:
 [execution/error routing](../../internal/cli/execute.go),

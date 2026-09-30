@@ -111,10 +111,19 @@ func ReadOverride(relativeName string) (Resolved, bool, error) {
 		return Resolved{}, false, err
 	}
 	path := filepath.Join(dir, relativeName)
-	if data, ok := readIfExists(path); ok {
+	data, err := os.ReadFile(path)
+	if err == nil {
 		return Resolved{Source: SourceOverride, Path: path, data: data}, true, nil
 	}
-	return Resolved{}, false, nil
+	if os.IsNotExist(err) {
+		// A dangling override symlink is present but unreadable, not absent.
+		if _, statErr := os.Lstat(path); os.IsNotExist(statErr) {
+			return Resolved{}, false, nil
+		} else if statErr != nil {
+			return Resolved{}, false, statErr
+		}
+	}
+	return Resolved{}, false, fmt.Errorf("asset: read override %q: %w", relativeName, err)
 }
 
 // ReadDefault reads relativeName from the shipped default directory, falling

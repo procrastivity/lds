@@ -243,6 +243,206 @@ func TestManifest_JSON_ListsAdoptionTemplatesWithChecksums(t *testing.T) {
 	}
 }
 
+func TestDocsRender_GreenfieldJSONAndReadOnly(t *testing.T) {
+	fixture := filepath.Join("..", "asset", "testdata", "adoption", "greenfield")
+	root := filepath.Join(fixture, "target")
+	facts := filepath.Join(fixture, "facts.json")
+	xdg := t.TempDir()
+	before := renderTargetSnapshot(t, root)
+	r := run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "docs", "render", root, "--facts", facts, "--json")
+	if r.exitCode != 0 || r.stderr != "" {
+		t.Fatalf("render exit=%d stderr=%q", r.exitCode, r.stderr)
+	}
+	var result struct {
+		SchemaVersion int    `json:"schemaVersion"`
+		Operation     string `json:"operation"`
+		Outputs       []struct {
+			Path    string `json:"path"`
+			Content string `json:"content"`
+			SHA256  string `json:"sha256"`
+			Asset   struct {
+				RelativeName string `json:"relativeName"`
+				Source       string `json:"source"`
+				SHA256       string `json:"sha256"`
+			} `json:"asset"`
+		} `json:"outputs"`
+	}
+	if err := json.Unmarshal([]byte(r.stdout), &result); err != nil {
+		t.Fatalf("render stdout is not JSON: %v; stdout=%q", err, r.stdout)
+	}
+	if result.SchemaVersion != 1 || result.Operation != "docs render" || len(result.Outputs) != 4 {
+		t.Fatalf("render result header/outputs = %+v", result)
+	}
+	wantPaths := []string{"docs/README.md", "docs/reference/usage.md", "engineering/README.md", "engineering/product/overview.md"}
+	for i, output := range result.Outputs {
+		if output.Path != wantPaths[i] || output.Asset.Source != "embedded" {
+			t.Errorf("output[%d] path/source = %q/%q", i, output.Path, output.Asset.Source)
+		}
+		want, err := os.ReadFile(filepath.Join(fixture, "expected", filepath.FromSlash(output.Path)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if output.Content != string(want) {
+			t.Errorf("rendered %s differs from independent expected bytes", output.Path)
+		}
+		sum := sha256.Sum256([]byte(output.Content))
+		if output.SHA256 != hex.EncodeToString(sum[:]) {
+			t.Errorf("content hash for %s = %s", output.Path, output.SHA256)
+		}
+		assetBytes, err := rootassets.FS.ReadFile(output.Asset.RelativeName)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assetSum := sha256.Sum256(assetBytes)
+		if output.Asset.SHA256 != hex.EncodeToString(assetSum[:]) {
+			t.Errorf("asset hash for %s = %s", output.Path, output.Asset.SHA256)
+		}
+	}
+	if after := renderTargetSnapshot(t, root); !equalRenderSnapshots(before, after) {
+		t.Fatalf("render modified target: before=%v after=%v", before, after)
+	}
+}
+
+func TestDocsRender_ResolverPrecedenceAndShadowing(t *testing.T) {
+	fixture := filepath.Join("..", "asset", "testdata", "adoption", "greenfield")
+	root, facts := filepath.Join(fixture, "target"), filepath.Join(fixture, "facts.json")
+	xdg := t.TempDir()
+	defaultDir := filepath.Join(filepath.Dir(filepath.Dir(binPath)), "share", "lds", "assets")
+	if err := os.RemoveAll(defaultDir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(defaultDir) })
+	templates := []struct {
+		asset  string
+		output string
+	}{
+		{"templates/adoption/docs/README.md", "docs/README.md"},
+		{"templates/adoption/docs/reference/usage.md", "docs/reference/usage.md"},
+		{"templates/adoption/engineering/README.md", "engineering/README.md"},
+		{"templates/adoption/engineering/product/overview.md", "engineering/product/overview.md"},
+	}
+	defaultAssets := map[string][]byte{}
+	overrideAssets := map[string][]byte{}
+	for _, item := range templates {
+		base, err := rootassets.FS.ReadFile(item.asset)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defaultAssets[item.asset] = append([]byte("<!-- installed-default-only:"+item.output+" -->\n"), base...)
+		overrideAssets[item.asset] = append([]byte("<!-- user-override-only:"+item.output+" -->\n"), base...)
+		writeRenderAsset(t, defaultDir, item.asset, defaultAssets[item.asset])
+	}
+	checkSources := func(r result, source, expectedMarker, rejectedMarker string) {
+		t.Helper()
+		for _, item := range templates {
+			output := mustRenderOutput(t, r, item.output)
+			if output.Asset.Source != source || (expectedMarker != "" && !strings.Contains(output.Content, expectedMarker+item.output)) || (rejectedMarker != "" && strings.Contains(output.Content, rejectedMarker)) {
+				t.Errorf("%s resolution for %s = %+v", source, item.output, output)
+			}
+			var assetBytes []byte
+			switch source {
+			case "default":
+				assetBytes = defaultAssets[item.asset]
+			case "override":
+				assetBytes = overrideAssets[item.asset]
+			default:
+				assetBytes, _ = rootassets.FS.ReadFile(item.asset)
+			}
+			sum := sha256.Sum256(assetBytes)
+			if output.Asset.SHA256 != hex.EncodeToString(sum[:]) {
+				t.Errorf("asset hash for %s = %s", item.output, output.Asset.SHA256)
+			}
+		}
+	}
+
+	r := run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "docs", "render", root, "--facts", facts, "--json")
+	checkSources(r, "default", "installed-default-only:", "user-override-only:")
+
+	overrideDir := filepath.Join(xdg, "lds")
+	for _, item := range templates {
+		writeRenderAsset(t, overrideDir, item.asset, overrideAssets[item.asset])
+	}
+	r = run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "docs", "render", root, "--facts", facts, "--json")
+	checkSources(r, "override", "user-override-only:", "installed-default-only:")
+
+	for _, item := range templates {
+		if err := os.Remove(filepath.Join(overrideDir, filepath.FromSlash(item.asset))); err != nil {
+			t.Fatal(err)
+		}
+	}
+	r = run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "docs", "render", root, "--facts", facts, "--json")
+	checkSources(r, "default", "installed-default-only:", "user-override-only:")
+
+	for _, item := range templates {
+		if err := os.Remove(filepath.Join(defaultDir, filepath.FromSlash(item.asset))); err != nil {
+			t.Fatal(err)
+		}
+	}
+	r = run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "docs", "render", root, "--facts", facts, "--json")
+	checkSources(r, "embedded", "", "installed-default-only:")
+	for _, item := range templates {
+		output := mustRenderOutput(t, r, item.output)
+		wantContent, err := os.ReadFile(filepath.Join(fixture, "expected", filepath.FromSlash(item.output)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if output.Content != string(wantContent) {
+			t.Errorf("embedded fallback for %s differs from independent expected bytes", item.output)
+		}
+	}
+}
+
+func TestDocsRender_InvalidFactsAndTemplateExitOne(t *testing.T) {
+	fixture := filepath.Join("..", "asset", "testdata", "adoption", "greenfield")
+	root := filepath.Join(fixture, "target")
+	valid, err := os.ReadFile(filepath.Join(fixture, "facts.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name string
+		data []byte
+	}{
+		{name: "missing required evidence"},
+		{name: "malformed facts", data: []byte(`{"DisplayName":`)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			facts := filepath.Join(t.TempDir(), "facts.json")
+			data := tc.data
+			if tc.name == "missing required evidence" {
+				var raw map[string]any
+				if err := json.Unmarshal(valid, &raw); err != nil {
+					t.Fatal(err)
+				}
+				raw["OutputEvidence"] = ""
+				data, err = json.Marshal(raw)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := os.WriteFile(facts, data, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "render", root, "--facts", facts, "--json")
+			if r.exitCode != 1 || r.stdout != "" || parseErrorEnvelope(t, r.stderr).Error.Code != "validation.render-invalid" {
+				t.Fatalf("invalid render result = %+v", r)
+			}
+		})
+	}
+
+	badOverrideHome := t.TempDir()
+	writeRenderAsset(t, filepath.Join(badOverrideHome, "lds"), "templates/adoption/docs/README.md", []byte("{{.Undeclared}}"))
+	badOverride := run(t, []string{"XDG_CONFIG_HOME=" + badOverrideHome}, "docs", "render", root, "--facts", filepath.Join(fixture, "facts.json"), "--json")
+	if badOverride.exitCode != 1 || badOverride.stdout != "" || parseErrorEnvelope(t, badOverride.stderr).Error.Code != "validation.render-invalid" {
+		t.Fatalf("invalid template override result = %+v", badOverride)
+	}
+
+	r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "render", root, "--facts", filepath.Join(fixture, "facts.json"), "--json", "--bad-template-option")
+	if r.exitCode != 2 || r.stdout != "" {
+		t.Fatalf("render usage exit=%d stdout=%q stderr=%q", r.exitCode, r.stdout, r.stderr)
+	}
+}
+
 func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 	m := run(t, nil, "manifest", "--json")
 	if m.exitCode != 0 {
@@ -259,18 +459,23 @@ func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 	if err := json.Unmarshal([]byte(m.stdout), &declaration); err != nil {
 		t.Fatal(err)
 	}
-	matches := map[string]int{"docs inventory": 0, "docs validate": 0}
-	for _, v := range declaration.Verbs {
-		if _, ok := matches[v.Name]; !ok {
+	matches := map[string]int{"docs inventory": 0, "docs validate": 0, "docs render": 0}
+	for _, verb := range declaration.Verbs {
+		if _, ok := matches[verb.Name]; !ok {
 			continue
 		}
-		matches[v.Name]++
-		wantField := `"files"`
-		if v.Name == "docs validate" {
+		matches[verb.Name]++
+		var wantField string
+		switch verb.Name {
+		case "docs inventory":
+			wantField = `"files"`
+		case "docs validate":
 			wantField = `"findings"`
+		case "docs render":
+			wantField = `"outputs"`
 		}
-		if v.Kind != "plumbing" || v.Usage != "<root>" || !json.Valid(v.OutputSchema) || !bytes.Contains(v.OutputSchema, []byte(wantField)) || !bytes.Contains(v.OutputSchema, []byte(`"skipped"`)) {
-			t.Fatalf("docs declaration = %+v", v)
+		if verb.Kind != "plumbing" || !json.Valid(verb.OutputSchema) || !bytes.Contains(verb.OutputSchema, []byte(wantField)) {
+			t.Fatalf("docs declaration = %+v", verb)
 		}
 	}
 	for name, count := range matches {
@@ -369,6 +574,107 @@ func TestDocsReadOnly_UsageMissingAndIO(t *testing.T) {
 				t.Fatalf("I/O path failure: %+v", failure)
 			}
 		})
+	}
+}
+
+func renderTargetSnapshot(t *testing.T, root string) map[string]string {
+	t.Helper()
+	files := make(map[string]string)
+	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			if path != root {
+				relative, err := filepath.Rel(root, path)
+				if err != nil {
+					return err
+				}
+				files["dir:"+filepath.ToSlash(relative)] = ""
+			}
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		relative, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		files["file:"+filepath.ToSlash(relative)] = string(data)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return files
+}
+
+func equalRenderSnapshots(a, b map[string]string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for path, data := range a {
+		if b[path] != data {
+			return false
+		}
+	}
+	return true
+}
+
+func mustRenderOutput(t *testing.T, r result, path string) struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
+	Asset   struct {
+		RelativeName string `json:"relativeName"`
+		Source       string `json:"source"`
+		SHA256       string `json:"sha256"`
+	} `json:"asset"`
+} {
+	t.Helper()
+	if r.exitCode != 0 || r.stderr != "" {
+		t.Fatalf("render exit=%d stderr=%q", r.exitCode, r.stderr)
+	}
+	var payload struct {
+		Outputs []struct {
+			Path    string `json:"path"`
+			Content string `json:"content"`
+			Asset   struct {
+				RelativeName string `json:"relativeName"`
+				Source       string `json:"source"`
+				SHA256       string `json:"sha256"`
+			} `json:"asset"`
+		} `json:"outputs"`
+	}
+	if err := json.Unmarshal([]byte(r.stdout), &payload); err != nil {
+		t.Fatalf("decode render result: %v", err)
+	}
+	for _, output := range payload.Outputs {
+		if output.Path == path {
+			return output
+		}
+	}
+	t.Fatalf("render result has no output %q", path)
+	return struct {
+		Path    string `json:"path"`
+		Content string `json:"content"`
+		Asset   struct {
+			RelativeName string `json:"relativeName"`
+			Source       string `json:"source"`
+			SHA256       string `json:"sha256"`
+		} `json:"asset"`
+	}{}
+}
+
+func writeRenderAsset(t *testing.T, base, relative string, data []byte) {
+	t.Helper()
+	path := filepath.Join(base, filepath.FromSlash(relative))
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		t.Fatal(err)
 	}
 }
 

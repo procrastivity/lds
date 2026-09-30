@@ -22,9 +22,9 @@
     "resolverSource": "embedded",
     "outputs": [
       {"path": "docs/README.md", "contentFixture": "greenfield/expected/docs/README.md", "contentSha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e", "asset": {"relativeName": "templates/adoption/docs/README.md", "source": "embedded", "sha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"}},
-      {"path": "docs/reference/usage.md", "contentFixture": "greenfield/expected/docs/reference/usage.md", "contentSha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41", "asset": {"relativeName": "templates/adoption/docs/reference/usage.md", "source": "embedded", "sha256": "e7286a28da73b8ec17db53a76e7894322980ace4a2eea559e5aeed9e46d576d6"}},
+      {"path": "docs/reference/usage.md", "contentFixture": "greenfield/expected/docs/reference/usage.md", "contentSha256": "47c4100c772b343293decb85b1e87dc530d39a5a01302c50fd0750728cf30cd8", "asset": {"relativeName": "templates/adoption/docs/reference/usage.md", "source": "embedded", "sha256": "ea7e71b911c72eda10cf1adbe1de7530526e6790e8e391c94ba0e042a058d1ba"}},
       {"path": "engineering/README.md", "contentFixture": "greenfield/expected/engineering/README.md", "contentSha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815", "asset": {"relativeName": "templates/adoption/engineering/README.md", "source": "embedded", "sha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"}},
-      {"path": "engineering/product/overview.md", "contentFixture": "greenfield/expected/engineering/product/overview.md", "contentSha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84", "asset": {"relativeName": "templates/adoption/engineering/product/overview.md", "source": "embedded", "sha256": "aca4eb9beee949fc45be058f8fd5a5d63e8f5248b3a170b5ab8aedcae83db525"}}
+      {"path": "engineering/product/overview.md", "contentFixture": "greenfield/expected/engineering/product/overview.md", "contentSha256": "e1d4ddf4687edb3a996bcbcad99d253da512a7048058491fbafa494fa7e6df6a", "asset": {"relativeName": "templates/adoption/engineering/product/overview.md", "source": "embedded", "sha256": "aca4eb9beee949fc45be058f8fd5a5d63e8f5248b3a170b5ab8aedcae83db525"}}
     ]
   },
   "canonicalizationVectors": [
@@ -51,9 +51,9 @@
         "factsDigest": {"assert": "commits to complete facts JSON including approval and provenance"},
         "outputs": [
           {"path": "docs/README.md", "classification": "create", "contentSha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"},
-          {"path": "docs/reference/usage.md", "classification": "create", "contentSha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"},
+          {"path": "docs/reference/usage.md", "classification": "create", "contentSha256": "47c4100c772b343293decb85b1e87dc530d39a5a01302c50fd0750728cf30cd8"},
           {"path": "engineering/README.md", "classification": "create", "contentSha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"},
-          {"path": "engineering/product/overview.md", "classification": "create", "contentSha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"}
+          {"path": "engineering/product/overview.md", "classification": "create", "contentSha256": "e1d4ddf4687edb3a996bcbcad99d253da512a7048058491fbafa494fa7e6df6a"}
         ],
         "necessaryParentDirectories": ["docs/", "docs/reference/", "engineering/", "engineering/product/"],
         "preserved": {"assert": "contains sample.txt and word-count.sh with their Step 8 sharedBaseline hashes"}, "reportOnly": [], "veto": false, "findings": [], "skipped": []
@@ -66,9 +66,9 @@
         "schemaVersion": 1, "operation": "docs apply", "planDigest": {"assert": "equals reviewed greenfield plan digest"}, "status": "applied",
         "created": [
           {"path": "docs/README.md", "sha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"},
-          {"path": "docs/reference/usage.md", "sha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"},
+          {"path": "docs/reference/usage.md", "sha256": "47c4100c772b343293decb85b1e87dc530d39a5a01302c50fd0750728cf30cd8"},
           {"path": "engineering/README.md", "sha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"},
-          {"path": "engineering/product/overview.md", "sha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"}
+          {"path": "engineering/product/overview.md", "sha256": "e1d4ddf4687edb3a996bcbcad99d253da512a7048058491fbafa494fa7e6df6a"}
         ],
         "identicalUntouched": [], "unattempted": [], "failed": [], "preserved": {"assert": "sample.txt and word-count.sh byte/hash-identical to pre-apply baseline"}
       },
@@ -80,9 +80,9 @@
         "schemaVersion": 1, "operation": "docs apply", "planDigest": {"assert": "equals newly reviewed identical-state plan digest"}, "status": "current", "created": [],
         "identicalUntouched": [
           {"path": "docs/README.md", "sha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"},
-          {"path": "docs/reference/usage.md", "sha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"},
+          {"path": "docs/reference/usage.md", "sha256": "47c4100c772b343293decb85b1e87dc530d39a5a01302c50fd0750728cf30cd8"},
           {"path": "engineering/README.md", "sha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"},
-          {"path": "engineering/product/overview.md", "sha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"}
+          {"path": "engineering/product/overview.md", "sha256": "e1d4ddf4687edb3a996bcbcad99d253da512a7048058491fbafa494fa7e6df6a"}
         ],
         "unattempted": [], "failed": [], "preserved": {"assert": "all existing target content remains byte-identical"}
       },
@@ -125,7 +125,7 @@
     },
     {
       "id": "preservation.already-generated-identical", "evidence": "fixture-projection; no-op apply required at runtime", "operation": "docs plan", "fixture": "preservation/cases.json#/cases/already-generated-identical", "expectedExit": 0,
-      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "planDigest": {"assert": "RFC 8785 full-plan relation; no static digest"}, "outputs": [{"path": "docs/README.md", "classification": "identical-untouched", "existingSha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"}, {"path": "docs/reference/usage.md", "classification": "identical-untouched", "existingSha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"}, {"path": "engineering/README.md", "classification": "identical-untouched", "existingSha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"}, {"path": "engineering/product/overview.md", "classification": "identical-untouched", "existingSha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"}], "necessaryParentDirectories": [], "preserved": {"assert": "contains baseline and all four outputs byte-for-byte"}, "reportOnly": [], "veto": false},
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "planDigest": {"assert": "RFC 8785 full-plan relation; no static digest"}, "outputs": [{"path": "docs/README.md", "classification": "identical-untouched", "existingSha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"}, {"path": "docs/reference/usage.md", "classification": "identical-untouched", "existingSha256": "47c4100c772b343293decb85b1e87dc530d39a5a01302c50fd0750728cf30cd8"}, {"path": "engineering/README.md", "classification": "identical-untouched", "existingSha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"}, {"path": "engineering/product/overview.md", "classification": "identical-untouched", "existingSha256": "e1d4ddf4687edb3a996bcbcad99d253da512a7048058491fbafa494fa7e6df6a"}], "necessaryParentDirectories": [], "preserved": {"assert": "contains baseline and all four outputs byte-for-byte"}, "reportOnly": [], "veto": false},
       "expectedStderr": "empty"
     },
     {

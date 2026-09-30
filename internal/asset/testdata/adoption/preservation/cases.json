@@ -111,9 +111,9 @@
       "name": "already-generated-identical",
       "overlayFiles": [
         {"path": "engineering/README.md", "source": "greenfield/expected/engineering/README.md", "sha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"},
-        {"path": "engineering/product/overview.md", "source": "greenfield/expected/engineering/product/overview.md", "sha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"},
+        {"path": "engineering/product/overview.md", "source": "greenfield/expected/engineering/product/overview.md", "sha256": "e1d4ddf4687edb3a996bcbcad99d253da512a7048058491fbafa494fa7e6df6a"},
         {"path": "docs/README.md", "source": "greenfield/expected/docs/README.md", "sha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"},
-        {"path": "docs/reference/usage.md", "source": "greenfield/expected/docs/reference/usage.md", "sha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"}
+        {"path": "docs/reference/usage.md", "source": "greenfield/expected/docs/reference/usage.md", "sha256": "47c4100c772b343293decb85b1e87dc530d39a5a01302c50fd0750728cf30cd8"}
       ],
       "preflight": "eligible-no-op",
       "classifications": ["identical-untouched", "identical-untouched", "identical-untouched", "identical-untouched"],
@@ -122,9 +122,9 @@
       "predictedWrites": 0,
       "preserved": [
         {"path": "engineering/README.md", "source": "greenfield/expected/engineering/README.md", "sha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"},
-        {"path": "engineering/product/overview.md", "source": "greenfield/expected/engineering/product/overview.md", "sha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"},
+        {"path": "engineering/product/overview.md", "source": "greenfield/expected/engineering/product/overview.md", "sha256": "e1d4ddf4687edb3a996bcbcad99d253da512a7048058491fbafa494fa7e6df6a"},
         {"path": "docs/README.md", "source": "greenfield/expected/docs/README.md", "sha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"},
-        {"path": "docs/reference/usage.md", "source": "greenfield/expected/docs/reference/usage.md", "sha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"}
+        {"path": "docs/reference/usage.md", "source": "greenfield/expected/docs/reference/usage.md", "sha256": "47c4100c772b343293decb85b1e87dc530d39a5a01302c50fd0750728cf30cd8"}
       ]
     },
     {
