@@ -1,9 +1,10 @@
 # lds
 
-LDS is a planned CLI for creating and maintaining a Layered Documentation
-System: engineering documentation alongside Diátaxis user documentation.
-This repository currently contains the generated Toolsmith application
-scaffold, not the LDS documentation workflows yet.
+LDS is a CLI for a Layered Documentation System: engineering documentation
+alongside Diátaxis user documentation. It has deterministic `lds docs`
+inventory, local-link validation, four-asset rendering, reviewed planning,
+and create-only application. Human-facing documentation workflows are not
+implemented yet.
 
 Built on the [toolsmith contract](https://github.com/procrastivity/toolsmith)
 (`toolsmith/v1` — the manifest declares it): a single static Go binary
@@ -37,7 +38,9 @@ CHANGELOG.md is generated per release, never committed.
 The [engineering documentation](engineering/README.md) is the design of
 record, starting with the [adoption decision](engineering/decisions/0001-adopt-two-track-documentation.md),
 [source-repository map](engineering/architecture/source-repositories.md),
-and [roadmap](engineering/product/roadmap.md). User-facing Diátaxis
-documentation will live in `docs/` once there is LDS behavior to document.
+and [roadmap](engineering/product/roadmap.md). The [runtime handoff](engineering/product/adoption-operations-runtime-handoff.md)
+documents supported `lds docs` behavior and its limits. No real project has
+been authorized as an adoption pilot; user-facing Diátaxis documentation for
+LDS itself is still to be written.
 The GitHub CI workflow runs; the generated release workflow has not been
 exercised yet.

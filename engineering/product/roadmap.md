@@ -12,6 +12,11 @@ resolution, a manifest, and harness-management plumbing: `version`,
 `manifest`, `install`, `uninstall`, `doctor`. These commands manage the CLI
 and projected agent skills. They do **not** create, assess, or reconcile
 project documentation yet.
+Five bounded `lds docs` plumbing leaves now inventory, check supported local
+links, render the four adoption assets, preview a plan, and exclusively create
+missing approved files after reviewed digest confirmation. See the
+[runtime handoff](adoption-operations-runtime-handoff.md) for evidence and
+limitations; no human-facing flow or real pilot is established.
 
 ## Planning constraints and open decisions
 
@@ -60,7 +65,7 @@ Resolve these questions before specifying the corresponding verbs:
 
 ## Candidate verbs
 
-Names and boundaries below are **proposals**. Porcelain is the human-facing
+Names and boundaries below are **proposals except the implemented docs row**. Porcelain is the human-facing
 workflow; plumbing is deterministic and suitable for JSON/exit-code use by
 skills and scripts. `toolsmith new` bootstraps the *CLI application*; a
 future `lds init` would bootstrap documentation *inside another project*.
@@ -72,7 +77,7 @@ future `lds init` would bootstrap documentation *inside another project*.
 | Porcelain | `lds update` | Bring one project's docs into line with its changed code and decisions. |
 | Porcelain | `lds review` | Audit coverage, links, and cross-track consistency. |
 | Porcelain | `lds reconcile` | Compare projects and guide explicit port/backport/divergence decisions. |
-| Plumbing | inventory, validate, render | Report files/links, check structure, and render assets without an LLM. |
+| Plumbing (implemented, bounded) | `lds docs inventory`, `validate`, `render`, `plan`, `apply` | Report scoped files/links, check supported local targets, render four assets, preview and create missing approved files without an LLM. |
 | Plumbing | reconciliation scan and journal operations | Produce candidate differences and persist decisions without assuming a 1:1 port. |
 
 Agent-specific skills worth evaluating: adopting a partial tree, drafting

@@ -1,7 +1,10 @@
 # BDS-250 deterministic adoption acceptance matrix
 
-**Status:** pre-implementation acceptance specification; no BDS-250 runtime
-behavior is established by this document.
+**Status:** original pre-implementation acceptance specification, retained as
+an independent baseline. It does not itself establish runtime behavior;
+the [executable handoff](adoption-operations-runtime-handoff.md) records later
+disposable-target observations. References below to runtime evidence still
+being required describe the specification at the time it was written.
 
 This matrix independently translates the accepted
 [operations contract](adoption-operations-contract.md) (SHA-256
