@@ -62,7 +62,7 @@ func Validate(root string) (Validation, error) {
 		switch {
 		case errors.Is(err, ErrUnsafeTarget):
 			result.Skipped = append(result.Skipped, Skip{Source: link.Source, Line: link.Line, Code: "validation.unsafe-link-skipped", Reason: "symlink target is not followed"})
-		case os.IsNotExist(err), errors.Is(err, syscall.ENOTDIR):
+		case errors.Is(err, os.ErrNotExist), errors.Is(err, syscall.ENOTDIR):
 			result.Findings = append(result.Findings, Finding{Code: "validation.local-target-missing", Path: link.Source, Line: link.Line, Target: link.Target, Message: "local file target is missing: " + link.Target})
 		case err != nil:
 			return result, fmt.Errorf("check %s from %s: %w", candidate, link.Source, err)

@@ -59,7 +59,7 @@ func Inspect(root string) (Inventory, error) {
 	var visit func(*os.File, string, string) error
 	visit = func(parent *os.File, name, rel string) error {
 		file, err := openChild(parent, name)
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			return nil // optional layers and README are absent on fresh targets
 		}
 		if errors.Is(err, ErrUnsafeTarget) {

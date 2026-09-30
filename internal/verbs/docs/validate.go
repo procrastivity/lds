@@ -26,7 +26,7 @@ func validateCommand(streams *iostreams.Streams) *cobra.Command {
 				if errors.Is(err, adoption.ErrUnsafeTarget) {
 					return ldserr.New("refusal.unsafe-target", err.Error())
 				}
-				if os.IsNotExist(err) {
+				if errors.Is(err, os.ErrNotExist) {
 					return ldserr.New("validation.target-root-missing", err.Error())
 				}
 				return ldserr.New("internal.validation-failed", err.Error())

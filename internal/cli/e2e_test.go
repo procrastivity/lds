@@ -243,7 +243,7 @@ func TestManifest_JSON_ListsAdoptionTemplatesWithChecksums(t *testing.T) {
 	}
 }
 
-func TestDocsInventory_ManifestAndFreshTarget(t *testing.T) {
+func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 	m := run(t, nil, "manifest", "--json")
 	if m.exitCode != 0 {
 		t.Fatalf("manifest exit=%d stderr=%q", m.exitCode, m.stderr)
@@ -259,18 +259,24 @@ func TestDocsInventory_ManifestAndFreshTarget(t *testing.T) {
 	if err := json.Unmarshal([]byte(m.stdout), &declaration); err != nil {
 		t.Fatal(err)
 	}
-	matches := 0
+	matches := map[string]int{"docs inventory": 0, "docs validate": 0}
 	for _, v := range declaration.Verbs {
-		if v.Name != "docs inventory" {
+		if _, ok := matches[v.Name]; !ok {
 			continue
 		}
-		matches++
-		if v.Kind != "plumbing" || v.Usage != "<root>" || !json.Valid(v.OutputSchema) || !bytes.Contains(v.OutputSchema, []byte(`"files"`)) {
-			t.Fatalf("inventory declaration = %+v", v)
+		matches[v.Name]++
+		wantField := `"files"`
+		if v.Name == "docs validate" {
+			wantField = `"findings"`
+		}
+		if v.Kind != "plumbing" || v.Usage != "<root>" || !json.Valid(v.OutputSchema) || !bytes.Contains(v.OutputSchema, []byte(wantField)) || !bytes.Contains(v.OutputSchema, []byte(`"skipped"`)) {
+			t.Fatalf("docs declaration = %+v", v)
 		}
 	}
-	if matches != 1 {
-		t.Fatalf("manifest has %d inventory declarations, want one", matches)
+	for name, count := range matches {
+		if count != 1 {
+			t.Fatalf("manifest has %d %s declarations, want one", count, name)
+		}
 	}
 	r := run(t, nil, "docs", "inventory", t.TempDir(), "--json")
 	if r.exitCode != 0 || r.stderr != "" {
@@ -293,6 +299,76 @@ func TestDocsInventory_UnsafeTargetRefuses(t *testing.T) {
 	}
 	if e := parseErrorEnvelope(t, r.stderr); e.Error.Code != "refusal.unsafe-target" {
 		t.Fatalf("unsafe target error = %+v", e.Error)
+	}
+}
+
+func TestDocsReadOnly_ExactJSONAndExits(t *testing.T) {
+	root := t.TempDir()
+	files := map[string]string{
+		"README.md":            "[guide](engineering/guide.md)\n",
+		"engineering/guide.md": "[doc][ref]\n\n[ref]: ../docs/target.md\n",
+		"docs/target.md":       "# Target\n",
+	}
+	for path, data := range files {
+		full := filepath.Join(root, path)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(data), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	r := run(t, nil, "docs", "inventory", root, "--json")
+	want := fmt.Sprintf(`{"schemaVersion":1,"operation":"docs inventory","files":[{"path":"README.md","sha256":"%x","size":%d},{"path":"docs/target.md","sha256":"%x","size":%d},{"path":"engineering/guide.md","sha256":"%x","size":%d}],"links":[{"source":"README.md","line":1,"target":"engineering/guide.md","kind":"inline"},{"source":"engineering/guide.md","line":1,"target":"../docs/target.md","kind":"reference"}],"skipped":[]}`+"\n",
+		sha256.Sum256([]byte(files["README.md"])), len(files["README.md"]),
+		sha256.Sum256([]byte(files["docs/target.md"])), len(files["docs/target.md"]),
+		sha256.Sum256([]byte(files["engineering/guide.md"])), len(files["engineering/guide.md"]))
+	if r.exitCode != 0 || r.stdout != want || r.stderr != "" {
+		t.Fatalf("inventory: exit=%d stdout=%q stderr=%q; want stdout=%q", r.exitCode, r.stdout, r.stderr, want)
+	}
+
+	r = run(t, nil, "docs", "validate", root, "--json")
+	if r.exitCode != 0 || r.stdout != `{"schemaVersion":1,"operation":"docs validate","findings":[],"skipped":[]}`+"\n" || r.stderr != "" {
+		t.Fatalf("clean validate: exit=%d stdout=%q stderr=%q", r.exitCode, r.stdout, r.stderr)
+	}
+
+	links := "# Links\n[missing](reference/missing.md#install)\n[external](https://example.invalid/docs)\n[fragment](#overview)\n"
+	if err := os.WriteFile(filepath.Join(root, "docs", "links.md"), []byte(links), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	r = run(t, nil, "docs", "validate", root, "--json")
+	want = `{"schemaVersion":1,"operation":"docs validate","findings":[{"code":"validation.local-target-missing","path":"docs/links.md","line":2,"target":"reference/missing.md#install","message":"local file target is missing: reference/missing.md#install"}],"skipped":[{"source":"docs/links.md","line":3,"code":"inventory.nonlocal-skipped","reason":"external or fragment-only target is not checked"},{"source":"docs/links.md","line":4,"code":"inventory.nonlocal-skipped","reason":"external or fragment-only target is not checked"}]}` + "\n"
+	if r.exitCode != 1 || r.stdout != want || parseErrorEnvelope(t, r.stderr).Error.Code != "validation.local-target-missing" {
+		t.Fatalf("finding validate: exit=%d stdout=%q stderr=%q; want stdout=%q", r.exitCode, r.stdout, r.stderr, want)
+	}
+
+	if err := os.WriteFile(filepath.Join(root, "docs", "links.md"), []byte("[external](https://example.invalid)\n[fragment](#only)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	r = run(t, nil, "docs", "validate", root, "--json")
+	want = `{"schemaVersion":1,"operation":"docs validate","findings":[],"skipped":[{"source":"docs/links.md","line":1,"code":"inventory.nonlocal-skipped","reason":"external or fragment-only target is not checked"},{"source":"docs/links.md","line":2,"code":"inventory.nonlocal-skipped","reason":"external or fragment-only target is not checked"}]}` + "\n"
+	if r.exitCode != 0 || r.stderr != "" || r.stdout != want {
+		t.Fatalf("skips-only validate: exit=%d stdout=%q stderr=%q; want stdout=%q", r.exitCode, r.stdout, r.stderr, want)
+	}
+}
+
+func TestDocsReadOnly_UsageMissingAndIO(t *testing.T) {
+	for _, leaf := range []string{"inventory", "validate"} {
+		t.Run(leaf, func(t *testing.T) {
+			usage := run(t, nil, "docs", leaf, "--json")
+			if usage.exitCode != 2 || usage.stdout != "" || !strings.HasPrefix(usage.stderr, "lds: ") {
+				t.Fatalf("usage: %+v", usage)
+			}
+			missing := run(t, nil, "docs", leaf, filepath.Join(t.TempDir(), "absent"), "--json")
+			if missing.exitCode != 1 || missing.stdout != "" || parseErrorEnvelope(t, missing.stderr).Error.Code != "validation.target-root-missing" {
+				t.Fatalf("missing root: %+v", missing)
+			}
+			tooLong := filepath.Join(t.TempDir(), strings.Repeat("x", 256))
+			failure := run(t, nil, "docs", leaf, tooLong, "--json")
+			if failure.exitCode != 4 || failure.stdout != "" || !strings.HasPrefix(parseErrorEnvelope(t, failure.stderr).Error.Code, "internal.") {
+				t.Fatalf("I/O path failure: %+v", failure)
+			}
+		})
 	}
 }
 
