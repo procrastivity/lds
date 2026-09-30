@@ -57,6 +57,12 @@ type PreservedPath struct {
 	Size   int    `json:"size"`
 }
 
+// ParentIdentity binds an existing approved-output ancestor to its directory.
+type ParentIdentity struct {
+	Path     string `json:"path"`
+	Identity string `json:"identity"`
+}
+
 // ReportOnlyNotice describes information that is not an approved output.
 type ReportOnlyNotice struct {
 	Path    string `json:"path"`
@@ -72,6 +78,7 @@ type PlanProjection struct {
 	FactsDigest                string             `json:"factsDigest"`
 	Outputs                    []PlanOutput       `json:"outputs"`
 	NecessaryParentDirectories []string           `json:"necessaryParentDirectories"`
+	ExistingParentDirectories  []ParentIdentity   `json:"existingParentDirectories"`
 	Preserved                  []PreservedPath    `json:"preserved"`
 	ReportOnly                 []ReportOnlyNotice `json:"reportOnly"`
 	Veto                       bool               `json:"veto"`
@@ -107,7 +114,8 @@ func Plan(root, factsPath string) (PlanResult, error) {
 	result := PlanResult{PlanProjection: PlanProjection{
 		SchemaVersion: 1, Operation: "docs plan", TargetRoot: root,
 		Outputs: []PlanOutput{}, NecessaryParentDirectories: []string{},
-		Preserved: []PreservedPath{}, ReportOnly: []ReportOnlyNotice{},
+		ExistingParentDirectories: []ParentIdentity{},
+		Preserved:                 []PreservedPath{}, ReportOnly: []ReportOnlyNotice{},
 		Findings: []PlanFinding{}, Skipped: []Skip{},
 	}}
 	data, facts, factsErr := readRenderFacts(factsPath)
@@ -199,6 +207,12 @@ func Plan(root, factsPath string) (PlanResult, error) {
 				result.Veto = true
 				result.Findings = append(result.Findings, PlanFinding{Code: cause.code, Path: cause.path, Message: cause.message})
 			}
+		}
+	}
+	if !result.Veto {
+		result.ExistingParentDirectories, err = collectParentIdentities(rootDir, rendered)
+		if err != nil {
+			return result, fmt.Errorf("inspect output parents: %w", err)
 		}
 	}
 
@@ -413,6 +427,54 @@ func readTargetFile(root *os.File, relative string) ([]byte, error) {
 	}
 	defer func() { _ = file.Close() }()
 	return io.ReadAll(file)
+}
+
+func collectParentIdentities(root *os.File, outputs []RenderOutput) ([]ParentIdentity, error) {
+	seen := map[string]string{}
+	for _, output := range outputs {
+		parent := root
+		var opened []*os.File
+		for i, component := range strings.Split(output.Path, "/")[:strings.Count(output.Path, "/")] {
+			next, err := openChild(parent, component)
+			if errors.Is(err, os.ErrNotExist) {
+				break
+			}
+			if err != nil {
+				for _, file := range opened {
+					_ = file.Close()
+				}
+				return nil, err
+			}
+			identity, err := rootIdentity(next)
+			if err != nil {
+				_ = next.Close()
+				for _, file := range opened {
+					_ = file.Close()
+				}
+				return nil, err
+			}
+			name := strings.Join(strings.Split(output.Path, "/")[:i+1], "/") + "/"
+			if previous, ok := seen[name]; ok && previous != identity {
+				_ = next.Close()
+				for _, file := range opened {
+					_ = file.Close()
+				}
+				return nil, ErrUnsafeTarget
+			}
+			seen[name] = identity
+			opened = append(opened, next)
+			parent = next
+		}
+		for _, file := range opened {
+			_ = file.Close()
+		}
+	}
+	result := make([]ParentIdentity, 0, len(seen))
+	for name, identity := range seen {
+		result = append(result, ParentIdentity{Path: name, Identity: identity})
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].Path < result[j].Path })
+	return result, nil
 }
 
 func classifyLegacyDocs(contents map[string][]byte) string {

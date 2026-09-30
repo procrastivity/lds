@@ -256,6 +256,9 @@ func TestPlanDigestCommitsToEveryDisplayedField(t *testing.T) {
 			p.Outputs[0].AffectedLinks = append(p.Outputs[0].AffectedLinks, Link{Source: "docs/x.md", Line: 1, Target: "missing.md", Kind: "inline"})
 		}},
 		{"parents", func(p *PlanResult) { p.NecessaryParentDirectories = append(p.NecessaryParentDirectories, "new/") }},
+		{"existing parent identity", func(p *PlanResult) {
+			p.ExistingParentDirectories = append(p.ExistingParentDirectories, ParentIdentity{Path: "docs/", Identity: "other"})
+		}},
 		{"preserved path", func(p *PlanResult) { p.Preserved[0].Path += ".changed" }},
 		{"preserved hash", func(p *PlanResult) { p.Preserved[0].SHA256 += "x" }},
 		{"preserved size", func(p *PlanResult) { p.Preserved[0].Size++ }},
@@ -514,6 +517,36 @@ func TestPlan_ReplacedByteIdenticalRootChangesDigest(t *testing.T) {
 	}
 	if !reflect.DeepEqual(first.Preserved, second.Preserved) || !reflect.DeepEqual(first.Outputs, second.Outputs) {
 		t.Fatal("replacement regression did not retain byte-identical reviewed file evidence")
+	}
+}
+
+func TestPlan_ReplacedEmptyOutputParentChangesDigest(t *testing.T) {
+	useIsolatedAssetDirectories(t)
+	root := t.TempDir()
+	docs := filepath.Join(root, "docs")
+	if err := os.Mkdir(docs, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	facts := filepath.Join(planFixtureDir, "greenfield", "facts.json")
+	first, err := Plan(root, facts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(docs, filepath.Join(root, "docs.old")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(docs, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	second, err := Plan(root, facts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.TargetIdentity != second.TargetIdentity || len(first.ExistingParentDirectories) != 1 || len(second.ExistingParentDirectories) != 1 || first.ExistingParentDirectories[0].Identity == second.ExistingParentDirectories[0].Identity || *first.PlanDigest == *second.PlanDigest {
+		t.Fatalf("replacement parent retained reviewed digest: before=%+v after=%+v", first.ExistingParentDirectories, second.ExistingParentDirectories)
+	}
+	if !reflect.DeepEqual(first.Outputs, second.Outputs) || !reflect.DeepEqual(first.Preserved, second.Preserved) {
+		t.Fatal("parent replacement changed file bytes/classifications instead of only parent identity")
 	}
 }
 

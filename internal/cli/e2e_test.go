@@ -551,6 +551,60 @@ func TestDocsPlan_GreenfieldJSONAndReadOnly(t *testing.T) {
 	}
 }
 
+func TestDocsApply_ReviewedDigestCreatesThenNoops(t *testing.T) {
+	fixture := filepath.Join("..", "asset", "testdata", "adoption", "greenfield")
+	root := t.TempDir()
+	facts := filepath.Join(fixture, "facts.json")
+	planRun := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", root, "--facts", facts, "--json")
+	if planRun.exitCode != 0 || planRun.stderr != "" {
+		t.Fatalf("plan exit=%d stderr=%q", planRun.exitCode, planRun.stderr)
+	}
+	var plan adoption.PlanResult
+	if err := json.Unmarshal([]byte(planRun.stdout), &plan); err != nil || plan.PlanDigest == nil {
+		t.Fatalf("decode reviewed plan: %v", err)
+	}
+	planFile := filepath.Join(t.TempDir(), "reviewed-plan.json")
+	if err := os.WriteFile(planFile, []byte(planRun.stdout), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	env := []string{"XDG_CONFIG_HOME=" + t.TempDir()}
+	declined := run(t, env, "docs", "apply", root, "--facts", facts, "--plan", planFile, "--confirm", "sha256:declined", "--json")
+	var decline adoption.ApplyResult
+	if declined.exitCode != 3 || parseErrorEnvelope(t, declined.stderr).Error.Code != "refusal.confirmation-declined" || json.Unmarshal([]byte(declined.stdout), &decline) != nil || decline.Status != "refused" || len(decline.Unattempted) != 4 {
+		t.Fatalf("declined apply=%+v result=%+v", declined, decline)
+	}
+	if entries, err := os.ReadDir(root); err != nil || len(entries) != 0 {
+		t.Fatalf("declined apply changed target: entries=%v err=%v", entries, err)
+	}
+	first := run(t, env, "docs", "apply", root, "--facts", facts, "--plan", planFile, "--confirm", *plan.PlanDigest, "--json")
+	if first.exitCode != 0 || first.stderr != "" {
+		t.Fatalf("apply exit=%d stderr=%q stdout=%q", first.exitCode, first.stderr, first.stdout)
+	}
+	var applied adoption.ApplyResult
+	if err := json.Unmarshal([]byte(first.stdout), &applied); err != nil || applied.Status != "applied" || len(applied.Created) != 4 {
+		t.Fatalf("apply result=%+v err=%v", applied, err)
+	}
+	for _, output := range plan.Outputs {
+		actual, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(output.Path)))
+		if err != nil || string(actual) != output.Content {
+			t.Fatalf("applied bytes %s differ from reviewed plan: err=%v", output.Path, err)
+		}
+	}
+	secondPlanRun := run(t, env, "docs", "plan", root, "--facts", facts, "--json")
+	var secondPlan adoption.PlanResult
+	if secondPlanRun.exitCode != 0 || json.Unmarshal([]byte(secondPlanRun.stdout), &secondPlan) != nil || secondPlan.PlanDigest == nil {
+		t.Fatalf("second plan: %+v", secondPlanRun)
+	}
+	if err := os.WriteFile(planFile, []byte(secondPlanRun.stdout), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	second := run(t, env, "docs", "apply", root, "--facts", facts, "--plan", planFile, "--confirm", *secondPlan.PlanDigest, "--json")
+	var current adoption.ApplyResult
+	if second.exitCode != 0 || second.stderr != "" || json.Unmarshal([]byte(second.stdout), &current) != nil || current.Status != "current" || len(current.Created) != 0 || len(current.IdenticalUntouched) != 4 {
+		t.Fatalf("identical rerun=%+v result=%+v", second, current)
+	}
+}
+
 func TestDocsPlan_IncompleteFactsCollisionAndUsage(t *testing.T) {
 	fixture := filepath.Join("..", "asset", "testdata", "adoption", "greenfield")
 	root := filepath.Join(fixture, "target")

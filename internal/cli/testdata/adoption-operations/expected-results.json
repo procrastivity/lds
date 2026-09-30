@@ -7,13 +7,14 @@
   "projectionSemantics": "Expected projections, not captured CLI stdout. Exact scalar/array values are normative; the reserved string empty means zero bytes; objects with an assert member describe a predicate. Paths are relative to the explicitly supplied target unless a fixture source path is stated.",
   "exitCodes": {"clean": 0, "diagnosticOrInvalidRender": 1, "cobraUsage": 2, "refusalOrCollision": 3, "unexpectedInternalOrIO": 4},
   "planInvariants": {
-    "requiredFields": ["targetRoot", "targetIdentity", "planDigest", "factsDigest", "outputs", "necessaryParentDirectories", "preserved", "reportOnly", "veto", "findings", "skipped"],
+    "requiredFields": ["targetRoot", "targetIdentity", "planDigest", "factsDigest", "outputs", "necessaryParentDirectories", "existingParentDirectories", "preserved", "reportOnly", "veto", "findings", "skipped"],
     "targetRoot": "equals the explicit target supplied to that invocation; never a fixture absolute path",
     "targetIdentity": "binds the no-follow root descriptor's filesystem identity; a replacement directory at the same path changes the reviewed digest",
     "factsDigest": "commits to supplied fact JSON including approval/provenance; a missing field does not make the plan eligible",
     "outputRecord": "contains relative path, classification, and reason; renderable records also expose exact content, content hash, and asset identity",
     "renderableOutputFields": "for each renderable path, content/content hash/asset identity match fixtureRenderSet.outputs for that path",
     "necessaryParentDirectories": "only missing parents needed by candidate output files; no unused directory",
+    "existingParentDirectories": "path and filesystem identity for existing approved-output ancestors; replacement changes the reviewed digest and is refused at creation",
     "arrayOrder": "path, then source location, then stable code; all paths slash-separated and relative",
     "eligiblePlanDigest": "sha256:<hex> over RFC 8785 canonical JSON of the whole displayed plan excluding planDigest",
     "incompleteFactsPlan": "planDigest is null; no application is possible"
