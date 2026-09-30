@@ -18,9 +18,10 @@ The five existing leaves are currently `lds docs …` plumbing verbs. If the
 C8 namespace is implemented later, their anticipated qualified spellings are
 `lds plumbing docs …`; none of those qualified spellings currently exists.
 This names a projection target, not a blanket move of root commands. The
-human-versus-agent audience and deterministic kind of every root leaf still
-require the C8 audit described in ADR-0002. The applicable Toolsmith rules
-are [C8.1–C8.5](https://github.com/procrastivity/toolsmith/blob/main/CONTRACT.md#c8--shapes),
+human-versus-agent audience and deterministic kind of every root leaf are
+recorded in the [C8 surface audit](cli-surface-audit.md). The applicable
+Toolsmith rules are
+[C8.1–C8.5](https://github.com/procrastivity/toolsmith/blob/main/CONTRACT.md#c8--shapes),
 including namespace **and** kind for projection and paired-flow rules.
 
 | Future flow step | Currently tested leaf → anticipated qualified spelling | Inputs, facts, and approval boundary | Output, refusal, or escalation |

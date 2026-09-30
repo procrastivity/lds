@@ -32,7 +32,9 @@ decisions do not name a real pilot or establish real-project usability.
    both the `plumbing` namespace and the deterministic `plumbing` kind;
    neither audience nor projectability is inferred from a command's name or
    package location.
-   This is a future surface decision, not a command-tree change in this ADR.
+   The reviewed per-command dispositions are recorded in the [BDS-251 CLI
+   surface audit](../product/cli-surface-audit.md). This is a future surface
+   decision, not a command-tree change in this ADR.
 4. **Defer paired LLM delivery (4B).** Do not ship an LLM-backed CLI workflow
    paired with a skill until LDS has one settled provider, endpoint, model,
    and credential source, and authorized disposable live access for exercising
@@ -56,9 +58,9 @@ decisions do not name a real pilot or establish real-project usability.
 - A skill-only implementation is not completion of the paired workflow.
   Conversely, a deterministic plumbing command is not the deferred LLM
   workflow or its skill.
-- The C8 audit and future namespace projection must preserve the distinction
-  between human-facing commands and deterministic kind. This ADR specifies
-  neither a per-command audit table nor implementation mechanics.
+- The future namespace projection must preserve the distinction between
+  human-facing commands and deterministic kind. The per-command audit is
+  recorded separately; implementation mechanics remain out of scope here.
 - Reconsidering the first-release exclusion, selecting provider configuration
   and live integration access, and selecting/authorizing any real pilot require
   separate decisions. This record does not assert that `lds adopt`, a paired
