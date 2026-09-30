@@ -1,0 +1,145 @@
+{
+  "approvedOutputs": [
+    "engineering/README.md",
+    "engineering/product/overview.md",
+    "docs/README.md",
+    "docs/reference/usage.md"
+  ],
+  "sharedBaseline": {
+    "fixture": "greenfield",
+    "facts": "greenfield/facts.json",
+    "targetFiles": [
+      {"path": "target/sample.txt", "source": "greenfield/target/sample.txt", "sha256": "0fedab7a6bcdee67c26091670c1aba184dacda6b69a321611f1dd53910e917c9"},
+      {"path": "target/word-count.sh", "source": "greenfield/target/word-count.sh", "sha256": "fe429d0d1c8969ab6b4aa7df28e32c29a7394d851e0f2b365927241859722559"}
+    ]
+  },
+  "cases": [
+    {
+      "name": "mixed-root-readme",
+      "overlayFiles": [
+        {"path": "README.md", "source": "preservation/mixed-readme/README.md", "sha256": "11a3a534bb7acc46482a8721f3aa85377e8cda9dbd28bc9c127f37ff6134e9dc"}
+      ],
+      "preflight": "eligible",
+      "classifications": ["create", "create", "create", "create"],
+      "proposedCreates": ["engineering/README.md", "engineering/product/overview.md", "docs/README.md", "docs/reference/usage.md"],
+      "vetoAllCreates": false,
+      "reportOnly": ["README.md: root signpost opportunity only; never an output"],
+      "absentLayersAreError": false,
+      "preserved": [{"path": "README.md", "source": "preservation/mixed-readme/README.md", "sha256": "11a3a534bb7acc46482a8721f3aa85377e8cda9dbd28bc9c127f37ff6134e9dc"}]
+    },
+    {
+      "name": "recognizable-legacy-under-docs",
+      "overlayFiles": [
+        {"path": "docs/DOCUMENTATION-GUIDE.md", "source": "preservation/legacy-docs-recognizable/docs/DOCUMENTATION-GUIDE.md", "sha256": "2efb42e3db5d88f002383efcfeaf4edae5d261f724a2e352c5869d20851c7fc9"},
+        {"path": "docs/decisions/0001-layered-docs.md", "source": "preservation/legacy-docs-recognizable/docs/decisions/0001-layered-docs.md", "sha256": "4398b98b7ca4016341e4046ddb6764b8e0196b8a239ff0673ce5122084aed2b1"},
+        {"path": "docs/product/vision.md", "source": "preservation/legacy-docs-recognizable/docs/product/vision.md", "sha256": "ab3bf5d65bd35dbfd66a9720d6983eb8e4a51a33c1b1f69c40196daf321135eb"}
+      ],
+      "preflight": "refusal",
+      "classifications": ["refusal", "refusal", "refusal", "refusal"],
+      "proposedCreates": [],
+      "vetoAllCreates": true,
+      "reason": "docs/ is recognizable as legacy LDS; refuse without migration or writes",
+      "absentLayersAreError": false,
+      "preserved": [
+        {"path": "docs/DOCUMENTATION-GUIDE.md", "source": "preservation/legacy-docs-recognizable/docs/DOCUMENTATION-GUIDE.md", "sha256": "2efb42e3db5d88f002383efcfeaf4edae5d261f724a2e352c5869d20851c7fc9"},
+        {"path": "docs/decisions/0001-layered-docs.md", "source": "preservation/legacy-docs-recognizable/docs/decisions/0001-layered-docs.md", "sha256": "4398b98b7ca4016341e4046ddb6764b8e0196b8a239ff0673ce5122084aed2b1"},
+        {"path": "docs/product/vision.md", "source": "preservation/legacy-docs-recognizable/docs/product/vision.md", "sha256": "ab3bf5d65bd35dbfd66a9720d6983eb8e4a51a33c1b1f69c40196daf321135eb"}
+      ]
+    },
+    {
+      "name": "partial-legacy-under-docs",
+      "overlayFiles": [
+        {"path": "docs/decisions/0001-adopt-lds.md", "source": "preservation/legacy-docs-partial/docs/decisions/0001-adopt-lds.md", "sha256": "a9b5d4fdc1172bc48fdf67901d40b9271a3a431b1df0d2f776c8bc8c4479c544"}
+      ],
+      "preflight": "refusal",
+      "classifications": ["refusal", "refusal", "refusal", "refusal"],
+      "proposedCreates": [],
+      "vetoAllCreates": true,
+      "reason": "partial LDS is explicitly rooted at docs/; missing layers do not authorize migration",
+      "absentLayers": ["docs/product/", "docs/architecture/", "docs/specs/", "docs/reference/", "docs/features/", "docs/implementation/"],
+      "absentLayersAreError": false,
+      "preserved": [{"path": "docs/decisions/0001-adopt-lds.md", "source": "preservation/legacy-docs-partial/docs/decisions/0001-adopt-lds.md", "sha256": "a9b5d4fdc1172bc48fdf67901d40b9271a3a431b1df0d2f776c8bc8c4479c544"}]
+    },
+    {
+      "name": "ambiguous-legacy-under-docs",
+      "overlayFiles": [
+        {"path": "docs/decisions/0001-doc-conventions.md", "source": "preservation/legacy-docs-ambiguous/docs/decisions/0001-doc-conventions.md", "sha256": "ac01a24b5442ff9ef6483ae54d69f013740348bf0ba3cf7fa5eef57a80082da3"},
+        {"path": "docs/product/vision.md", "source": "preservation/legacy-docs-ambiguous/docs/product/vision.md", "sha256": "85e477dc4c7410675823990ed914ce8336abad0251566a432fe684ff8f9a22d4"},
+        {"path": "docs/reference/api.md", "source": "preservation/legacy-docs-ambiguous/docs/reference/api.md", "sha256": "109ef19f410a192db6488eed41d5569bcf296ea74af35b60673b3b4bf108e744"}
+      ],
+      "preflight": "refusal",
+      "classifications": ["refusal", "refusal", "refusal", "refusal"],
+      "proposedCreates": [],
+      "vetoAllCreates": true,
+      "reason": "docs/ has partial LDS-like decision, product, and reference content but no ownership signal; refuse the ambiguous legacy tree; reference alone is inconclusive",
+      "absentLayersAreError": false,
+      "preserved": [
+        {"path": "docs/decisions/0001-doc-conventions.md", "source": "preservation/legacy-docs-ambiguous/docs/decisions/0001-doc-conventions.md", "sha256": "ac01a24b5442ff9ef6483ae54d69f013740348bf0ba3cf7fa5eef57a80082da3"},
+        {"path": "docs/product/vision.md", "source": "preservation/legacy-docs-ambiguous/docs/product/vision.md", "sha256": "85e477dc4c7410675823990ed914ce8336abad0251566a432fe684ff8f9a22d4"},
+        {"path": "docs/reference/api.md", "source": "preservation/legacy-docs-ambiguous/docs/reference/api.md", "sha256": "109ef19f410a192db6488eed41d5569bcf296ea74af35b60673b3b4bf108e744"}
+      ]
+    },
+    {
+      "name": "partial-engineering-missing-layers",
+      "overlayFiles": [
+        {"path": "engineering/decisions/0001-docs.md", "source": "preservation/partial-engineering/engineering/decisions/0001-docs.md", "sha256": "7b5ba96cd690c4800dcb970dd8a1da589d90bcf856733e56dafc217911f08927"}
+      ],
+      "preflight": "eligible",
+      "classifications": ["create", "create", "create", "create"],
+      "proposedCreates": ["engineering/README.md", "engineering/product/overview.md", "docs/README.md", "docs/reference/usage.md"],
+      "vetoAllCreates": false,
+      "necessaryParentDirectories": ["engineering/product/", "docs/", "docs/reference/"],
+      "absentLayers": ["engineering/product/", "engineering/architecture/", "engineering/specs/", "engineering/reference/", "engineering/behaviors/", "engineering/implementation/"],
+      "absentLayersAreError": false,
+      "preserved": [{"path": "engineering/decisions/0001-docs.md", "source": "preservation/partial-engineering/engineering/decisions/0001-docs.md", "sha256": "7b5ba96cd690c4800dcb970dd8a1da589d90bcf856733e56dafc217911f08927"}]
+    },
+    {
+      "name": "one-different-approved-output",
+      "overlayFiles": [
+        {"path": "docs/reference/usage.md", "source": "preservation/output-collision/docs/reference/usage.md", "sha256": "98f2932add4aa1f592944e1b157a4c9c0ac314375ecf060ca9ba14808f5ee78e"}
+      ],
+      "preflight": "collision",
+      "classifications": ["create", "create", "create", "different-collision"],
+      "proposedCreates": ["engineering/README.md", "engineering/product/overview.md", "docs/README.md"],
+      "vetoAllCreates": true,
+      "reason": "occupied bytes differ; record content, provenance, and affected links for manual review outside this contract",
+      "provenance": "fixture target's pre-existing user guide; no generator or ownership metadata supplied",
+      "affectedLinks": ["docs/reference/usage.md: [the old guide](../howto.md)"],
+      "preserved": [{"path": "docs/reference/usage.md", "source": "preservation/output-collision/docs/reference/usage.md", "sha256": "98f2932add4aa1f592944e1b157a4c9c0ac314375ecf060ca9ba14808f5ee78e"}]
+    },
+    {
+      "name": "already-generated-identical",
+      "overlayFiles": [
+        {"path": "engineering/README.md", "source": "greenfield/expected/engineering/README.md", "sha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"},
+        {"path": "engineering/product/overview.md", "source": "greenfield/expected/engineering/product/overview.md", "sha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"},
+        {"path": "docs/README.md", "source": "greenfield/expected/docs/README.md", "sha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"},
+        {"path": "docs/reference/usage.md", "source": "greenfield/expected/docs/reference/usage.md", "sha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"}
+      ],
+      "preflight": "eligible-no-op",
+      "classifications": ["identical-untouched", "identical-untouched", "identical-untouched", "identical-untouched"],
+      "proposedCreates": [],
+      "vetoAllCreates": false,
+      "predictedWrites": 0,
+      "preserved": [
+        {"path": "engineering/README.md", "source": "greenfield/expected/engineering/README.md", "sha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"},
+        {"path": "engineering/product/overview.md", "source": "greenfield/expected/engineering/product/overview.md", "sha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"},
+        {"path": "docs/README.md", "source": "greenfield/expected/docs/README.md", "sha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"},
+        {"path": "docs/reference/usage.md", "source": "greenfield/expected/docs/reference/usage.md", "sha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"}
+      ]
+    },
+    {
+      "name": "edited-generated-looking-output",
+      "overlayFiles": [
+        {"path": "docs/reference/usage.md", "source": "preservation/generated-edited/docs/reference/usage.md", "sha256": "8a4a2bc70b527c2cabc8ea03a12f47ce493e6bf0e6ea48a99ed17af8e78e95fc"}
+      ],
+      "preflight": "collision",
+      "classifications": ["create", "create", "create", "different-collision"],
+      "proposedCreates": ["engineering/README.md", "engineering/product/overview.md", "docs/README.md"],
+      "vetoAllCreates": true,
+      "reason": "generated-looking provenance is not ownership; different occupied bytes collide and veto all creates",
+      "provenance": "fixture target's generated-looking usage page was edited by its simulated owner; no harness stamp grants ownership",
+      "affectedLinks": ["docs/reference/usage.md: [legacy help](../manual.md)"],
+      "preserved": [{"path": "docs/reference/usage.md", "source": "preservation/generated-edited/docs/reference/usage.md", "sha256": "8a4a2bc70b527c2cabc8ea03a12f47ce493e6bf0e6ea48a99ed17af8e78e95fc"}]
+    }
+  ]
+}
