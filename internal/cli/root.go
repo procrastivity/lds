@@ -10,6 +10,7 @@ import (
 	"github.com/procrastivity/lds/internal/buildinfo"
 	"github.com/procrastivity/lds/internal/cliflags"
 	"github.com/procrastivity/lds/internal/iostreams"
+	docsverb "github.com/procrastivity/lds/internal/verbs/docs"
 	doctorverb "github.com/procrastivity/lds/internal/verbs/doctor"
 	installverb "github.com/procrastivity/lds/internal/verbs/install"
 	manifestverb "github.com/procrastivity/lds/internal/verbs/manifest"
@@ -53,6 +54,7 @@ func NewRootCommand(streams *iostreams.Streams, build buildinfo.Info) *cobra.Com
 	root.AddCommand(installverb.Command(streams, build, root))
 	root.AddCommand(uninstallverb.Command(streams))
 	root.AddCommand(doctorverb.Command(streams, build, root))
+	root.AddCommand(docsverb.Command(streams))
 
 	// Register the tool's own verbs here, one package per verb under
 	// internal/verbs/ (C1.4). Every Command constructor ends with

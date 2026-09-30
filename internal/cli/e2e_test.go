@@ -243,6 +243,59 @@ func TestManifest_JSON_ListsAdoptionTemplatesWithChecksums(t *testing.T) {
 	}
 }
 
+func TestDocsInventory_ManifestAndFreshTarget(t *testing.T) {
+	m := run(t, nil, "manifest", "--json")
+	if m.exitCode != 0 {
+		t.Fatalf("manifest exit=%d stderr=%q", m.exitCode, m.stderr)
+	}
+	var declaration struct {
+		Verbs []struct {
+			Name         string          `json:"name"`
+			Kind         string          `json:"kind"`
+			Usage        string          `json:"usage"`
+			OutputSchema json.RawMessage `json:"outputSchema"`
+		} `json:"verbs"`
+	}
+	if err := json.Unmarshal([]byte(m.stdout), &declaration); err != nil {
+		t.Fatal(err)
+	}
+	matches := 0
+	for _, v := range declaration.Verbs {
+		if v.Name != "docs inventory" {
+			continue
+		}
+		matches++
+		if v.Kind != "plumbing" || v.Usage != "<root>" || !json.Valid(v.OutputSchema) || !bytes.Contains(v.OutputSchema, []byte(`"files"`)) {
+			t.Fatalf("inventory declaration = %+v", v)
+		}
+	}
+	if matches != 1 {
+		t.Fatalf("manifest has %d inventory declarations, want one", matches)
+	}
+	r := run(t, nil, "docs", "inventory", t.TempDir(), "--json")
+	if r.exitCode != 0 || r.stderr != "" {
+		t.Fatalf("inventory exit=%d stderr=%q", r.exitCode, r.stderr)
+	}
+	if r.stdout != "{\"schemaVersion\":1,\"operation\":\"docs inventory\",\"files\":[],\"links\":[],\"skipped\":[]}\n" {
+		t.Fatalf("fresh inventory stdout = %q", r.stdout)
+	}
+}
+
+func TestDocsInventory_UnsafeTargetRefuses(t *testing.T) {
+	root := t.TempDir()
+	alias := filepath.Join(t.TempDir(), "alias")
+	if err := os.Symlink(root, alias); err != nil {
+		t.Fatal(err)
+	}
+	r := run(t, nil, "docs", "inventory", alias, "--json")
+	if r.exitCode != 3 || r.stdout != "" {
+		t.Fatalf("unsafe target exit=%d stdout=%q stderr=%q; want refusal 3 and no partial inventory", r.exitCode, r.stdout, r.stderr)
+	}
+	if e := parseErrorEnvelope(t, r.stderr); e.Error.Code != "refusal.unsafe-target" {
+		t.Fatalf("unsafe target error = %+v", e.Error)
+	}
+}
+
 // TestManifest_DigestCommitsToTheDocument checks C3.4's substance, not just
 // its prefix: the emitted manifest_digest must be a sha256 over the exact
 // bytes the caller received, with the digest field held empty. It does the
