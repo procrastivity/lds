@@ -99,33 +99,44 @@ func Render(root, factsPath string) ([]RenderOutput, error) {
 		return nil, fmt.Errorf("close render target: %w", err)
 	}
 
+	_, facts, err := readRenderFacts(factsPath)
+	if err != nil {
+		return nil, err
+	}
+	return renderBundleOutputs(facts)
+}
+
+func readRenderFacts(factsPath string) ([]byte, renderFactBundle, error) {
 	data, err := os.ReadFile(factsPath)
 	if err != nil {
-		return nil, invalidRender("read facts file: %v", err)
+		return nil, renderFactBundle{}, invalidRender("cannot read facts file")
 	}
 	if !utf8.Valid(data) {
-		return nil, invalidRender("facts file is not valid UTF-8")
+		return data, renderFactBundle{}, invalidRender("facts file is not valid UTF-8")
 	}
 	if err := rejectDuplicateJSONKeys(data); err != nil {
-		return nil, invalidRender("decode facts file: %v", err)
+		return data, renderFactBundle{}, invalidRender("decode facts file: %v", err)
 	}
 	if err := validateExactFactKeys(data); err != nil {
-		return nil, invalidRender("decode facts file: %v", err)
+		return data, renderFactBundle{}, invalidRender("decode facts file: %v", err)
 	}
 
 	var facts renderFactBundle
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&facts); err != nil {
-		return nil, invalidRender("decode facts file: %v", err)
+		return data, renderFactBundle{}, invalidRender("decode facts file: %v", err)
 	}
 	if err := requireJSONEOF(decoder); err != nil {
-		return nil, invalidRender("decode facts file: %v", err)
+		return data, renderFactBundle{}, invalidRender("decode facts file: %v", err)
 	}
 	if err := validateRenderFacts(facts); err != nil {
-		return nil, invalidRender("validate facts: %v", err)
+		return data, renderFactBundle{}, invalidRender("validate facts: %v", err)
 	}
+	return data, facts, nil
+}
 
+func renderBundleOutputs(facts renderFactBundle) ([]RenderOutput, error) {
 	values := map[string]string{
 		"DisplayName":             escapeMarkdownText(facts.DisplayName),
 		"Purpose":                 escapeMarkdownText(facts.Purpose),

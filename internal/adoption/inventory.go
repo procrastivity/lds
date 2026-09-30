@@ -192,8 +192,12 @@ func extractLinks(source, content string) ([]Link, []Skip) {
 				}
 				target = target[1 : len(target)-1]
 			}
-			if strings.HasPrefix(target, "#") || target == "" || strings.Contains(target, ":") || strings.HasPrefix(target, "//") {
-				skipped = append(skipped, Skip{Source: source, Line: lineNumber + 1, Code: "inventory.nonlocal-skipped", Reason: "external or fragment-only target is not checked"})
+			if strings.HasPrefix(target, "#") || target == "" {
+				skipped = append(skipped, Skip{Source: source, Line: lineNumber + 1, Code: "inventory.fragment-only-skipped", Reason: "fragment-only target is not checked"})
+				continue
+			}
+			if strings.Contains(target, ":") || strings.HasPrefix(target, "//") {
+				skipped = append(skipped, Skip{Source: source, Line: lineNumber + 1, Code: "inventory.external-skipped", Reason: "external URL is not fetched"})
 				continue
 			}
 			links = append(links, Link{Source: source, Line: lineNumber + 1, Target: target, Kind: kind})

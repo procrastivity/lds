@@ -7,6 +7,7 @@
 package asset
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -95,7 +96,9 @@ func DefaultDir() (string, error) {
 // chain and returns its content. Shadow by name: an override present at
 // relativeName fully replaces a shipped default at the same relative path.
 func Resolve(relativeName string) (Resolved, error) {
-	if r, ok, err := ReadOverride(relativeName); err == nil && ok {
+	if r, ok, err := ReadOverride(relativeName); err != nil {
+		return Resolved{}, err
+	} else if ok {
 		return r, nil
 	}
 	return ReadDefault(relativeName)
@@ -111,19 +114,21 @@ func ReadOverride(relativeName string) (Resolved, bool, error) {
 		return Resolved{}, false, err
 	}
 	path := filepath.Join(dir, relativeName)
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return Resolved{}, false, nil
+	}
+	if err != nil {
+		return Resolved{}, false, fmt.Errorf("asset: inspect override %q: %w", path, err)
+	}
+	if !info.Mode().IsRegular() {
+		return Resolved{}, false, fmt.Errorf("asset: override %q is not a regular file", path)
+	}
 	data, err := os.ReadFile(path)
-	if err == nil {
-		return Resolved{Source: SourceOverride, Path: path, data: data}, true, nil
+	if err != nil {
+		return Resolved{}, false, fmt.Errorf("asset: read override %q: %w", path, err)
 	}
-	if os.IsNotExist(err) {
-		// A dangling override symlink is present but unreadable, not absent.
-		if _, statErr := os.Lstat(path); os.IsNotExist(statErr) {
-			return Resolved{}, false, nil
-		} else if statErr != nil {
-			return Resolved{}, false, statErr
-		}
-	}
-	return Resolved{}, false, fmt.Errorf("asset: read override %q: %w", relativeName, err)
+	return Resolved{Source: SourceOverride, Path: path, data: data}, true, nil
 }
 
 // ReadDefault reads relativeName from the shipped default directory, falling

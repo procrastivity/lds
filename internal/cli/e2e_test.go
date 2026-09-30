@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	rootassets "github.com/procrastivity/lds/assets"
+	"github.com/procrastivity/lds/internal/adoption"
 )
 
 var binPath string
@@ -459,7 +460,7 @@ func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 	if err := json.Unmarshal([]byte(m.stdout), &declaration); err != nil {
 		t.Fatal(err)
 	}
-	matches := map[string]int{"docs inventory": 0, "docs validate": 0, "docs render": 0}
+	matches := map[string]int{"docs inventory": 0, "docs validate": 0, "docs render": 0, "docs plan": 0}
 	for _, verb := range declaration.Verbs {
 		if _, ok := matches[verb.Name]; !ok {
 			continue
@@ -473,6 +474,8 @@ func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 			wantField = `"findings"`
 		case "docs render":
 			wantField = `"outputs"`
+		case "docs plan":
+			wantField = `"planDigest"`
 		}
 		if verb.Kind != "plumbing" || !json.Valid(verb.OutputSchema) || !bytes.Contains(verb.OutputSchema, []byte(wantField)) {
 			t.Fatalf("docs declaration = %+v", verb)
@@ -490,6 +493,178 @@ func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 	if r.stdout != "{\"schemaVersion\":1,\"operation\":\"docs inventory\",\"files\":[],\"links\":[],\"skipped\":[]}\n" {
 		t.Fatalf("fresh inventory stdout = %q", r.stdout)
 	}
+}
+
+func TestDocsPlan_GreenfieldJSONAndReadOnly(t *testing.T) {
+	fixture := filepath.Join("..", "asset", "testdata", "adoption", "greenfield")
+	root := filepath.Join(fixture, "target")
+	facts := filepath.Join(fixture, "facts.json")
+	before := renderTargetSnapshot(t, root)
+	r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", root, "--facts", facts, "--json")
+	if r.exitCode != 0 || r.stderr != "" {
+		t.Fatalf("plan exit=%d stderr=%q", r.exitCode, r.stderr)
+	}
+	var plan adoption.PlanResult
+	if err := json.Unmarshal([]byte(r.stdout), &plan); err != nil {
+		t.Fatalf("plan stdout is not JSON: %v; stdout=%q", err, r.stdout)
+	}
+	if plan.SchemaVersion != 1 || plan.Operation != "docs plan" || plan.TargetRoot != root || plan.Veto || len(plan.Outputs) != 4 || plan.PlanDigest == nil {
+		t.Fatalf("plan header = %+v", plan.PlanProjection)
+	}
+	digest, err := adoption.CanonicalPlanDigest(plan)
+	if err != nil || digest != *plan.PlanDigest {
+		t.Fatalf("plan digest=%q err=%v, want %q", digest, err, *plan.PlanDigest)
+	}
+	wantPaths := []string{"docs/README.md", "docs/reference/usage.md", "engineering/README.md", "engineering/product/overview.md"}
+	for i, output := range plan.Outputs {
+		if output.Path != wantPaths[i] || output.Classification != "create" || output.Content == "" || output.Asset == nil || output.Asset.Source != "embedded" {
+			t.Errorf("output[%d] = %+v", i, output)
+		}
+		want, err := os.ReadFile(filepath.Join(fixture, "expected", filepath.FromSlash(output.Path)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if output.Content != string(want) {
+			t.Errorf("plan content for %s differs from independent expected bytes", output.Path)
+		}
+		sum := sha256.Sum256(want)
+		if output.ContentSHA256 != hex.EncodeToString(sum[:]) {
+			t.Errorf("plan content hash for %s = %s", output.Path, output.ContentSHA256)
+		}
+	}
+	for _, baseline := range []struct{ path, hash string }{
+		{"sample.txt", "0fedab7a6bcdee67c26091670c1aba184dacda6b69a321611f1dd53910e917c9"},
+		{"word-count.sh", "fe429d0d1c8969ab6b4aa7df28e32c29a7394d851e0f2b365927241859722559"},
+	} {
+		found := false
+		for _, preserved := range plan.Preserved {
+			if preserved.Path == baseline.path && preserved.SHA256 == baseline.hash {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("plan does not preserve baseline %s with hash %s", baseline.path, baseline.hash)
+		}
+	}
+	if after := renderTargetSnapshot(t, root); !equalRenderSnapshots(before, after) {
+		t.Fatalf("plan modified target: before=%v after=%v", before, after)
+	}
+}
+
+func TestDocsPlan_IncompleteFactsCollisionAndUsage(t *testing.T) {
+	fixture := filepath.Join("..", "asset", "testdata", "adoption", "greenfield")
+	root := filepath.Join(fixture, "target")
+	facts := filepath.Join(fixture, "facts.json")
+
+	incomplete := t.TempDir()
+	data, err := os.ReadFile(facts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fields map[string]any
+	if err := json.Unmarshal(data, &fields); err != nil {
+		t.Fatal(err)
+	}
+	fields["OutputEvidence"] = ""
+	data, err = json.Marshal(fields)
+	if err != nil {
+		t.Fatal(err)
+	}
+	incompleteFacts := filepath.Join(incomplete, "facts.json")
+	if err := os.WriteFile(incompleteFacts, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	refused := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", root, "--facts", incompleteFacts, "--json")
+	if refused.exitCode != 3 || parseErrorEnvelope(t, refused.stderr).Error.Code != "refusal.incomplete-facts" {
+		t.Fatalf("incomplete facts result=%+v", refused)
+	}
+	var incompletePlan adoption.PlanResult
+	if err := json.Unmarshal([]byte(refused.stdout), &incompletePlan); err != nil || incompletePlan.PlanDigest != nil || len(incompletePlan.Outputs) != 4 {
+		t.Fatalf("incomplete facts stdout=%q err=%v", refused.stdout, err)
+	}
+
+	collisionRoot := t.TempDir()
+	collisionPath := filepath.Join(collisionRoot, "docs", "reference", "usage.md")
+	if err := os.MkdirAll(filepath.Dir(collisionPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	oldBytes := []byte("# Owner page\n\n[old guide](../howto.md)\n")
+	if err := os.WriteFile(collisionPath, oldBytes, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	before := renderTargetSnapshot(t, collisionRoot)
+	collision := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", collisionRoot, "--facts", facts, "--json")
+	if collision.exitCode != 3 || parseErrorEnvelope(t, collision.stderr).Error.Code != "refusal.output-collision" {
+		t.Fatalf("collision result=%+v", collision)
+	}
+	var collisionPlan adoption.PlanResult
+	if err := json.Unmarshal([]byte(collision.stdout), &collisionPlan); err != nil {
+		t.Fatalf("collision stdout: %v", err)
+	}
+	if !collisionPlan.Veto || findCLITestOutput(collisionPlan, "docs/reference/usage.md").ExistingContent != string(oldBytes) {
+		t.Fatalf("collision plan omitted old bytes or veto: %+v", collisionPlan)
+	}
+	if after := renderTargetSnapshot(t, collisionRoot); !equalRenderSnapshots(before, after) {
+		t.Fatalf("collision plan changed target: before=%v after=%v", before, after)
+	}
+
+	usage := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", root, "--json")
+	if usage.exitCode != 2 || usage.stdout != "" || !strings.HasPrefix(usage.stderr, "lds: ") {
+		t.Fatalf("missing required facts flag usage=%+v", usage)
+	}
+}
+
+func TestDocsPlan_BrokenLinkIsDiagnosticNotVeto(t *testing.T) {
+	fixture := filepath.Join("..", "asset", "testdata", "adoption", "greenfield")
+	root := t.TempDir()
+	for _, name := range []string{"sample.txt", "word-count.sh"} {
+		data, err := os.ReadFile(filepath.Join(fixture, "target", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, name), data, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.MkdirAll(filepath.Join(root, "docs"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	links := "[missing](reference/missing.md#install)\n[external](https://example.invalid/docs)\n[anchor](#overview)\n"
+	if err := os.WriteFile(filepath.Join(root, "docs", "legacy-links.md"), []byte(links), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	before := renderTargetSnapshot(t, root)
+	r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", root, "--facts", filepath.Join(fixture, "facts.json"), "--json")
+	if r.exitCode != 0 || r.stderr != "" {
+		t.Fatalf("diagnostic plan exit=%d stderr=%q", r.exitCode, r.stderr)
+	}
+	var result adoption.PlanResult
+	if err := json.Unmarshal([]byte(r.stdout), &result); err != nil {
+		t.Fatalf("plan stdout: %v", err)
+	}
+	if result.Veto || len(result.Findings) != 1 || result.Findings[0].Code != "validation.local-target-missing" || result.Findings[0].Path != "docs/legacy-links.md" || result.Findings[0].Line != 1 {
+		t.Fatalf("link finding improperly vetoed or missing: %+v", result)
+	}
+	var external, anchor bool
+	for _, skipped := range result.Skipped {
+		external = external || skipped.Code == "inventory.external-skipped"
+		anchor = anchor || skipped.Code == "inventory.fragment-only-skipped"
+	}
+	if !external || !anchor || result.PlanDigest == nil {
+		t.Fatalf("plan diagnostics/digest = %+v", result)
+	}
+	if after := renderTargetSnapshot(t, root); !equalRenderSnapshots(before, after) {
+		t.Fatalf("diagnostic plan changed target: before=%v after=%v", before, after)
+	}
+}
+
+func findCLITestOutput(plan adoption.PlanResult, target string) adoption.PlanOutput {
+	for _, output := range plan.Outputs {
+		if output.Path == target {
+			return output
+		}
+	}
+	return adoption.PlanOutput{}
 }
 
 func TestDocsInventory_UnsafeTargetRefuses(t *testing.T) {
@@ -542,7 +717,7 @@ func TestDocsReadOnly_ExactJSONAndExits(t *testing.T) {
 		t.Fatal(err)
 	}
 	r = run(t, nil, "docs", "validate", root, "--json")
-	want = `{"schemaVersion":1,"operation":"docs validate","findings":[{"code":"validation.local-target-missing","path":"docs/links.md","line":2,"target":"reference/missing.md#install","message":"local file target is missing: reference/missing.md#install"}],"skipped":[{"source":"docs/links.md","line":3,"code":"inventory.nonlocal-skipped","reason":"external or fragment-only target is not checked"},{"source":"docs/links.md","line":4,"code":"inventory.nonlocal-skipped","reason":"external or fragment-only target is not checked"}]}` + "\n"
+	want = `{"schemaVersion":1,"operation":"docs validate","findings":[{"code":"validation.local-target-missing","path":"docs/links.md","line":2,"target":"reference/missing.md#install","message":"local file target is missing: reference/missing.md#install"}],"skipped":[{"source":"docs/links.md","line":3,"code":"inventory.external-skipped","reason":"external URL is not fetched"},{"source":"docs/links.md","line":4,"code":"inventory.fragment-only-skipped","reason":"fragment-only target is not checked"}]}` + "\n"
 	if r.exitCode != 1 || r.stdout != want || parseErrorEnvelope(t, r.stderr).Error.Code != "validation.local-target-missing" {
 		t.Fatalf("finding validate: exit=%d stdout=%q stderr=%q; want stdout=%q", r.exitCode, r.stdout, r.stderr, want)
 	}
@@ -551,7 +726,7 @@ func TestDocsReadOnly_ExactJSONAndExits(t *testing.T) {
 		t.Fatal(err)
 	}
 	r = run(t, nil, "docs", "validate", root, "--json")
-	want = `{"schemaVersion":1,"operation":"docs validate","findings":[],"skipped":[{"source":"docs/links.md","line":1,"code":"inventory.nonlocal-skipped","reason":"external or fragment-only target is not checked"},{"source":"docs/links.md","line":2,"code":"inventory.nonlocal-skipped","reason":"external or fragment-only target is not checked"}]}` + "\n"
+	want = `{"schemaVersion":1,"operation":"docs validate","findings":[],"skipped":[{"source":"docs/links.md","line":1,"code":"inventory.external-skipped","reason":"external URL is not fetched"},{"source":"docs/links.md","line":2,"code":"inventory.fragment-only-skipped","reason":"fragment-only target is not checked"}]}` + "\n"
 	if r.exitCode != 0 || r.stderr != "" || r.stdout != want {
 		t.Fatalf("skips-only validate: exit=%d stdout=%q stderr=%q; want stdout=%q", r.exitCode, r.stdout, r.stderr, want)
 	}

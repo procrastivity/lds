@@ -42,7 +42,7 @@ func TestValidateLocalFilesAndHonestSkips(t *testing.T) {
 	if !reflect.DeepEqual(got.Findings, want) {
 		t.Fatalf("findings = %+v, want %+v", got.Findings, want)
 	}
-	wantCodes := []string{"validation.fragment-skipped", "inventory.nonlocal-skipped", "inventory.nonlocal-skipped", "validation.unsafe-link-skipped", "validation.query-skipped", "validation.unsafe-link-skipped", "validation.not-file-skipped", "inventory.symlink-skipped"}
+	wantCodes := []string{"validation.fragment-skipped", "inventory.external-skipped", "inventory.fragment-only-skipped", "validation.unsafe-link-skipped", "validation.query-skipped", "validation.unsafe-link-skipped", "validation.not-file-skipped", "inventory.symlink-skipped"}
 	var codes []string
 	for _, skip := range got.Skipped {
 		codes = append(codes, skip.Code)
