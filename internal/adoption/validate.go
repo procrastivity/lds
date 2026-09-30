@@ -10,6 +10,7 @@ import (
 	"syscall"
 )
 
+// Finding describes a missing local file target in a scoped Markdown file.
 type Finding struct {
 	Code    string `json:"code"`
 	Path    string `json:"path"`
@@ -18,6 +19,7 @@ type Finding struct {
 	Message string `json:"message"`
 }
 
+// Validation contains the bounded link findings and explicitly skipped checks.
 type Validation struct {
 	Findings []Finding `json:"findings"`
 	Skipped  []Skip    `json:"skipped"`
@@ -37,7 +39,7 @@ func Validate(root string) (Validation, error) {
 	if err != nil {
 		return result, fmt.Errorf("open target root: %w", err)
 	}
-	defer dir.Close()
+	defer func() { _ = dir.Close() }()
 	for _, link := range inventory.Links {
 		target := link.Target
 		hasFragment := false
@@ -100,14 +102,14 @@ func regularTarget(root *os.File, relative string) (bool, error) {
 	for _, component := range strings.Split(relative, "/") {
 		next, err := openChild(current, component)
 		if current != root {
-			current.Close()
+			_ = current.Close()
 		}
 		if err != nil {
 			return false, err
 		}
 		current = next
 	}
-	defer current.Close()
+	defer func() { _ = current.Close() }()
 	info, err := current.Stat()
 	if err != nil {
 		return false, err

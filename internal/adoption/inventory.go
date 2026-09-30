@@ -12,12 +12,14 @@ import (
 	"strings"
 )
 
+// File describes one regular Markdown file in the bounded target scope.
 type File struct {
 	Path   string `json:"path"`
 	SHA256 string `json:"sha256"`
 	Size   int    `json:"size"`
 }
 
+// Link describes a supported local inline or reference Markdown link.
 type Link struct {
 	Source string `json:"source"`
 	Line   int    `json:"line"`
@@ -25,6 +27,7 @@ type Link struct {
 	Kind   string `json:"kind"`
 }
 
+// Skip explains a target or syntax that was deliberately not checked.
 type Skip struct {
 	Source string `json:"source"`
 	Line   int    `json:"line,omitempty"`
@@ -32,6 +35,7 @@ type Skip struct {
 	Reason string `json:"reason"`
 }
 
+// Inventory is the sorted read-only file and link report.
 type Inventory struct {
 	Files   []File `json:"files"`
 	Links   []Link `json:"links"`
@@ -45,6 +49,7 @@ var (
 	titledTarget      = regexp.MustCompile(`^(\S+)(?:\s+(?:"[^"]*"|'[^']*'))?$`)
 )
 
+// ErrUnsafeTarget marks a path that cannot be traversed without following a symlink.
 var ErrUnsafeTarget = errors.New("unsafe target path")
 
 // Inspect reads only root README.md and regular Markdown below engineering/
@@ -55,7 +60,7 @@ func Inspect(root string) (Inventory, error) {
 	if err != nil {
 		return result, fmt.Errorf("inspect target root: %w", err)
 	}
-	defer dir.Close()
+	defer func() { _ = dir.Close() }()
 	var visit func(*os.File, string, string) error
 	visit = func(parent *os.File, name, rel string) error {
 		file, err := openChild(parent, name)
@@ -69,7 +74,7 @@ func Inspect(root string) (Inventory, error) {
 		if err != nil {
 			return fmt.Errorf("inspect %s: %w", rel, err)
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 		info, err := file.Stat()
 		if err != nil {
 			return fmt.Errorf("stat %s: %w", rel, err)

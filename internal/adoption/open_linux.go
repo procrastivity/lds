@@ -27,17 +27,17 @@ func openRoot(path string) (*os.File, error) {
 			continue
 		}
 		next, err := openChild(dir, part)
-		dir.Close()
+		_ = dir.Close()
 		if err != nil {
 			return nil, err
 		}
 		info, err := next.Stat()
 		if err != nil {
-			next.Close()
+			_ = next.Close()
 			return nil, err
 		}
 		if !info.IsDir() {
-			next.Close()
+			_ = next.Close()
 			return nil, fmt.Errorf("%w: root ancestor is not a directory", ErrUnsafeTarget)
 		}
 		dir = next
