@@ -14,6 +14,8 @@ The [adoption runtime handoff](product/adoption-operations-runtime-handoff.md)
 records the implemented plumbing, executable disposable evidence, and limits.
 The [BDS-251 workflow decision](decisions/0002-bds-251-adoption-workflow-boundary.md)
 records the accepted preparation scope and gates for paired delivery.
+The [flow-to-plumbing map](product/adoption-flow-plumbing-map.md) connects
+those decisions to existing documentation operations and disposable cases.
 The [LDS Linear project](https://linear.app/beausimensen/project/lds-22892af0659b)
 tracks actionable work; decisions and command contracts belong in this repo.
 
