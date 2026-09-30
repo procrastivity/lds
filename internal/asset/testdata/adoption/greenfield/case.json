@@ -1,0 +1,30 @@
+{
+  "initialTargetFiles": [
+    "target/sample.txt",
+    "target/word-count.sh"
+  ],
+  "firstRun": {
+    "creates": [
+      "engineering/README.md",
+      "engineering/product/overview.md",
+      "docs/README.md",
+      "docs/reference/usage.md"
+    ],
+    "necessaryParentDirectories": [
+      "engineering/",
+      "engineering/product/",
+      "docs/",
+      "docs/reference/"
+    ]
+  },
+  "secondRun": {
+    "classifications": [
+      {"path": "engineering/README.md", "state": "identical-untouched"},
+      {"path": "engineering/product/overview.md", "state": "identical-untouched"},
+      {"path": "docs/README.md", "state": "identical-untouched"},
+      {"path": "docs/reference/usage.md", "state": "identical-untouched"}
+    ],
+    "writes": 0,
+    "changedBytes": 0
+  }
+}

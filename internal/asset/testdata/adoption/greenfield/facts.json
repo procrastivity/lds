@@ -1,0 +1,21 @@
+{
+  "DisplayName": "Wordcount",
+  "Purpose": "Counts whitespace-separated words in a text file and prints the count.",
+  "CurrentCapability": "The command counts whitespace-separated words from a supplied file and prints one count.",
+  "DisplayNameSource": "facts.json#/DisplayName; approved by Simulated fixture owner per facts.json#/approval (test-only)",
+  "PurposeSource": "facts.json#/Purpose; approved by Simulated fixture owner per facts.json#/approval (test-only)",
+  "CurrentCapabilitySource": "word-count.sh#L1-L10",
+  "Prerequisites": "POSIX-compatible sh and wc are available.",
+  "OperationName": "Count words",
+  "OperationSummary": "Count whitespace-separated words in a text file.",
+  "Invocation": "sh word-count.sh count sample.txt",
+  "Input": "sample.txt contains exactly four whitespace-separated words: alpha beta gamma delta.",
+  "OutputEvidence": "Executed from target/; observed stdout bytes were `Word count: 4` followed by LF (0x0a), and exit status was 0.",
+  "OperationSource": "word-count.sh#L1-L10; sample.txt; verified by the fixture test invoking the documented command.",
+  "Limitations": "Counts whitespace-separated tokens only; it does not parse or validate token meaning.",
+  "approval": {
+    "approver": "Simulated fixture owner",
+    "approvedFacts": ["DisplayName", "Purpose", "CurrentCapability", "VerifiedUserOperation"],
+    "status": "test-only simulated approval; not a real project authorization"
+  }
+}
