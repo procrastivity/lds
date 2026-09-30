@@ -15,6 +15,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	rootassets "github.com/procrastivity/lds/assets"
 )
 
 var binPath string
@@ -25,7 +27,13 @@ func TestMain(m *testing.M) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	binPath = filepath.Join(tmpDir, "lds")
+	binDir := filepath.Join(tmpDir, "bin")
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		_ = os.RemoveAll(tmpDir)
+		os.Exit(1)
+	}
+	binPath = filepath.Join(binDir, "lds")
 
 	build := exec.Command("go", "build", "-o", binPath, "github.com/procrastivity/lds/cmd/lds")
 	if out, err := build.CombinedOutput(); err != nil {
@@ -187,6 +195,50 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 	for _, v := range m.Verbs {
 		if v.Kind == "" {
 			t.Fatalf("verb %q carries no surface kind (C3.2)", v.Name)
+		}
+	}
+}
+
+func TestManifest_JSON_ListsAdoptionTemplatesWithChecksums(t *testing.T) {
+	r := run(t, nil, "manifest", "--json")
+	if r.exitCode != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", r.exitCode, r.stderr)
+	}
+	var m struct {
+		Assets []struct {
+			Path   string `json:"path"`
+			SHA256 string `json:"sha256"`
+		} `json:"assets"`
+	}
+	if err := json.Unmarshal([]byte(r.stdout), &m); err != nil {
+		t.Fatalf("manifest --json stdout is not one JSON value: %v; stdout=%q", err, r.stdout)
+	}
+
+	wantPaths := []string{
+		"templates/adoption/docs/README.md",
+		"templates/adoption/docs/reference/usage.md",
+		"templates/adoption/engineering/README.md",
+		"templates/adoption/engineering/product/overview.md",
+	}
+	for _, path := range wantPaths {
+		data, err := rootassets.FS.ReadFile(path)
+		if err != nil {
+			t.Fatalf("read embedded adoption template %q: %v", path, err)
+		}
+		sum := sha256.Sum256(data)
+		wantChecksum := hex.EncodeToString(sum[:])
+		matches := 0
+		for _, asset := range m.Assets {
+			if asset.Path != path {
+				continue
+			}
+			matches++
+			if asset.SHA256 != wantChecksum {
+				t.Errorf("manifest checksum for %q = %q, want %q", path, asset.SHA256, wantChecksum)
+			}
+		}
+		if matches != 1 {
+			t.Errorf("manifest lists %q %d times, want exactly once", path, matches)
 		}
 	}
 }
