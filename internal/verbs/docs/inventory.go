@@ -52,5 +52,6 @@ func Command(streams *iostreams.Streams) *cobra.Command {
 	surface.Annotate(inventory, surface.Plumbing)
 	manifest.SetOutputSchema(inventory, json.RawMessage(`{"type":"object","required":["schemaVersion","operation","files","links","skipped"],"properties":{"schemaVersion":{"const":1},"operation":{"const":"docs inventory"},"files":{"type":"array","items":{"type":"object","required":["path","sha256","size"]}},"links":{"type":"array","items":{"type":"object","required":["source","line","target","kind"]}},"skipped":{"type":"array","items":{"type":"object","required":["source","code","reason"]}}}}`))
 	docs.AddCommand(inventory)
+	docs.AddCommand(validateCommand(streams))
 	return docs
 }
