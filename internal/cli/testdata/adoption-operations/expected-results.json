@@ -1,0 +1,216 @@
+{
+  "format": "lds-adoption-operations-expected-projections/v1",
+  "sourceContract": {
+    "path": "engineering/product/adoption-operations-contract.md",
+    "sha256": "adf0e770a7d5c3df9c56fce939cd50892cd6e5a0323043e64a836620c815f85d"
+  },
+  "projectionSemantics": "Expected projections, not captured CLI stdout. Exact scalar/array values are normative; the reserved string empty means zero bytes; objects with an assert member describe a predicate. Paths are relative to the explicitly supplied target unless a fixture source path is stated.",
+  "exitCodes": {"clean": 0, "diagnosticOrInvalidRender": 1, "cobraUsage": 2, "refusalOrCollision": 3, "unexpectedInternalOrIO": 4},
+  "planInvariants": {
+    "requiredFields": ["targetRoot", "planDigest", "factsDigest", "outputs", "necessaryParentDirectories", "preserved", "reportOnly", "veto", "findings", "skipped"],
+    "targetRoot": "equals the explicit target supplied to that invocation; never a fixture absolute path",
+    "factsDigest": "commits to supplied fact JSON including approval/provenance; a missing field does not make the plan eligible",
+    "outputRecord": "contains relative path, classification, and reason; renderable records also expose exact content, content hash, and asset identity",
+    "renderableOutputFields": "for each renderable path, content/content hash/asset identity match fixtureRenderSet.outputs for that path",
+    "necessaryParentDirectories": "only missing parents needed by candidate output files; no unused directory",
+    "arrayOrder": "path, then source location, then stable code; all paths slash-separated and relative",
+    "eligiblePlanDigest": "sha256:<hex> over RFC 8785 canonical JSON of the whole displayed plan excluding planDigest",
+    "incompleteFactsPlan": "planDigest is null; no application is possible"
+  },
+  "fixtureRenderSet": {
+    "evidence": "Step 7 independently-authored expected content; checked separately against template rendering",
+    "resolverSource": "embedded",
+    "outputs": [
+      {"path": "docs/README.md", "contentFixture": "greenfield/expected/docs/README.md", "contentSha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e", "asset": {"relativeName": "templates/adoption/docs/README.md", "source": "embedded", "sha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"}},
+      {"path": "docs/reference/usage.md", "contentFixture": "greenfield/expected/docs/reference/usage.md", "contentSha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41", "asset": {"relativeName": "templates/adoption/docs/reference/usage.md", "source": "embedded", "sha256": "e7286a28da73b8ec17db53a76e7894322980ace4a2eea559e5aeed9e46d576d6"}},
+      {"path": "engineering/README.md", "contentFixture": "greenfield/expected/engineering/README.md", "contentSha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815", "asset": {"relativeName": "templates/adoption/engineering/README.md", "source": "embedded", "sha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"}},
+      {"path": "engineering/product/overview.md", "contentFixture": "greenfield/expected/engineering/product/overview.md", "contentSha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84", "asset": {"relativeName": "templates/adoption/engineering/product/overview.md", "source": "embedded", "sha256": "aca4eb9beee949fc45be058f8fd5a5d63e8f5248b3a170b5ab8aedcae83db525"}}
+    ]
+  },
+  "canonicalizationVectors": [
+    {"purpose": "RFC 8785 canonicalizer unit vector; not a plan digest", "inputJson": {"veto": false, "schemaVersion": 1, "operation": "docs plan"}, "canonicalUtf8": "{\"operation\":\"docs plan\",\"schemaVersion\":1,\"veto\":false}", "sha256": "009aebfc79bf51ce3fd5fdbd951ec4977e840e053267adc26a1db37558ef1f64"}
+  ],
+  "cases": [
+    {
+      "id": "greenfield.inventory", "evidence": "fixture-projection; runtime observation still required", "operation": "docs inventory", "fixture": "greenfield", "expectedExit": 0,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs inventory", "files": [], "links": [], "skipped": []}, "expectedStderr": "empty"
+    },
+    {
+      "id": "greenfield.validate", "evidence": "fixture-projection; runtime observation still required", "operation": "docs validate", "fixture": "greenfield", "expectedExit": 0,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs validate", "findings": [], "skipped": []}, "expectedStderr": "empty"
+    },
+    {
+      "id": "greenfield.render", "evidence": "fixture-projection; embedded-only resolver state makes asset source deterministic", "operation": "docs render", "fixture": "greenfield", "expectedExit": 0,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs render", "outputs": {"equalsFixtureRenderSet": "fixtureRenderSet.outputs"}}, "expectedStderr": "empty"
+    },
+    {
+      "id": "greenfield.plan", "evidence": "fixture-projection; first-run plan only, no writes", "operation": "docs plan", "fixture": "greenfield", "expectedExit": 0,
+      "expectedStdout": {
+        "schemaVersion": 1, "operation": "docs plan", "targetRoot": {"assert": "equals explicitly supplied disposable target root; no checked-in absolute path"},
+        "planDigest": {"assert": "sha256:<hex> recomputed over full displayed plan excluding planDigest using RFC 8785"},
+        "factsDigest": {"assert": "commits to complete facts JSON including approval and provenance"},
+        "outputs": [
+          {"path": "docs/README.md", "classification": "create", "contentSha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"},
+          {"path": "docs/reference/usage.md", "classification": "create", "contentSha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"},
+          {"path": "engineering/README.md", "classification": "create", "contentSha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"},
+          {"path": "engineering/product/overview.md", "classification": "create", "contentSha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"}
+        ],
+        "necessaryParentDirectories": ["docs/", "docs/reference/", "engineering/", "engineering/product/"],
+        "preserved": {"assert": "contains sample.txt and word-count.sh with their Step 8 sharedBaseline hashes"}, "reportOnly": [], "veto": false, "findings": [], "skipped": []
+      },
+      "expectedStderr": "empty"
+    },
+    {
+      "id": "greenfield.apply-first-run", "evidence": "runtime-observation; apply only after explicit human approval of displayed digest", "operation": "docs apply", "fixture": "greenfield", "expectedExit": 0,
+      "expectedStdout": {
+        "schemaVersion": 1, "operation": "docs apply", "planDigest": {"assert": "equals reviewed greenfield plan digest"}, "status": "applied",
+        "created": [
+          {"path": "docs/README.md", "sha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"},
+          {"path": "docs/reference/usage.md", "sha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"},
+          {"path": "engineering/README.md", "sha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"},
+          {"path": "engineering/product/overview.md", "sha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"}
+        ],
+        "identicalUntouched": [], "unattempted": [], "failed": [], "preserved": {"assert": "sample.txt and word-count.sh byte/hash-identical to pre-apply baseline"}
+      },
+      "expectedStderr": "empty"
+    },
+    {
+      "id": "greenfield.apply-identical-rerun", "evidence": "runtime-observation; Step 7 rerun counts are fixture plans, not runtime evidence", "operation": "docs apply", "fixture": "greenfield-after-first-apply", "expectedExit": 0,
+      "expectedStdout": {
+        "schemaVersion": 1, "operation": "docs apply", "planDigest": {"assert": "equals newly reviewed identical-state plan digest"}, "status": "current", "created": [],
+        "identicalUntouched": [
+          {"path": "docs/README.md", "sha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"},
+          {"path": "docs/reference/usage.md", "sha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"},
+          {"path": "engineering/README.md", "sha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"},
+          {"path": "engineering/product/overview.md", "sha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"}
+        ],
+        "unattempted": [], "failed": [], "preserved": {"assert": "all existing target content remains byte-identical"}
+      },
+      "expectedStderr": "empty"
+    },
+    {
+      "id": "preservation.mixed-root-readme", "evidence": "fixture-projection; runtime apply remains unobserved", "operation": "docs plan", "fixture": "preservation/cases.json#/cases/mixed-root-readme", "expectedExit": 0,
+      "expectedStdout": {
+        "schemaVersion": 1, "operation": "docs plan", "targetRoot": {"assert": "equals explicit target root"}, "planDigest": {"assert": "RFC 8785 full-plan relation; no static digest"},
+        "outputs": [{"path": "docs/README.md", "classification": "create"}, {"path": "docs/reference/usage.md", "classification": "create"}, {"path": "engineering/README.md", "classification": "create"}, {"path": "engineering/product/overview.md", "classification": "create"}],
+        "necessaryParentDirectories": ["docs/", "docs/reference/", "engineering/", "engineering/product/"],
+        "preserved": {"assert": "contains shared baseline files and overlay README.md byte-for-byte"}, "reportOnly": {"assert": "includes root README signpost opportunity only"}, "veto": false
+      },
+      "expectedStderr": "empty"
+    },
+    {
+      "id": "preservation.recognizable-legacy-under-docs", "evidence": "fixture-projection; runtime refusal required", "operation": "docs plan", "fixture": "preservation/cases.json#/cases/recognizable-legacy-under-docs", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "planDigest": {"assert": "digest of complete refused preview"}, "outputs": [{"path": "docs/README.md", "classification": "refusal"}, {"path": "docs/reference/usage.md", "classification": "refusal"}, {"path": "engineering/README.md", "classification": "refusal"}, {"path": "engineering/product/overview.md", "classification": "refusal"}], "veto": true, "preserved": {"assert": "contains baseline and all overlay files with unchanged hashes"}},
+      "expectedStderr": {"error": {"code": {"assert": "stable refusal.* token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "preservation.partial-legacy-under-docs", "evidence": "fixture-projection; runtime refusal required", "operation": "docs plan", "fixture": "preservation/cases.json#/cases/partial-legacy-under-docs", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "planDigest": {"assert": "digest of complete refused preview"}, "outputs": [{"path": "docs/README.md", "classification": "refusal"}, {"path": "docs/reference/usage.md", "classification": "refusal"}, {"path": "engineering/README.md", "classification": "refusal"}, {"path": "engineering/product/overview.md", "classification": "refusal"}], "veto": true, "preserved": {"assert": "contains baseline and overlay files with unchanged hashes"}},
+      "expectedStderr": {"error": {"code": {"assert": "stable refusal.* token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "preservation.ambiguous-legacy-under-docs", "evidence": "fixture-projection; runtime refusal required", "operation": "docs plan", "fixture": "preservation/cases.json#/cases/ambiguous-legacy-under-docs", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "planDigest": {"assert": "digest of complete refused preview"}, "outputs": [{"path": "docs/README.md", "classification": "refusal"}, {"path": "docs/reference/usage.md", "classification": "refusal"}, {"path": "engineering/README.md", "classification": "refusal"}, {"path": "engineering/product/overview.md", "classification": "refusal"}], "veto": true, "preserved": {"assert": "contains baseline and all overlay files with unchanged hashes"}},
+      "expectedStderr": {"error": {"code": {"assert": "stable refusal.* token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "preservation.partial-engineering-missing-layers", "evidence": "fixture-projection; runtime plan required", "operation": "docs plan", "fixture": "preservation/cases.json#/cases/partial-engineering-missing-layers", "expectedExit": 0,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "targetRoot": {"assert": "equals explicit target root"}, "planDigest": {"assert": "RFC 8785 full-plan relation; no static digest"}, "outputs": [{"path": "docs/README.md", "classification": "create"}, {"path": "docs/reference/usage.md", "classification": "create"}, {"path": "engineering/README.md", "classification": "create"}, {"path": "engineering/product/overview.md", "classification": "create"}], "necessaryParentDirectories": ["docs/", "docs/reference/", "engineering/product/"], "preserved": {"assert": "contains baseline files and overlay decision file byte-for-byte"}, "reportOnly": [], "veto": false},
+      "expectedStderr": "empty"
+    },
+    {
+      "id": "preservation.one-different-approved-output", "evidence": "fixture-projection; runtime veto required", "operation": "docs plan", "fixture": "preservation/cases.json#/cases/one-different-approved-output", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "targetRoot": {"assert": "equals explicit target root"}, "planDigest": {"assert": "digest of the complete vetoed preview; not apply authority"}, "outputs": [{"path": "docs/README.md", "classification": "create"}, {"path": "docs/reference/usage.md", "classification": "different-collision", "existingSha256": "98f2932add4aa1f592944e1b157a4c9c0ac314375ecf060ca9ba14808f5ee78e"}, {"path": "engineering/README.md", "classification": "create"}, {"path": "engineering/product/overview.md", "classification": "create"}], "necessaryParentDirectories": ["engineering/", "engineering/product/"], "preserved": {"assert": "contains baseline files and exact occupied usage bytes"}, "reportOnly": [], "veto": true},
+      "expectedStderr": {"error": {"code": "refusal.output-collision", "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "preservation.already-generated-identical", "evidence": "fixture-projection; no-op apply required at runtime", "operation": "docs plan", "fixture": "preservation/cases.json#/cases/already-generated-identical", "expectedExit": 0,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "planDigest": {"assert": "RFC 8785 full-plan relation; no static digest"}, "outputs": [{"path": "docs/README.md", "classification": "identical-untouched", "existingSha256": "65c911432ba0ac02f08b6c45b59ee197207751f0c45d59e290cfde36b84e791e"}, {"path": "docs/reference/usage.md", "classification": "identical-untouched", "existingSha256": "e761c49e6216a7ea063c5b930217e8ba0f47ed8b565619b0f770032fabd54b41"}, {"path": "engineering/README.md", "classification": "identical-untouched", "existingSha256": "95dfb71d18039a94bf2e0de0a360df0ec5785e80b0ba74bf527e9a5f9ac9a815"}, {"path": "engineering/product/overview.md", "classification": "identical-untouched", "existingSha256": "0eaf9a19819ed2eb9dcfb61603df1ce4134c8ee6d3e032f42a712debbf62ac84"}], "necessaryParentDirectories": [], "preserved": {"assert": "contains baseline and all four outputs byte-for-byte"}, "reportOnly": [], "veto": false},
+      "expectedStderr": "empty"
+    },
+    {
+      "id": "preservation.edited-generated-looking-output", "evidence": "fixture-projection; runtime collision/no-write required", "operation": "docs plan", "fixture": "preservation/cases.json#/cases/edited-generated-looking-output", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "targetRoot": {"assert": "equals explicit target root"}, "planDigest": {"assert": "digest of complete vetoed preview; no static digest"}, "outputs": [{"path": "docs/README.md", "classification": "create"}, {"path": "docs/reference/usage.md", "classification": "different-collision", "existingSha256": "8a4a2bc70b527c2cabc8ea03a12f47ce493e6bf0e6ea48a99ed17af8e78e95fc"}, {"path": "engineering/README.md", "classification": "create"}, {"path": "engineering/product/overview.md", "classification": "create"}], "necessaryParentDirectories": ["engineering/", "engineering/product/"], "preserved": {"assert": "contains baseline and exact edited occupied bytes"}, "reportOnly": [], "veto": true},
+      "expectedStderr": {"error": {"code": "refusal.output-collision", "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "validate.broken-local-external-and-anchor", "evidence": "runtime-observation required; input lines fixed", "operation": "docs validate",
+      "inputMarkdown": {"path": "docs/legacy-links.md", "lines": ["# Links", "[missing](reference/missing.md#install)", "[external](https://example.invalid/docs)", "[fragment](#overview)"]},
+      "expectedExit": 1,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs validate", "findings": [{"code": "validation.local-target-missing", "path": "docs/legacy-links.md", "line": 2, "target": "reference/missing.md#install", "message": {"assert": "nonempty; exact prose is not contract-stable"}}], "skipped": [{"source": "docs/legacy-links.md", "line": 3, "code": {"assert": "stable nonempty skip code"}, "reason": {"assert": "states external URL is not fetched"}}, {"source": "docs/legacy-links.md", "line": 4, "code": {"assert": "stable nonempty skip code"}, "reason": {"assert": "states fragment-only links/fragments are not validated"}}]},
+      "expectedStderr": {"error": {"code": "validation.local-target-missing", "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "validate.external-and-anchor-skips-only", "evidence": "runtime-observation required", "operation": "docs validate",
+      "inputMarkdown": {"path": "docs/legacy-links.md", "lines": ["# Links", "[external](https://example.invalid/docs)", "[fragment](#overview)"]},
+      "expectedExit": 0,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs validate", "findings": [], "skipped": [{"source": "docs/legacy-links.md", "line": 2, "code": {"assert": "stable nonempty skip code"}, "reason": {"assert": "states external URL is not fetched"}}, {"source": "docs/legacy-links.md", "line": 3, "code": {"assert": "stable nonempty skip code"}, "reason": {"assert": "states fragment-only links/fragments are not validated"}}]},
+      "expectedStderr": "empty"
+    },
+    {
+      "id": "plan.link-diagnostics-do-not-veto", "evidence": "runtime-observation required", "operation": "docs plan", "inputCase": "validate.broken-local-external-and-anchor", "expectedExit": 0,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "outputs": {"assert": "four create classifications with complete facts and absent approved files"}, "findings": [{"code": "validation.local-target-missing", "path": "docs/legacy-links.md", "line": 2, "target": "reference/missing.md#install"}], "skipped": {"assert": "includes external and fragment-only skips with reasons"}, "veto": false, "planDigest": {"assert": "includes findings/skips and changes if either changes"}},
+      "expectedStderr": "empty"
+    },
+    {
+      "id": "facts.missing-required-operation", "evidence": "fixture-specification; runtime refusal required", "operation": "docs plan", "inputMutation": "remove required OutputEvidence from otherwise complete greenfield facts", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "planDigest": null, "outputs": [{"path": "docs/README.md", "classification": "refusal"}, {"path": "docs/reference/usage.md", "classification": "refusal"}, {"path": "engineering/README.md", "classification": "refusal"}, {"path": "engineering/product/overview.md", "classification": "refusal"}], "veto": true, "findings": {"assert": "identifies incomplete required facts"}},
+      "expectedStderr": {"error": {"code": {"assert": "stable refusal.* token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "facts.unverified-approval-or-source", "evidence": "fixture-specification; runtime refusal required", "operation": "docs plan", "inputMutation": "remove owner approval/provenance or verified operation source/evidence", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs plan", "planDigest": null, "outputs": [{"path": "docs/README.md", "classification": "refusal"}, {"path": "docs/reference/usage.md", "classification": "refusal"}, {"path": "engineering/README.md", "classification": "refusal"}, {"path": "engineering/product/overview.md", "classification": "refusal"}], "veto": true, "findings": {"assert": "identifies unverified required fact group"}},
+      "expectedStderr": {"error": {"code": {"assert": "stable refusal.* token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "render.missing-required-fact", "evidence": "fixture-specification; invalid-render exit must be observed", "operation": "docs render", "inputMutation": "remove a required nonempty field from greenfield facts", "expectedExit": 1,
+      "expectedStdout": "empty", "expectedStderr": {"error": {"code": {"assert": "stable nonempty validation/render token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "render.markdown-metacharacters", "evidence": "runtime-observation; synthetic render-only strings are not pilot facts", "operation": "docs render",
+      "inputFactBase": "greenfield/facts.json (all required fields inherited)",
+      "inputFactOverrides": {"DisplayName": "Demo [guide](https://example.invalid) <script> **heading** `tick`", "Purpose": "Plain text with a newline\nand a second line.", "Invocation": "sh word-count.sh count `sample.txt`", "Input": "Literal [input](https://example.invalid), <tag>, **stars**, and `code`."},
+      "expectedExit": 0,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs render", "outputs": {"assert": "all four paths are UTF-8/LF; fact values stay literal/inert in context; no injected heading, link, HTML, action, or new block; invocation delimiter/fence is longer than every run in the value"}},
+      "expectedStderr": "empty"
+    },
+    {
+      "id": "render.unsafe-local-source-or-malformed-override", "evidence": "runtime-observation required", "operation": "docs render", "inputMutation": "unsafe escaping source reference, unsafe control, missing field, or invalid template action in selected override", "expectedExit": 1,
+      "expectedStdout": "empty", "expectedStderr": {"error": {"code": {"assert": "stable nonempty validation/render token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "apply.stale-facts", "evidence": "runtime-observation required", "operation": "docs apply", "changeAfterPlan": "change any target fact or approval/provenance byte", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs apply", "planDigest": {"assert": "identifies supplied reviewed plan"}, "status": "refused", "created": [], "identicalUntouched": [], "unattempted": {"assert": "all reviewed eligible creates"}, "failed": {"assert": "stale cause reported where supported"}, "preserved": {"assert": "baseline and existing target bytes unchanged"}},
+      "expectedStderr": {"error": {"code": {"assert": "stable refusal.* stale-plan token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "apply.stale-effective-asset", "evidence": "runtime-observation required", "operation": "docs apply", "changeAfterPlan": "change selected asset bytes/source under the same relative asset name", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs apply", "status": "refused", "created": [], "identicalUntouched": [], "unattempted": {"assert": "all reviewed eligible creates"}, "preserved": {"assert": "target bytes unchanged"}},
+      "expectedStderr": {"error": {"code": {"assert": "stable refusal.* stale-plan token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "apply.stale-target", "evidence": "runtime-observation required", "operation": "docs apply", "changeAfterPlan": "occupy/change a reviewed output or preserved target path", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs apply", "status": "refused", "created": [], "identicalUntouched": [], "unattempted": {"assert": "all not-created reviewed outputs"}, "preserved": {"assert": "changed/preexisting bytes reported and not modified"}},
+      "expectedStderr": {"error": {"code": {"assert": "stable refusal.* stale-plan token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "apply.stale-or-unsafe-ancestor", "evidence": "runtime-observation required", "operation": "docs apply", "changeAfterPlan": "replace a reviewed output ancestor with a symlink or change its no-follow identity", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs apply", "status": "refused", "created": [], "identicalUntouched": [], "unattempted": {"assert": "all eligible creates"}, "preserved": {"assert": "no symlink target is traversed or changed"}},
+      "expectedStderr": {"error": {"code": {"assert": "stable refusal.* unsafe-or-stale token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "apply.declined-confirmation", "evidence": "runtime-observation required", "operation": "docs apply", "changeAfterPlan": "decline explicit approval of displayed plan digest", "expectedExit": 3,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs apply", "status": "refused", "created": [], "identicalUntouched": [], "unattempted": {"assert": "all reviewed creates"}, "failed": [], "preserved": {"assert": "all pre-existing bytes unchanged"}},
+      "expectedStderr": {"error": {"code": {"assert": "stable refusal.* approval-declined token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "apply.late-injected-io-failure", "evidence": "runtime-observation; inject I/O failure after at least one exclusive create", "operation": "docs apply", "expectedExit": 4,
+      "expectedStdout": {"schemaVersion": 1, "operation": "docs apply", "status": "partial", "planDigest": {"assert": "equals reviewed digest"}, "created": {"assert": "nonempty; each observed hash matches rendered bytes"}, "identicalUntouched": [], "unattempted": {"assert": "remaining reviewed creates not successfully created"}, "failed": {"assert": "includes failing path, stable internal.* code/message and observed hash if readable"}, "preserved": {"assert": "pre-existing target paths remain byte-identical"}},
+      "expectedStderr": {"error": {"code": {"assert": "stable internal.* I/O token"}, "message": {"assert": "nonempty human-readable text"}}}
+    },
+    {
+      "id": "usage.invalid-argument", "evidence": "runtime-observation; reuse current Cobra usage path", "operation": "any docs leaf", "inputMutation": "invalid flag or positional arguments", "expectedExit": 2,
+      "expectedStdout": "empty", "expectedStderr": {"assert": "Cobra usage diagnostic; not a success JSON object or structured verb-error envelope"}
+    }
+  ]
+}
