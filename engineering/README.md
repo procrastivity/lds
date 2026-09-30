@@ -12,6 +12,8 @@ their status. The [source-repository map](architecture/source-repositories.md)
 records what other projects contribute and how their local checkouts are found.
 The [adoption runtime handoff](product/adoption-operations-runtime-handoff.md)
 records the implemented plumbing, executable disposable evidence, and limits.
+The [BDS-251 workflow decision](decisions/0002-bds-251-adoption-workflow-boundary.md)
+records the accepted preparation scope and gates for paired delivery.
 The [LDS Linear project](https://linear.app/beausimensen/project/lds-22892af0659b)
 tracks actionable work; decisions and command contracts belong in this repo.
 
