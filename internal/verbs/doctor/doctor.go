@@ -1,8 +1,9 @@
-// Package doctor implements the `lds doctor` verb: it reports every
-// registered harness target's drift state (C4.5) and every finding, flat
-// and with no severity levels (C4.7). Only a code without the "advisory."
-// prefix fails the run. A tool grows doctor by registering checks, never
-// by a second command or a second output path.
+// Package doctor implements the `lds plumbing doctor` verb and its root
+// `lds doctor` compatibility alias: it reports every registered harness
+// target's drift state (C4.5) and every finding, flat and with no severity
+// levels (C4.7). Only a code without the "advisory." prefix fails the run.
+// A tool grows doctor by registering checks, never by a second command or a
+// second output path.
 package doctor
 
 import (
@@ -21,7 +22,7 @@ import (
 
 import "github.com/procrastivity/lds/internal/ldserr"
 
-// Command constructs the `lds doctor` verb. root is the
+// Command constructs the canonical `doctor` verb. root is the
 // *cobra.Command NewRootCommand is assembling, captured by reference — the
 // same pattern manifest/install use — so checks.HarnessTargets reads the
 // manifest every verb ultimately registered on it.

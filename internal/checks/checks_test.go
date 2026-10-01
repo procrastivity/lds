@@ -21,7 +21,13 @@ import (
 func newFixture(t *testing.T) (root *cobra.Command, build buildinfo.Info) {
 	t.Helper()
 	t.Setenv(claudecode.SkillsDirEnv, t.TempDir())
-	return &cobra.Command{Use: "lds"}, buildinfo.Info{Version: "v0.0.0-test"}
+	root = &cobra.Command{Use: "lds"}
+	plumbing := &cobra.Command{Use: "plumbing"}
+	base := &cobra.Command{Use: "base", Run: func(*cobra.Command, []string) {}}
+	surface.Annotate(base, surface.Plumbing)
+	plumbing.AddCommand(base)
+	root.AddCommand(plumbing)
+	return root, buildinfo.Info{Version: "v0.0.0-test"}
 }
 
 // installClean renders and stamps a fresh claude-code tree under root's
@@ -44,10 +50,17 @@ func installClean(t *testing.T, root *cobra.Command, build buildinfo.Info) strin
 // the manifest, and so claudecode.Generate's output, now differs from what
 // got stamped (a verb added since install), Status's binary-vs-stamp
 // question (C4.6), independent of whatever the disk says.
-func addVerb(root *cobra.Command) {
+func addVerb(t *testing.T, root *cobra.Command) {
+	t.Helper()
 	extra := &cobra.Command{Use: "extra", Run: func(*cobra.Command, []string) {}}
 	surface.Annotate(extra, surface.Plumbing)
-	root.AddCommand(extra)
+	for _, child := range root.Commands() {
+		if child.Name() == "plumbing" {
+			child.AddCommand(extra)
+			return
+		}
+	}
+	t.Fatalf("fixture has no plumbing group")
 }
 
 func findTarget(t *testing.T, targets []TargetState, name string) TargetState {
@@ -96,7 +109,7 @@ func TestHarnessTargets_Missing(t *testing.T) {
 func TestHarnessTargets_Stale(t *testing.T) {
 	root, build := newFixture(t)
 	installClean(t, root, build)
-	addVerb(root)
+	addVerb(t, root)
 
 	findings, targets, err := HarnessTargets(root, build)
 	if err != nil {
@@ -145,7 +158,7 @@ func TestHarnessTargets_ModifiedAndStale(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("hand-edited\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	addVerb(root)
+	addVerb(t, root)
 
 	findings, targets, err := HarnessTargets(root, build)
 	if err != nil {

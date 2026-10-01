@@ -10,6 +10,7 @@ import (
 	"github.com/procrastivity/lds/internal/exitcode"
 	"github.com/procrastivity/lds/internal/iostreams"
 	"github.com/procrastivity/lds/internal/ldserr"
+	"github.com/procrastivity/lds/internal/surface"
 )
 
 // Execute runs root and returns the process exit code, per the contract's
@@ -75,6 +76,9 @@ func classifyRunEFailures(root *cobra.Command) {
 // root command's own name, so nested verbs (e.g. "step create") read
 // naturally without redesign later.
 func verbPath(root, cmd *cobra.Command) string {
+	if canonical, ok := surface.AliasOf(cmd); ok {
+		return canonical
+	}
 	path := strings.TrimPrefix(cmd.CommandPath(), root.Name())
 	return strings.TrimSpace(path)
 }

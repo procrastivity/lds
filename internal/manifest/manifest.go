@@ -1,10 +1,11 @@
 // Package manifest builds the tool's machine-readable declaration of itself
-// (CONTRACT.md C3): the flat JSON object `lds manifest --json` emits —
-// tool identity, contract version, every registered verb regardless of
-// kind, the shipped-asset list with checksums, and a self-committing
-// digest. It reads the chassis's single verb-registration point (the built
-// root command) and the asset-resolution chain; it adds no second registry
-// of either.
+// (CONTRACT.md C3): the flat JSON object `lds plumbing manifest --json`
+// emits, also available through the root `lds manifest --json` alias — tool
+// identity, contract version, every registered verb regardless of kind,
+// the shipped-asset list with checksums, and a self-committing digest. It
+// reads the chassis's single verb-registration point (the built root
+// command) and the asset-resolution chain; it adds no second registry of
+// either.
 package manifest
 
 import (
@@ -57,6 +58,9 @@ type Arg struct {
 type Verb struct {
 	Name string       `json:"name"`
 	Kind surface.Kind `json:"kind"`
+	// AliasOf links only the porcelain member of a same-deliverable alias
+	// pair to its canonical plumbing registration (C3.9).
+	AliasOf string `json:"alias-of,omitempty"`
 
 	// Usage is the positional-argument portion of the verb's own cobra Use
 	// line, recorded verbatim: "<name>" for a verb declared as
@@ -84,7 +88,7 @@ type Asset struct {
 	SHA256 string `json:"sha256"`
 }
 
-// Manifest is the flat object `lds manifest --json` emits.
+// Manifest is the flat object the canonical plumbing manifest emits.
 type Manifest struct {
 	Tool                    Tool    `json:"tool"`
 	SchemaVersion           int     `json:"schemaVersion"`

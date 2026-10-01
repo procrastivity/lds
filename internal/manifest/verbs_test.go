@@ -58,6 +58,38 @@ func TestWalkVerbs_RecordsUsage(t *testing.T) {
 	}
 }
 
+// TestWalkVerbs_RecordsAliasOnlyOnThePorcelainMember pins C3.9: the
+// compatibility spelling points to its canonical qualified registration,
+// while the canonical member and unrelated verbs omit alias-of entirely.
+func TestWalkVerbs_RecordsAliasOnlyOnThePorcelainMember(t *testing.T) {
+	root := &cobra.Command{Use: "tool"}
+	plumbing := &cobra.Command{Use: "plumbing"}
+	canonical := &cobra.Command{Use: "manifest", Run: func(*cobra.Command, []string) {}}
+	surface.Annotate(canonical, surface.Plumbing)
+	plumbing.AddCommand(canonical)
+	root.AddCommand(plumbing)
+
+	alias := &cobra.Command{Use: "manifest", Run: func(*cobra.Command, []string) {}}
+	surface.Annotate(alias, surface.Plumbing)
+	surface.Alias(alias, "plumbing manifest")
+	root.AddCommand(alias)
+
+	verbs, err := walkVerbs(root)
+	if err != nil {
+		t.Fatalf("walkVerbs: %v", err)
+	}
+	got := map[string]string{}
+	for _, verb := range verbs {
+		got[verb.Name] = verb.AliasOf
+	}
+	if got["manifest"] != "plumbing manifest" {
+		t.Errorf("porcelain alias-of = %q, want %q", got["manifest"], "plumbing manifest")
+	}
+	if got["plumbing manifest"] != "" {
+		t.Errorf("canonical alias-of = %q, want absent", got["plumbing manifest"])
+	}
+}
+
 // TestWalkVerbs_RefusesAnUnannotatedVerb covers C3.2's hard error, the
 // clause's actual enforcement point. The manifest e2e test can only assert
 // that every registered verb carries a kind; it cannot reach the refusal,

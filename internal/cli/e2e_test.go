@@ -118,6 +118,120 @@ func TestUsageError_UnknownCommand(t *testing.T) {
 	}
 }
 
+func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
+	root := run(t, nil, "--help")
+	if root.exitCode != 0 || root.stderr != "" {
+		t.Fatalf("root help: exit=%d stderr=%q", root.exitCode, root.stderr)
+	}
+	for _, name := range []string{"doctor", "install", "manifest", "plumbing", "uninstall", "version"} {
+		if !strings.Contains(root.stdout, "\n  "+name) {
+			t.Errorf("root help omits root command %q: %s", name, root.stdout)
+		}
+	}
+	for _, leaf := range []string{"inventory", "validate", "render", "plan", "apply"} {
+		if strings.Contains(root.stdout, "\n  "+leaf+" ") {
+			t.Errorf("root help leaks plumbing docs leaf %q: %s", leaf, root.stdout)
+		}
+	}
+
+	plumbing := run(t, nil, "plumbing", "--help")
+	if plumbing.exitCode != 0 || plumbing.stderr != "" || !strings.Contains(plumbing.stdout, "\n  lds plumbing ") {
+		t.Fatalf("plumbing help: exit=%d stdout=%q stderr=%q", plumbing.exitCode, plumbing.stdout, plumbing.stderr)
+	}
+	for _, member := range []string{"doctor", "manifest", "docs"} {
+		if !strings.Contains(plumbing.stdout, "\n  "+member) {
+			t.Errorf("plumbing help omits canonical member %q: %s", member, plumbing.stdout)
+		}
+	}
+	if strings.Contains(plumbing.stdout, "inventory") || strings.Contains(plumbing.stdout, "apply") {
+		t.Fatalf("plumbing group help leaks nested docs leaves: %s", plumbing.stdout)
+	}
+	docs := run(t, nil, "plumbing", "docs", "--help")
+	if docs.exitCode != 0 || docs.stderr != "" || !strings.Contains(docs.stdout, "\n  lds plumbing docs ") {
+		t.Fatalf("plumbing docs help: exit=%d stdout=%q stderr=%q", docs.exitCode, docs.stdout, docs.stderr)
+	}
+	for _, leaf := range []string{"apply", "inventory", "plan", "render", "validate"} {
+		if !strings.Contains(docs.stdout, "\n  "+leaf) {
+			t.Errorf("plumbing docs help omits %q: %s", leaf, docs.stdout)
+		}
+	}
+	for _, path := range []string{
+		"plumbing doctor", "plumbing manifest",
+		"plumbing docs apply", "plumbing docs inventory", "plumbing docs plan",
+		"plumbing docs render", "plumbing docs validate",
+	} {
+		args := strings.Fields(path)
+		helpArgs := append(append([]string(nil), args...), "--help")
+		help := run(t, nil, helpArgs...)
+		if help.exitCode != 0 || help.stderr != "" || !strings.Contains(help.stdout, "\n  lds "+path+" ") {
+			t.Errorf("canonical help for %q is not qualified: %+v", path, help)
+		}
+	}
+	for _, leaf := range []string{"apply", "inventory", "plan", "render", "validate"} {
+		legacy := run(t, nil, "docs", leaf, "--help")
+		if legacy.exitCode != 2 || legacy.stdout != "" {
+			t.Errorf("unaliased root docs spelling %q was accepted: %+v", leaf, legacy)
+		}
+	}
+
+	for _, pair := range []struct{ alias, canonical string }{
+		{"manifest", "plumbing manifest"},
+		{"doctor", "plumbing doctor"},
+	} {
+		aliasHelp := run(t, nil, pair.alias, "--help")
+		canonicalArgs := strings.Fields(pair.canonical)
+		canonicalArgs = append(canonicalArgs, "--help")
+		canonicalHelp := run(t, nil, canonicalArgs...)
+		oldPath := "  lds " + pair.alias
+		newPath := "  lds " + pair.canonical
+		if aliasHelp.exitCode != 0 || canonicalHelp.exitCode != 0 || aliasHelp.stderr != "" || canonicalHelp.stderr != "" || strings.Count(aliasHelp.stdout, oldPath) != 1 {
+			t.Fatalf("help pair %q/%q: alias=%+v canonical=%+v", pair.alias, pair.canonical, aliasHelp, canonicalHelp)
+		}
+		if strings.Replace(aliasHelp.stdout, oldPath, newPath, 1) != canonicalHelp.stdout {
+			t.Errorf("help pair %q/%q differs beyond the command path:\nalias:\n%s\ncanonical:\n%s", pair.alias, pair.canonical, aliasHelp.stdout, canonicalHelp.stdout)
+		}
+	}
+}
+
+func TestRootAliasesMatchCanonicalPlumbingMembers(t *testing.T) {
+	skills := t.TempDir()
+	env := []string{"LDS_CLAUDE_SKILLS_DIR=" + skills}
+	for _, pair := range []struct {
+		alias     []string
+		canonical []string
+	}{
+		{[]string{"manifest"}, []string{"plumbing", "manifest"}},
+		{[]string{"manifest", "--json"}, []string{"plumbing", "manifest", "--json"}},
+		{[]string{"doctor"}, []string{"plumbing", "doctor"}},
+		{[]string{"doctor", "--json"}, []string{"plumbing", "doctor", "--json"}},
+	} {
+		alias := run(t, env, pair.alias...)
+		canonical := run(t, env, pair.canonical...)
+		if alias.exitCode != canonical.exitCode || alias.stdout != canonical.stdout || alias.stderr != canonical.stderr {
+			t.Errorf("alias %v differs from %v:\nalias=%+v\ncanonical=%+v", pair.alias, pair.canonical, alias, canonical)
+		}
+	}
+
+	installClean(t, skills, env)
+	stampPath := filepath.Join(skills, "lds", ".lds-manifest-stamp.json")
+	if err := os.WriteFile(stampPath, []byte("not json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	alias := run(t, env, "doctor")
+	canonical := run(t, env, "plumbing", "doctor")
+	if alias.exitCode != 1 || alias.exitCode != canonical.exitCode || alias.stdout != canonical.stdout || alias.stderr != canonical.stderr {
+		t.Fatalf("failing doctor alias differs from canonical: alias=%+v canonical=%+v", alias, canonical)
+	}
+	if !strings.HasPrefix(alias.stderr, "lds: plumbing doctor: ") {
+		t.Fatalf("alias failure diagnostic is not canonicalized: %q", alias.stderr)
+	}
+	aliasJSON := run(t, env, "doctor", "--json")
+	canonicalJSON := run(t, env, "plumbing", "doctor", "--json")
+	if aliasJSON.exitCode != canonicalJSON.exitCode || aliasJSON.stdout != canonicalJSON.stdout || aliasJSON.stderr != canonicalJSON.stderr {
+		t.Fatalf("failing JSON doctor alias differs from canonical: alias=%+v canonical=%+v", aliasJSON, canonicalJSON)
+	}
+}
+
 func TestInstall_RunEFailureIsInternalAndArgsFailureRemainsUsage(t *testing.T) {
 	// install's own Args validator and RunE share the same Cobra command:
 	// excess args must remain usage, while a real filesystem failure from
@@ -164,7 +278,7 @@ func TestVersion_JSON(t *testing.T) {
 }
 
 func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
-	r := run(t, nil, "manifest", "--json")
+	r := run(t, nil, "plumbing", "manifest", "--json")
 	if r.exitCode != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", r.exitCode, r.stderr)
 	}
@@ -174,8 +288,9 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		ContractReconciledMinor int    `json:"contractReconciledMinor"`
 		ManifestDigest          string `json:"manifest_digest"`
 		Verbs                   []struct {
-			Name string `json:"name"`
-			Kind string `json:"kind"`
+			Name    string `json:"name"`
+			Kind    string `json:"kind"`
+			AliasOf string `json:"alias-of"`
 		} `json:"verbs"`
 	}
 	if err := json.Unmarshal([]byte(r.stdout), &m); err != nil {
@@ -198,10 +313,45 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			t.Fatalf("verb %q carries no surface kind (C3.2)", v.Name)
 		}
 	}
+	want := map[string]string{
+		"version":                 "",
+		"manifest":                "plumbing manifest",
+		"install":                 "",
+		"uninstall":               "",
+		"doctor":                  "plumbing doctor",
+		"plumbing manifest":       "",
+		"plumbing doctor":         "",
+		"plumbing docs apply":     "",
+		"plumbing docs inventory": "",
+		"plumbing docs plan":      "",
+		"plumbing docs render":    "",
+		"plumbing docs validate":  "",
+	}
+	seen := map[string]bool{}
+	projectable := 0
+	for _, verb := range m.Verbs {
+		if strings.HasPrefix(verb.Name, "docs ") {
+			t.Errorf("manifest retained an unqualified docs leaf %q", verb.Name)
+		}
+		if canonical, required := want[verb.Name]; required {
+			seen[verb.Name] = true
+			if verb.AliasOf != canonical {
+				t.Errorf("verb %q alias-of = %q, want %q", verb.Name, verb.AliasOf, canonical)
+			}
+		} else if verb.AliasOf != "" {
+			t.Errorf("unreviewed verb %q has alias-of %q", verb.Name, verb.AliasOf)
+		}
+		if verb.Kind == "plumbing" && strings.HasPrefix(verb.Name, "plumbing ") {
+			projectable++
+		}
+	}
+	if len(m.Verbs) != 12 || len(seen) != len(want) || projectable != 7 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want twelve leaves and seven projected members", len(m.Verbs), len(seen), len(want), projectable)
+	}
 }
 
 func TestManifest_JSON_ListsAdoptionTemplatesWithChecksums(t *testing.T) {
-	r := run(t, nil, "manifest", "--json")
+	r := run(t, nil, "plumbing", "manifest", "--json")
 	if r.exitCode != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", r.exitCode, r.stderr)
 	}
@@ -250,7 +400,7 @@ func TestDocsRender_GreenfieldJSONAndReadOnly(t *testing.T) {
 	facts := filepath.Join(fixture, "facts.json")
 	xdg := t.TempDir()
 	before := renderTargetSnapshot(t, root)
-	r := run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "docs", "render", root, "--facts", facts, "--json")
+	r := run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "plumbing", "docs", "render", root, "--facts", facts, "--json")
 	if r.exitCode != 0 || r.stderr != "" {
 		t.Fatalf("render exit=%d stderr=%q", r.exitCode, r.stderr)
 	}
@@ -356,14 +506,14 @@ func TestDocsRender_ResolverPrecedenceAndShadowing(t *testing.T) {
 		}
 	}
 
-	r := run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "docs", "render", root, "--facts", facts, "--json")
+	r := run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "plumbing", "docs", "render", root, "--facts", facts, "--json")
 	checkSources(r, "default", "installed-default-only:", "user-override-only:")
 
 	overrideDir := filepath.Join(xdg, "lds")
 	for _, item := range templates {
 		writeRenderAsset(t, overrideDir, item.asset, overrideAssets[item.asset])
 	}
-	r = run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "docs", "render", root, "--facts", facts, "--json")
+	r = run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "plumbing", "docs", "render", root, "--facts", facts, "--json")
 	checkSources(r, "override", "user-override-only:", "installed-default-only:")
 
 	for _, item := range templates {
@@ -371,7 +521,7 @@ func TestDocsRender_ResolverPrecedenceAndShadowing(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	r = run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "docs", "render", root, "--facts", facts, "--json")
+	r = run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "plumbing", "docs", "render", root, "--facts", facts, "--json")
 	checkSources(r, "default", "installed-default-only:", "user-override-only:")
 
 	for _, item := range templates {
@@ -379,7 +529,7 @@ func TestDocsRender_ResolverPrecedenceAndShadowing(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	r = run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "docs", "render", root, "--facts", facts, "--json")
+	r = run(t, []string{"XDG_CONFIG_HOME=" + xdg}, "plumbing", "docs", "render", root, "--facts", facts, "--json")
 	checkSources(r, "embedded", "", "installed-default-only:")
 	for _, item := range templates {
 		output := mustRenderOutput(t, r, item.output)
@@ -424,7 +574,7 @@ func TestDocsRender_InvalidFactsAndTemplateExitOne(t *testing.T) {
 			if err := os.WriteFile(facts, data, 0o600); err != nil {
 				t.Fatal(err)
 			}
-			r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "render", root, "--facts", facts, "--json")
+			r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "plumbing", "docs", "render", root, "--facts", facts, "--json")
 			if r.exitCode != 1 || r.stdout != "" || parseErrorEnvelope(t, r.stderr).Error.Code != "validation.render-invalid" {
 				t.Fatalf("invalid render result = %+v", r)
 			}
@@ -433,19 +583,19 @@ func TestDocsRender_InvalidFactsAndTemplateExitOne(t *testing.T) {
 
 	badOverrideHome := t.TempDir()
 	writeRenderAsset(t, filepath.Join(badOverrideHome, "lds"), "templates/adoption/docs/README.md", []byte("{{.Undeclared}}"))
-	badOverride := run(t, []string{"XDG_CONFIG_HOME=" + badOverrideHome}, "docs", "render", root, "--facts", filepath.Join(fixture, "facts.json"), "--json")
+	badOverride := run(t, []string{"XDG_CONFIG_HOME=" + badOverrideHome}, "plumbing", "docs", "render", root, "--facts", filepath.Join(fixture, "facts.json"), "--json")
 	if badOverride.exitCode != 1 || badOverride.stdout != "" || parseErrorEnvelope(t, badOverride.stderr).Error.Code != "validation.render-invalid" {
 		t.Fatalf("invalid template override result = %+v", badOverride)
 	}
 
-	r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "render", root, "--facts", filepath.Join(fixture, "facts.json"), "--json", "--bad-template-option")
+	r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "plumbing", "docs", "render", root, "--facts", filepath.Join(fixture, "facts.json"), "--json", "--bad-template-option")
 	if r.exitCode != 2 || r.stdout != "" {
 		t.Fatalf("render usage exit=%d stdout=%q stderr=%q", r.exitCode, r.stdout, r.stderr)
 	}
 }
 
 func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
-	m := run(t, nil, "manifest", "--json")
+	m := run(t, nil, "plumbing", "manifest", "--json")
 	if m.exitCode != 0 {
 		t.Fatalf("manifest exit=%d stderr=%q", m.exitCode, m.stderr)
 	}
@@ -460,7 +610,7 @@ func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 	if err := json.Unmarshal([]byte(m.stdout), &declaration); err != nil {
 		t.Fatal(err)
 	}
-	matches := map[string]int{"docs inventory": 0, "docs validate": 0, "docs render": 0, "docs plan": 0}
+	matches := map[string]int{"plumbing docs inventory": 0, "plumbing docs validate": 0, "plumbing docs render": 0, "plumbing docs plan": 0, "plumbing docs apply": 0}
 	for _, verb := range declaration.Verbs {
 		if _, ok := matches[verb.Name]; !ok {
 			continue
@@ -468,14 +618,16 @@ func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 		matches[verb.Name]++
 		var wantField string
 		switch verb.Name {
-		case "docs inventory":
+		case "plumbing docs inventory":
 			wantField = `"files"`
-		case "docs validate":
+		case "plumbing docs validate":
 			wantField = `"findings"`
-		case "docs render":
+		case "plumbing docs render":
 			wantField = `"outputs"`
-		case "docs plan":
+		case "plumbing docs plan":
 			wantField = `"planDigest"`
+		case "plumbing docs apply":
+			wantField = `"created"`
 		}
 		if verb.Kind != "plumbing" || !json.Valid(verb.OutputSchema) || !bytes.Contains(verb.OutputSchema, []byte(wantField)) {
 			t.Fatalf("docs declaration = %+v", verb)
@@ -486,7 +638,7 @@ func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 			t.Fatalf("manifest has %d %s declarations, want one", count, name)
 		}
 	}
-	r := run(t, nil, "docs", "inventory", t.TempDir(), "--json")
+	r := run(t, nil, "plumbing", "docs", "inventory", t.TempDir(), "--json")
 	if r.exitCode != 0 || r.stderr != "" {
 		t.Fatalf("inventory exit=%d stderr=%q", r.exitCode, r.stderr)
 	}
@@ -500,7 +652,7 @@ func TestDocsPlan_GreenfieldJSONAndReadOnly(t *testing.T) {
 	root := filepath.Join(fixture, "target")
 	facts := filepath.Join(fixture, "facts.json")
 	before := renderTargetSnapshot(t, root)
-	r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", root, "--facts", facts, "--json")
+	r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "plumbing", "docs", "plan", root, "--facts", facts, "--json")
 	if r.exitCode != 0 || r.stderr != "" {
 		t.Fatalf("plan exit=%d stderr=%q", r.exitCode, r.stderr)
 	}
@@ -555,7 +707,7 @@ func TestDocsApply_ReviewedDigestCreatesThenNoops(t *testing.T) {
 	fixture := filepath.Join("..", "asset", "testdata", "adoption", "greenfield")
 	root := t.TempDir()
 	facts := filepath.Join(fixture, "facts.json")
-	planRun := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", root, "--facts", facts, "--json")
+	planRun := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "plumbing", "docs", "plan", root, "--facts", facts, "--json")
 	if planRun.exitCode != 0 || planRun.stderr != "" {
 		t.Fatalf("plan exit=%d stderr=%q", planRun.exitCode, planRun.stderr)
 	}
@@ -568,7 +720,7 @@ func TestDocsApply_ReviewedDigestCreatesThenNoops(t *testing.T) {
 		t.Fatal(err)
 	}
 	env := []string{"XDG_CONFIG_HOME=" + t.TempDir()}
-	declined := run(t, env, "docs", "apply", root, "--facts", facts, "--plan", planFile, "--confirm", "sha256:declined", "--json")
+	declined := run(t, env, "plumbing", "docs", "apply", root, "--facts", facts, "--plan", planFile, "--confirm", "sha256:declined", "--json")
 	var decline adoption.ApplyResult
 	if declined.exitCode != 3 || parseErrorEnvelope(t, declined.stderr).Error.Code != "refusal.confirmation-declined" || json.Unmarshal([]byte(declined.stdout), &decline) != nil || decline.Status != "refused" || len(decline.Unattempted) != 4 {
 		t.Fatalf("declined apply=%+v result=%+v", declined, decline)
@@ -576,7 +728,7 @@ func TestDocsApply_ReviewedDigestCreatesThenNoops(t *testing.T) {
 	if entries, err := os.ReadDir(root); err != nil || len(entries) != 0 {
 		t.Fatalf("declined apply changed target: entries=%v err=%v", entries, err)
 	}
-	first := run(t, env, "docs", "apply", root, "--facts", facts, "--plan", planFile, "--confirm", *plan.PlanDigest, "--json")
+	first := run(t, env, "plumbing", "docs", "apply", root, "--facts", facts, "--plan", planFile, "--confirm", *plan.PlanDigest, "--json")
 	if first.exitCode != 0 || first.stderr != "" {
 		t.Fatalf("apply exit=%d stderr=%q stdout=%q", first.exitCode, first.stderr, first.stdout)
 	}
@@ -590,7 +742,7 @@ func TestDocsApply_ReviewedDigestCreatesThenNoops(t *testing.T) {
 			t.Fatalf("applied bytes %s differ from reviewed plan: err=%v", output.Path, err)
 		}
 	}
-	secondPlanRun := run(t, env, "docs", "plan", root, "--facts", facts, "--json")
+	secondPlanRun := run(t, env, "plumbing", "docs", "plan", root, "--facts", facts, "--json")
 	var secondPlan adoption.PlanResult
 	if secondPlanRun.exitCode != 0 || json.Unmarshal([]byte(secondPlanRun.stdout), &secondPlan) != nil || secondPlan.PlanDigest == nil {
 		t.Fatalf("second plan: %+v", secondPlanRun)
@@ -598,7 +750,7 @@ func TestDocsApply_ReviewedDigestCreatesThenNoops(t *testing.T) {
 	if err := os.WriteFile(planFile, []byte(secondPlanRun.stdout), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	second := run(t, env, "docs", "apply", root, "--facts", facts, "--plan", planFile, "--confirm", *secondPlan.PlanDigest, "--json")
+	second := run(t, env, "plumbing", "docs", "apply", root, "--facts", facts, "--plan", planFile, "--confirm", *secondPlan.PlanDigest, "--json")
 	var current adoption.ApplyResult
 	if second.exitCode != 0 || second.stderr != "" || json.Unmarshal([]byte(second.stdout), &current) != nil || current.Status != "current" || len(current.Created) != 0 || len(current.IdenticalUntouched) != 4 {
 		t.Fatalf("identical rerun=%+v result=%+v", second, current)
@@ -628,7 +780,7 @@ func TestDocsPlan_IncompleteFactsCollisionAndUsage(t *testing.T) {
 	if err := os.WriteFile(incompleteFacts, data, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	refused := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", root, "--facts", incompleteFacts, "--json")
+	refused := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "plumbing", "docs", "plan", root, "--facts", incompleteFacts, "--json")
 	if refused.exitCode != 3 || parseErrorEnvelope(t, refused.stderr).Error.Code != "refusal.incomplete-facts" {
 		t.Fatalf("incomplete facts result=%+v", refused)
 	}
@@ -647,7 +799,7 @@ func TestDocsPlan_IncompleteFactsCollisionAndUsage(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := renderTargetSnapshot(t, collisionRoot)
-	collision := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", collisionRoot, "--facts", facts, "--json")
+	collision := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "plumbing", "docs", "plan", collisionRoot, "--facts", facts, "--json")
 	if collision.exitCode != 3 || parseErrorEnvelope(t, collision.stderr).Error.Code != "refusal.output-collision" {
 		t.Fatalf("collision result=%+v", collision)
 	}
@@ -662,7 +814,7 @@ func TestDocsPlan_IncompleteFactsCollisionAndUsage(t *testing.T) {
 		t.Fatalf("collision plan changed target: before=%v after=%v", before, after)
 	}
 
-	usage := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", root, "--json")
+	usage := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "plumbing", "docs", "plan", root, "--json")
 	if usage.exitCode != 2 || usage.stdout != "" || !strings.HasPrefix(usage.stderr, "lds: ") {
 		t.Fatalf("missing required facts flag usage=%+v", usage)
 	}
@@ -688,7 +840,7 @@ func TestDocsPlan_BrokenLinkIsDiagnosticNotVeto(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := renderTargetSnapshot(t, root)
-	r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "docs", "plan", root, "--facts", filepath.Join(fixture, "facts.json"), "--json")
+	r := run(t, []string{"XDG_CONFIG_HOME=" + t.TempDir()}, "plumbing", "docs", "plan", root, "--facts", filepath.Join(fixture, "facts.json"), "--json")
 	if r.exitCode != 0 || r.stderr != "" {
 		t.Fatalf("diagnostic plan exit=%d stderr=%q", r.exitCode, r.stderr)
 	}
@@ -727,7 +879,7 @@ func TestDocsInventory_UnsafeTargetRefuses(t *testing.T) {
 	if err := os.Symlink(root, alias); err != nil {
 		t.Fatal(err)
 	}
-	r := run(t, nil, "docs", "inventory", alias, "--json")
+	r := run(t, nil, "plumbing", "docs", "inventory", alias, "--json")
 	if r.exitCode != 3 || r.stdout != "" {
 		t.Fatalf("unsafe target exit=%d stdout=%q stderr=%q; want refusal 3 and no partial inventory", r.exitCode, r.stdout, r.stderr)
 	}
@@ -752,7 +904,7 @@ func TestDocsReadOnly_ExactJSONAndExits(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	r := run(t, nil, "docs", "inventory", root, "--json")
+	r := run(t, nil, "plumbing", "docs", "inventory", root, "--json")
 	want := fmt.Sprintf(`{"schemaVersion":1,"operation":"docs inventory","files":[{"path":"README.md","sha256":"%x","size":%d},{"path":"docs/target.md","sha256":"%x","size":%d},{"path":"engineering/guide.md","sha256":"%x","size":%d}],"links":[{"source":"README.md","line":1,"target":"engineering/guide.md","kind":"inline"},{"source":"engineering/guide.md","line":1,"target":"../docs/target.md","kind":"reference"}],"skipped":[]}`+"\n",
 		sha256.Sum256([]byte(files["README.md"])), len(files["README.md"]),
 		sha256.Sum256([]byte(files["docs/target.md"])), len(files["docs/target.md"]),
@@ -761,7 +913,7 @@ func TestDocsReadOnly_ExactJSONAndExits(t *testing.T) {
 		t.Fatalf("inventory: exit=%d stdout=%q stderr=%q; want stdout=%q", r.exitCode, r.stdout, r.stderr, want)
 	}
 
-	r = run(t, nil, "docs", "validate", root, "--json")
+	r = run(t, nil, "plumbing", "docs", "validate", root, "--json")
 	if r.exitCode != 0 || r.stdout != `{"schemaVersion":1,"operation":"docs validate","findings":[],"skipped":[]}`+"\n" || r.stderr != "" {
 		t.Fatalf("clean validate: exit=%d stdout=%q stderr=%q", r.exitCode, r.stdout, r.stderr)
 	}
@@ -770,7 +922,7 @@ func TestDocsReadOnly_ExactJSONAndExits(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "docs", "links.md"), []byte(links), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	r = run(t, nil, "docs", "validate", root, "--json")
+	r = run(t, nil, "plumbing", "docs", "validate", root, "--json")
 	want = `{"schemaVersion":1,"operation":"docs validate","findings":[{"code":"validation.local-target-missing","path":"docs/links.md","line":2,"target":"reference/missing.md#install","message":"local file target is missing: reference/missing.md#install"}],"skipped":[{"source":"docs/links.md","line":3,"code":"inventory.external-skipped","reason":"external URL is not fetched"},{"source":"docs/links.md","line":4,"code":"inventory.fragment-only-skipped","reason":"fragment-only target is not checked"}]}` + "\n"
 	if r.exitCode != 1 || r.stdout != want || parseErrorEnvelope(t, r.stderr).Error.Code != "validation.local-target-missing" {
 		t.Fatalf("finding validate: exit=%d stdout=%q stderr=%q; want stdout=%q", r.exitCode, r.stdout, r.stderr, want)
@@ -779,7 +931,7 @@ func TestDocsReadOnly_ExactJSONAndExits(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "docs", "links.md"), []byte("[external](https://example.invalid)\n[fragment](#only)\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	r = run(t, nil, "docs", "validate", root, "--json")
+	r = run(t, nil, "plumbing", "docs", "validate", root, "--json")
 	want = `{"schemaVersion":1,"operation":"docs validate","findings":[],"skipped":[{"source":"docs/links.md","line":1,"code":"inventory.external-skipped","reason":"external URL is not fetched"},{"source":"docs/links.md","line":2,"code":"inventory.fragment-only-skipped","reason":"fragment-only target is not checked"}]}` + "\n"
 	if r.exitCode != 0 || r.stderr != "" || r.stdout != want {
 		t.Fatalf("skips-only validate: exit=%d stdout=%q stderr=%q; want stdout=%q", r.exitCode, r.stdout, r.stderr, want)
@@ -789,16 +941,16 @@ func TestDocsReadOnly_ExactJSONAndExits(t *testing.T) {
 func TestDocsReadOnly_UsageMissingAndIO(t *testing.T) {
 	for _, leaf := range []string{"inventory", "validate"} {
 		t.Run(leaf, func(t *testing.T) {
-			usage := run(t, nil, "docs", leaf, "--json")
+			usage := run(t, nil, "plumbing", "docs", leaf, "--json")
 			if usage.exitCode != 2 || usage.stdout != "" || !strings.HasPrefix(usage.stderr, "lds: ") {
 				t.Fatalf("usage: %+v", usage)
 			}
-			missing := run(t, nil, "docs", leaf, filepath.Join(t.TempDir(), "absent"), "--json")
+			missing := run(t, nil, "plumbing", "docs", leaf, filepath.Join(t.TempDir(), "absent"), "--json")
 			if missing.exitCode != 1 || missing.stdout != "" || parseErrorEnvelope(t, missing.stderr).Error.Code != "validation.target-root-missing" {
 				t.Fatalf("missing root: %+v", missing)
 			}
 			tooLong := filepath.Join(t.TempDir(), strings.Repeat("x", 256))
-			failure := run(t, nil, "docs", leaf, tooLong, "--json")
+			failure := run(t, nil, "plumbing", "docs", leaf, tooLong, "--json")
 			if failure.exitCode != 4 || failure.stdout != "" || !strings.HasPrefix(parseErrorEnvelope(t, failure.stderr).Error.Code, "internal.") {
 				t.Fatalf("I/O path failure: %+v", failure)
 			}
@@ -917,7 +1069,7 @@ func writeRenderAsset(t *testing.T, base, relative string, data []byte) {
 // The property is what makes the asset list load-bearing: without it, an
 // edited shipped asset could leave the digest where it was.
 func TestManifest_DigestCommitsToTheDocument(t *testing.T) {
-	r := run(t, nil, "manifest", "--json")
+	r := run(t, nil, "plumbing", "manifest", "--json")
 	if r.exitCode != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", r.exitCode, r.stderr)
 	}
@@ -945,12 +1097,12 @@ func TestManifest_DigestCommitsToTheDocument(t *testing.T) {
 // document every time, so neither the verb walk nor the asset walk may vary
 // with map or filesystem iteration order.
 func TestManifest_IsDeterministic(t *testing.T) {
-	first := run(t, nil, "manifest", "--json")
+	first := run(t, nil, "plumbing", "manifest", "--json")
 	if first.exitCode != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", first.exitCode, first.stderr)
 	}
 	for i := range 2 {
-		again := run(t, nil, "manifest", "--json")
+		again := run(t, nil, "plumbing", "manifest", "--json")
 		if again.stdout != first.stdout {
 			t.Fatalf("run %d differs from the first; the manifest is not deterministic", i+2)
 		}
@@ -974,12 +1126,62 @@ func TestInstallLoop(t *testing.T) {
 			t.Fatalf("after install, %s: %v", f, err)
 		}
 	}
+	skillBytes, err := os.ReadFile(filepath.Join(skillDir, "SKILL.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRows := map[string]bool{
+		"lds plumbing doctor":                false,
+		"lds plumbing manifest":              false,
+		"lds plumbing docs apply <root>":     false,
+		"lds plumbing docs inventory <root>": false,
+		"lds plumbing docs plan <root>":      false,
+		"lds plumbing docs render <root>":    false,
+		"lds plumbing docs validate <root>":  false,
+	}
+	var rows []string
+	for _, line := range strings.Split(string(skillBytes), "\n") {
+		if !strings.HasPrefix(line, "| `lds ") {
+			continue
+		}
+		end := strings.Index(line, "` |")
+		if end < 0 {
+			t.Fatalf("malformed generated verb table row: %q", line)
+		}
+		invocation := line[3:end]
+		rows = append(rows, invocation)
+		if _, ok := wantRows[invocation]; ok {
+			wantRows[invocation] = true
+		}
+	}
+	if len(rows) != len(wantRows) {
+		t.Fatalf("generated skill has %d verb rows %v, want exactly %d canonical plumbing rows", len(rows), rows, len(wantRows))
+	}
+	for invocation, found := range wantRows {
+		if !found {
+			t.Errorf("generated skill omits %q; rows=%v", invocation, rows)
+		}
+	}
+	stampBytes, err := os.ReadFile(filepath.Join(skillDir, ".lds-manifest-stamp.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stamp struct {
+		Files map[string]string `json:"files"`
+	}
+	if err := json.Unmarshal(stampBytes, &stamp); err != nil {
+		t.Fatalf("decode generated stamp: %v", err)
+	}
+	skillHash := sha256.Sum256(skillBytes)
+	if stamp.Files["SKILL.md"] != hex.EncodeToString(skillHash[:]) || len(stamp.Files) != 2 {
+		t.Fatalf("generated stamp files = %v; want exact generated files with SKILL.md hash %x", stamp.Files, skillHash)
+	}
 
 	if r := run(t, env, "install", "claude-code", "--json"); r.exitCode != 0 || !strings.Contains(r.stdout, `"status":"current"`) {
 		t.Fatalf("re-install: exit=%d stdout=%q, want status current", r.exitCode, r.stdout)
 	}
 
-	if r := run(t, env, "doctor"); r.exitCode != 0 {
+	if r := run(t, env, "plumbing", "doctor"); r.exitCode != 0 {
 		t.Fatalf("doctor on a current install: exit=%d stdout=%q stderr=%q", r.exitCode, r.stdout, r.stderr)
 	}
 
@@ -1375,7 +1577,7 @@ func TestDoctor_JSON_States(t *testing.T) {
 			env := []string{"LDS_CLAUDE_SKILLS_DIR=" + skills}
 			c.setup(t, skills, env)
 
-			r := run(t, env, "doctor", "--json")
+			r := run(t, env, "plumbing", "doctor", "--json")
 			if r.exitCode != c.wantExit {
 				t.Fatalf("doctor --json: exit=%d, want %d; stdout=%q stderr=%q", r.exitCode, c.wantExit, r.stdout, r.stderr)
 			}
@@ -1433,7 +1635,7 @@ func TestDoctor_TextMode_StateLine(t *testing.T) {
 	env := []string{"LDS_CLAUDE_SKILLS_DIR=" + skills}
 	skillDir := filepath.Join(skills, "lds")
 
-	r := run(t, env, "doctor")
+	r := run(t, env, "plumbing", "doctor")
 	if r.exitCode != 0 {
 		t.Fatalf("doctor: exit=%d, want 0; stdout=%q stderr=%q", r.exitCode, r.stdout, r.stderr)
 	}

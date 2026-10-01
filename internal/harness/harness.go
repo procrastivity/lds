@@ -7,19 +7,20 @@
 package harness
 
 import (
+	"strings"
+
 	"github.com/procrastivity/lds/internal/manifest"
 	"github.com/procrastivity/lds/internal/surface"
 )
 
-// Projectable selects the plumbing-kind subset of verbs (C4.3): only verbs
-// that are deterministic, JSON + exit codes, no LLM belong in a harness
-// projection, because inside a harness the model already is the LLM
-// (llm-kind verbs) or the projection has no live MCP surface to run
-// against (control-plane-kind verbs).
+// Projectable selects canonical plumbing-kind members beneath the plumbing
+// namespace (C4.3, C8.3, C8.5). Kind alone is not an audience decision:
+// root porcelain stays out even when deterministic, and only qualified
+// namespace members are projected.
 func Projectable(verbs []manifest.Verb) []manifest.Verb {
 	out := make([]manifest.Verb, 0, len(verbs))
 	for _, v := range verbs {
-		if v.Kind == surface.Plumbing {
+		if v.Kind == surface.Plumbing && strings.HasPrefix(v.Name, "plumbing ") {
 			out = append(out, v)
 		}
 	}

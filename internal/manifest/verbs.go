@@ -71,6 +71,9 @@ func collect(root, cmd *cobra.Command, out *[]Verb) error {
 			Args:        walkArgs(child),
 			Description: child.Short,
 		}
+		if canonical, ok := surface.AliasOf(child); ok {
+			v.AliasOf = canonical
+		}
 		if schema, ok := child.Annotations[outputSchemaAnnotation]; ok && schema != "" {
 			v.OutputSchema = json.RawMessage(schema)
 		}

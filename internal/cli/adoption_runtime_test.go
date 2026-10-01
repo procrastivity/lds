@@ -55,7 +55,7 @@ func TestDocsAdoptionRuntime_PreservationMatrix(t *testing.T) {
 			}
 			before := renderTargetSnapshot(t, root)
 			env := []string{"XDG_CONFIG_HOME=" + t.TempDir()}
-			planRun := run(t, env, "docs", "plan", root, "--facts", facts, "--json")
+			planRun := run(t, env, "plumbing", "docs", "plan", root, "--facts", facts, "--json")
 			wantExit := 0
 			if scenario.VetoAllCreates {
 				wantExit = 3
@@ -101,7 +101,7 @@ func TestDocsAdoptionRuntime_PreservationMatrix(t *testing.T) {
 			if err := os.WriteFile(planPath, []byte(planRun.stdout), 0o600); err != nil {
 				t.Fatal(err)
 			}
-			appliedRun := run(t, env, "docs", "apply", root, "--facts", facts, "--plan", planPath, "--confirm", *plan.PlanDigest, "--json")
+			appliedRun := run(t, env, "plumbing", "docs", "apply", root, "--facts", facts, "--plan", planPath, "--confirm", *plan.PlanDigest, "--json")
 			if appliedRun.exitCode != wantExit || (wantExit == 0 && appliedRun.stderr != "") {
 				t.Fatalf("apply exit=%d stderr=%q stdout=%q, want %d", appliedRun.exitCode, appliedRun.stderr, appliedRun.stdout, wantExit)
 			}
@@ -143,7 +143,7 @@ func TestDocsAdoptionRuntime_PreservationMatrix(t *testing.T) {
 			}
 			// A second review of the resulting tree is an identical no-op.
 			postApply := renderTargetSnapshot(t, root)
-			secondPlan := run(t, env, "docs", "plan", root, "--facts", facts, "--json")
+			secondPlan := run(t, env, "plumbing", "docs", "plan", root, "--facts", facts, "--json")
 			var identical adoption.PlanResult
 			if secondPlan.exitCode != 0 || json.Unmarshal([]byte(secondPlan.stdout), &identical) != nil || identical.PlanDigest == nil {
 				t.Fatalf("second plan = %+v", secondPlan)
@@ -154,7 +154,7 @@ func TestDocsAdoptionRuntime_PreservationMatrix(t *testing.T) {
 			if err := os.WriteFile(planPath, []byte(secondPlan.stdout), 0o600); err != nil {
 				t.Fatal(err)
 			}
-			secondRun := run(t, env, "docs", "apply", root, "--facts", facts, "--plan", planPath, "--confirm", *identical.PlanDigest, "--json")
+			secondRun := run(t, env, "plumbing", "docs", "apply", root, "--facts", facts, "--plan", planPath, "--confirm", *identical.PlanDigest, "--json")
 			var current adoption.ApplyResult
 			if secondRun.exitCode != 0 || json.Unmarshal([]byte(secondRun.stdout), &current) != nil || current.Status != "current" || len(current.Created) != 0 || len(current.IdenticalUntouched) != 4 || !reflect.DeepEqual(postApply, renderTargetSnapshot(t, root)) {
 				t.Fatalf("identical rerun changed target: run=%+v result=%+v", secondRun, current)

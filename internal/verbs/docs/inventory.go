@@ -1,4 +1,4 @@
-// Package docs registers deterministic documentation plumbing beneath lds docs.
+// Package docs registers deterministic documentation plumbing beneath lds plumbing docs.
 package docs
 
 import (

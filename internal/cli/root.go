@@ -10,6 +10,7 @@ import (
 	"github.com/procrastivity/lds/internal/buildinfo"
 	"github.com/procrastivity/lds/internal/cliflags"
 	"github.com/procrastivity/lds/internal/iostreams"
+	"github.com/procrastivity/lds/internal/surface"
 	docsverb "github.com/procrastivity/lds/internal/verbs/docs"
 	doctorverb "github.com/procrastivity/lds/internal/verbs/doctor"
 	installverb "github.com/procrastivity/lds/internal/verbs/install"
@@ -50,11 +51,20 @@ func NewRootCommand(streams *iostreams.Streams, build buildinfo.Info) *cobra.Com
 	root.PersistentFlags().BoolP("verbose", "v", false, "extra diagnostic lines on stderr")
 
 	root.AddCommand(versionverb.Command(streams, build))
-	root.AddCommand(manifestverb.Command(streams, build, root))
+	plumbing := &cobra.Command{Use: "plumbing", Short: "deterministic commands for skills and scripts"}
+	plumbing.AddCommand(manifestverb.Command(streams, build, root))
+	plumbing.AddCommand(doctorverb.Command(streams, build, root))
+	plumbing.AddCommand(docsverb.Command(streams))
+	root.AddCommand(plumbing)
+
+	manifestAlias := manifestverb.Command(streams, build, root)
+	surface.Alias(manifestAlias, "plumbing manifest")
+	root.AddCommand(manifestAlias)
 	root.AddCommand(installverb.Command(streams, build, root))
 	root.AddCommand(uninstallverb.Command(streams))
-	root.AddCommand(doctorverb.Command(streams, build, root))
-	root.AddCommand(docsverb.Command(streams))
+	doctorAlias := doctorverb.Command(streams, build, root)
+	surface.Alias(doctorAlias, "plumbing doctor")
+	root.AddCommand(doctorAlias)
 
 	// Register the tool's own verbs here, one package per verb under
 	// internal/verbs/ (C1.4). Every Command constructor ends with

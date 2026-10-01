@@ -1,63 +1,67 @@
 # BDS-251 Stage 2 Step 3: CLI surface audit
 
-**Status:** Reviewed against the supplied BDS-251 Step 1/2 baseline. Audit
-only: no `lds plumbing` namespace exists yet, and no command is moved here.
+**Status:** Step 3 audit approved; BDS-251 Step 4 placement is implemented in
+the current local tree. The first column records the pre-Step-4 spelling
+audited; the disposition column records the current command tree.
 
-This records the audience decision for every current runnable application
-leaf beneath the root command. The `docs` node is a grouping command with five
+This records the audience decision for every runnable application leaf in the
+pre-Step-4 root command. Its `docs` node was a grouping command with five
 leaves; Cobra's built-in `help` and `completion` commands are framework
-infrastructure, not application verbs. The recommendations follow
+infrastructure, not application verbs. Placement follows
 [ADR-0002](../decisions/0002-bds-251-adoption-workflow-boundary.md) and
 [Toolsmith C8.3–C8.5](https://github.com/procrastivity/toolsmith/blob/main/CONTRACT.md#c8--shapes):
 audience is expressed by command-tree placement, while kind describes the
-deterministic/LLM/control-plane contract. Every current application leaf has
-kind `plumbing`; that fact alone does not make it skill-projectable. Under
-the future boundary, a skill receives only canonical members beneath
-`lds plumbing` whose kind is also `plumbing`.
+deterministic/LLM/control-plane contract. Every audited leaf has kind
+`plumbing`; kind alone does not make a verb skill-projectable. Projection now
+requires both a canonical `lds plumbing` path and kind `plumbing`.
 
-| Current spelling | Intended audience · current kind | Disposition when the namespace is implemented | Projectable under namespace **and** kind? | Existing consumer justifies compatibility alias? |
+| Pre-Step-4 spelling | Intended audience · kind | Current registration: root porcelain or canonical plumbing member | Projectable under namespace **and** kind? | Real existing consumer justifies root alias? |
 | --- | --- | --- | --- | --- |
-| `lds version` | Human/operator checking build identity · `plumbing` | Retain as root porcelain. The manifest already carries the same version, commit, and date for machine consumers. | No: root-only, despite its kind. | No skill/script call site found. |
-| `lds manifest` | Skill/scripts reading the machine self-description; human-readable summary is also available · `plumbing` | Canonical `lds plumbing manifest`; retain `lds manifest` as a compatibility alias. | Yes, through the canonical member only; do not project the root alias twice. | **Yes.** Shared [agent guidance](../../assets/agent-guidance.md) tells the installed skill to run `lds manifest --json`. |
-| `lds install <harness>` | Human/operator installing or refreshing the generated harness skill (`<harness>` is optional for install-all mode) · `plumbing` | Retain as root porcelain. | No: root-only, despite its kind. | No. The generated skill tells the user how to reinstall after an upgrade; installation is not a skill operation. |
-| `lds uninstall <harness>` | Human/operator removing the generated harness skill · `plumbing` | Retain as root porcelain. | No: root-only, despite its kind. | No skill operation calls it. |
-| `lds doctor` | Human/operator diagnosis and the current Claude skill's installation-diagnosis task · `plumbing` | Retain root porcelain and provide canonical `lds plumbing doctor` as an alias pair with the same deliverable. | Yes, through the canonical member only. | **Yes.** The [Claude skill judgment](../../assets/templates/skills/claude-code/judgment.md) explicitly covers diagnosing the generated installation, and `doctor` is the corresponding projected verb. A pair must meet C8.5's output/help parity and canonical failure-diagnostic requirements. |
-| `lds docs apply <root>` | Future adoption skill/script applying an explicitly reviewed plan · `plumbing` | Canonical `lds plumbing docs apply`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified; the implementation and its tests are in the unpushed baseline. |
-| `lds docs inventory <root>` | Future adoption skill/script inspecting the bounded documentation surface · `plumbing` | Canonical `lds plumbing docs inventory`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified; the implementation and its tests are in the unpushed baseline. |
-| `lds docs plan <root>` | Future adoption skill/script building the read-only review artifact · `plumbing` | Canonical `lds plumbing docs plan`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified; the implementation and its tests are in the unpushed baseline. |
-| `lds docs render <root>` | Future adoption skill/script rendering candidate documentation · `plumbing` | Canonical `lds plumbing docs render`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified; the implementation and its tests are in the unpushed baseline. |
-| `lds docs validate <root>` | Future adoption skill/script checking supported local links · `plumbing` | Canonical `lds plumbing docs validate`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified; the implementation and its tests are in the unpushed baseline. |
+| `lds version` | Human/operator checking build identity · `plumbing` | Retain `lds version` as root porcelain. The manifest carries the same version, commit, and date for machine consumers. | No: root-only, despite its kind. | No skill/script call site found. |
+| `lds manifest` | Skill/scripts reading the machine self-description; human-readable summary is also available · `plumbing` | Canonical `lds plumbing manifest`; retain `lds manifest` as a root compatibility alias. | Yes, canonical member only; the alias is not projected. | **Yes.** Previously generated skills and shared guidance called `lds manifest --json`; retaining the alias lets already-installed older skill versions continue working. Current guidance prefers the canonical path. |
+| `lds install <harness>` | Human/operator installing or refreshing the generated harness skill (`<harness>` is optional for install-all mode) · `plumbing` | Retain `lds install <harness>` as root porcelain. | No: root-only, despite its kind. | No. The generated skill tells the user how to reinstall after an upgrade; installation is not a skill operation. |
+| `lds uninstall <harness>` | Human/operator removing the generated harness skill · `plumbing` | Retain `lds uninstall <harness>` as root porcelain. | No: root-only, despite its kind. | No skill operation calls it. |
+| `lds doctor` | Human/operator diagnosis and the current Claude skill's installation-diagnosis task · `plumbing` | Canonical `lds plumbing doctor`; retain `lds doctor` as a root compatibility alias. | Yes, canonical member only; the alias is not projected. | **Yes.** Previously generated skills expose root `doctor` for installation diagnosis; preserving that path keeps existing generated skill versions working. |
+| `lds docs apply <root>` | Future adoption skill/script applying an explicitly reviewed plan · `plumbing` | Canonical `lds plumbing docs apply`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified. |
+| `lds docs inventory <root>` | Future adoption skill/script inspecting the bounded documentation surface · `plumbing` | Canonical `lds plumbing docs inventory`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified. |
+| `lds docs plan <root>` | Future adoption skill/script building the read-only review artifact · `plumbing` | Canonical `lds plumbing docs plan`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified. |
+| `lds docs render <root>` | Future adoption skill/script rendering candidate documentation · `plumbing` | Canonical `lds plumbing docs render`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified. |
+| `lds docs validate <root>` | Future adoption skill/script checking supported local links · `plumbing` | Canonical `lds plumbing docs validate`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified. |
 
-The `manifest` and `doctor` aliases are compatibility judgments, not
-implemented registrations. No blanket move or additional alias is justified
-by this audit. The future adoption skill genuinely needs the five `docs`
-operations as plumbing. Under C8.4 it also needs the same-named deterministic
-adoption document at `lds plumbing adopt`, paired with the future LLM shape
-`lds adopt`; neither command exists today, and the paired workflow remains
-deferred by ADR-0002.
+The `manifest` and `doctor` aliases use the same constructors as their
+canonical members. The manifest records `alias-of` only on these two root
+rows. No blanket move or speculative alias was added. A future adoption
+skill needs the five docs operations as plumbing; under C8.4 it will also
+need the same-named deterministic document `lds plumbing adopt` and its
+shared-flow root verb `lds adopt`. Neither verb nor a flow asset exists yet;
+ADR-0002 continues to defer that paired workflow.
 
 ## Observed projections
 
-- `lds --help` lists the five current root leaves plus the `docs` grouping
-  node (and Cobra's built-ins); `lds docs --help` lists the five docs leaves.
-  The [manifest walker](../../internal/manifest/verbs.go) excludes framework
-  built-ins and records runnable leaves by their current qualified spelling.
-- `lds manifest --json` reports ten application leaves, all with kind
-  `plumbing`; it has no audience field. `lds install claude-code` in a
-  disposable skills directory produced a ten-row skill table because
-  [the current projection filter](../../internal/harness/harness.go) checks
-  kind alone. This is the current behavior, not the future C8.3 rule.
-- After that disposable install, `lds doctor --json` reported an empty
-  findings list and the Claude Code target as `current`. Doctor derives the
-  expected generated tree and compares it with the host's installed tree,
-  which is why the existing skill's diagnosis task has a real consumer.
-- The shared guidance asset still says documentation generation/reconciliation
-  commands are not implemented, although the five `docs` leaves now exist in
-  this baseline. Treat that paragraph as stale scope prose, not as evidence
-  that those leaves should stay out of the future adoption skill.
+- `lds --help` lists human root commands, the two compatibility aliases, and
+  the `plumbing` group; it does not list docs leaves. `lds plumbing --help`
+  lists `manifest`, `doctor`, and the `docs` group; `lds plumbing docs --help`
+  lists the five docs leaves. Cobra's built-ins remain framework help only.
+- `lds plumbing manifest --json` reports twelve application leaves, all with
+  kind `plumbing`, and records `alias-of` only on root `manifest` and
+  `doctor`. The [manifest walker](../../internal/manifest/verbs.go) excludes
+  framework built-ins and records canonical qualified paths for plumbing
+  members.
+- `lds install claude-code` in a disposable skills directory produces seven
+  table rows: canonical `plumbing manifest`, `plumbing doctor`, and the five
+  `plumbing docs …` members. The [projection filter](../../internal/harness/harness.go)
+  checks namespace and kind, excluding root aliases and root-only
+  `version`, `install`, and `uninstall`. The generated skill is stamped and
+  `lds plumbing doctor --json` reports the target as `current`.
+- Alias tests pin byte-identical stdout/stderr and exit codes in text and JSON
+  modes, help differing only by command path, and plumbing-canonical failure
+  diagnostics. Docs payload values such as `"operation":"docs plan"` remain
+  unchanged; deterministic adoption behavior is exercised through
+  `lds plumbing docs plan/apply`.
 
-The root registrations, leaf annotations, and current projection are visible
-in [`internal/cli/root.go`](../../internal/cli/root.go), the individual
-constructors under [`internal/verbs`](../../internal/verbs), and the
+The root registrations, leaf annotations, and projection are visible in
+[`internal/cli/root.go`](../../internal/cli/root.go), the constructors under
+[`internal/verbs`](../../internal/verbs), and the
 [CLI end-to-end tests](../../internal/cli/e2e_test.go). This audit records
-placement only; it does not implement Step 4 or establish a namespace.
+the placement decision and its Step 4 implementation; it does not implement
+the deferred `lds adopt` workflow or establish a flow asset.

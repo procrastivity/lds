@@ -8,11 +8,12 @@ record settled behavior in decisions, specs, and reference docs here.
 ## Current state
 
 `toolsmith new --name lds` provided a Go CLI, embedded assets and override
-resolution, a manifest, and harness-management plumbing: `version`,
-`manifest`, `install`, `uninstall`, `doctor`. These commands manage the CLI
-and projected agent skills. They do **not** create, assess, or reconcile
-project documentation yet.
-Five bounded `lds docs` plumbing leaves now inventory, check supported local
+resolution, and harness management. The root porcelain retains `version`,
+`install`, and `uninstall`; the canonical plumbing members are
+`lds plumbing manifest` and `lds plumbing doctor`, with reviewed root
+aliases. These commands manage the CLI and projected agent skills; they do
+**not** create, assess, or reconcile project documentation.
+Five bounded `lds plumbing docs` leaves now inventory, check supported local
 links, render the four adoption assets, preview a plan, and exclusively create
 missing approved files after reviewed digest confirmation. See the
 [runtime handoff](adoption-operations-runtime-handoff.md) for evidence and
@@ -77,7 +78,7 @@ future `lds init` would bootstrap documentation *inside another project*.
 | Porcelain | `lds update` | Bring one project's docs into line with its changed code and decisions. |
 | Porcelain | `lds review` | Audit coverage, links, and cross-track consistency. |
 | Porcelain | `lds reconcile` | Compare projects and guide explicit port/backport/divergence decisions. |
-| Plumbing (implemented, bounded) | `lds docs inventory`, `validate`, `render`, `plan`, `apply` | Report scoped files/links, check supported local targets, render four assets, preview and create missing approved files without an LLM. |
+| Plumbing (implemented, bounded) | `lds plumbing docs inventory`, `validate`, `render`, `plan`, `apply` | Report scoped files/links, check supported local targets, render four assets, preview and create missing approved files without an LLM. |
 | Plumbing | reconciliation scan and journal operations | Produce candidate differences and persist decisions without assuming a 1:1 port. |
 
 Agent-specific skills worth evaluating: adopting a partial tree, drafting

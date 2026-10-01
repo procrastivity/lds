@@ -1,7 +1,8 @@
-// Package manifest implements the `lds manifest` verb: the tool's own
-// machine-readable declaration of itself (C3). It reads the chassis's
-// single verb-registration point directly off the built root command — no
-// second registry.
+// Package manifest implements the `lds plumbing manifest` verb and its
+// root `lds manifest` compatibility alias: the tool's own machine-readable
+// declaration of itself (C3). It reads the chassis's single
+// verb-registration point directly off the built root command — no second
+// registry.
 package manifest
 
 import (
@@ -17,7 +18,7 @@ import (
 	"github.com/procrastivity/lds/internal/surface"
 )
 
-// Command constructs the `lds manifest` verb. root is the same
+// Command constructs the canonical `manifest` verb. root is the same
 // *cobra.Command NewRootCommand is assembling — captured by reference, so
 // by the time RunE executes every other verb registered on it, since
 // Command is called during that same construction.

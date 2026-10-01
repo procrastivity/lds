@@ -112,9 +112,9 @@ func InstallDir() (string, error) {
 }
 
 // Generate renders m into the generated tree's content, keyed by path
-// relative to InstallDir(). It filters m's verbs to the plumbing subset
-// (harness.Projectable, C4.3) before rendering — the manifest's own full
-// verb list is never projected as-is.
+// relative to InstallDir(). It filters m's verbs to canonical plumbing-
+// namespace members (harness.Projectable, C4.3/C8.3) before rendering —
+// root aliases and the manifest's other verbs are never projected as-is.
 func Generate(m manifest.Manifest) (map[string][]byte, error) {
 	verbs := harness.Projectable(m.Verbs)
 

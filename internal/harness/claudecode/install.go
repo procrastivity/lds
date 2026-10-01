@@ -10,10 +10,10 @@ import (
 	"github.com/procrastivity/lds/internal/manifest"
 )
 
-// Install renders m's plumbing-verb subset into InstallDir() and stamps
-// the result with tool.version, schemaVersion, and a per-file checksum
-// (C4.4). It always overwrites whatever it finds and writes the stamp
-// unconditionally — refusing to overwrite a hand-edited or unstamped
+// Install renders m's canonical plumbing-namespace subset into InstallDir()
+// and stamps the result with tool.version, schemaVersion, and a per-file
+// checksum (C4.4). It always overwrites whatever it finds and writes the
+// stamp unconditionally — refusing to overwrite a hand-edited or unstamped
 // target is the install verb's job (internal/harness.Status plus
 // internal/harness.Refusal), not this function's, kept out of Install so
 // every harness stays policy-free (C4.3) and so a caller that has already
