@@ -13,6 +13,7 @@ func TestResolveAdoptionTemplateResolutionOrderAndShadowing(t *testing.T) {
 	t.Cleanup(func() { executable = originalExecutable })
 
 	paths := []string{
+		"flows/adopt.md",
 		"templates/adoption/engineering/README.md",
 		"templates/adoption/engineering/product/overview.md",
 		"templates/adoption/docs/README.md",

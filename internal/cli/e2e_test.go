@@ -366,6 +366,7 @@ func TestManifest_JSON_ListsAdoptionTemplatesWithChecksums(t *testing.T) {
 	}
 
 	wantPaths := []string{
+		"flows/adopt.md",
 		"templates/adoption/docs/README.md",
 		"templates/adoption/docs/reference/usage.md",
 		"templates/adoption/engineering/README.md",
