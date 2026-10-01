@@ -16,6 +16,7 @@ import (
 	doctorverb "github.com/procrastivity/lds/internal/verbs/doctor"
 	installverb "github.com/procrastivity/lds/internal/verbs/install"
 	manifestverb "github.com/procrastivity/lds/internal/verbs/manifest"
+	reconcileverb "github.com/procrastivity/lds/internal/verbs/reconcile"
 	uninstallverb "github.com/procrastivity/lds/internal/verbs/uninstall"
 	versionverb "github.com/procrastivity/lds/internal/verbs/version"
 )
@@ -57,6 +58,7 @@ func NewRootCommand(streams *iostreams.Streams, build buildinfo.Info) *cobra.Com
 	plumbing.AddCommand(manifestverb.Command(streams, build, root))
 	plumbing.AddCommand(doctorverb.Command(streams, build, root))
 	plumbing.AddCommand(docsverb.Command(streams))
+	plumbing.AddCommand(reconcileverb.Command(streams))
 	root.AddCommand(plumbing)
 
 	manifestAlias := manifestverb.Command(streams, build, root)

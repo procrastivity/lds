@@ -138,7 +138,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	if plumbing.exitCode != 0 || plumbing.stderr != "" || !strings.Contains(plumbing.stdout, "\n  lds plumbing ") {
 		t.Fatalf("plumbing help: exit=%d stdout=%q stderr=%q", plumbing.exitCode, plumbing.stdout, plumbing.stderr)
 	}
-	for _, member := range []string{"doctor", "manifest", "docs"} {
+	for _, member := range []string{"doctor", "manifest", "docs", "reconcile"} {
 		if !strings.Contains(plumbing.stdout, "\n  "+member) {
 			t.Errorf("plumbing help omits canonical member %q: %s", member, plumbing.stdout)
 		}
@@ -156,7 +156,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 		}
 	}
 	for _, path := range []string{
-		"plumbing adopt", "plumbing doctor", "plumbing manifest",
+		"plumbing adopt", "plumbing doctor", "plumbing manifest", "plumbing reconcile scan",
 		"plumbing docs apply", "plumbing docs inventory", "plumbing docs plan",
 		"plumbing docs render", "plumbing docs validate",
 	} {
@@ -327,6 +327,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		"plumbing docs plan":      "",
 		"plumbing docs render":    "",
 		"plumbing docs validate":  "",
+		"plumbing reconcile scan": "",
 	}
 	seen := map[string]bool{}
 	projectable := 0
@@ -346,8 +347,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 13 || len(seen) != len(want) || projectable != 8 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want thirteen leaves and eight projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 14 || len(seen) != len(want) || projectable != 9 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want fourteen leaves and nine projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 
@@ -1141,6 +1142,7 @@ func TestInstallLoop(t *testing.T) {
 		"lds plumbing docs plan <root>":      false,
 		"lds plumbing docs render <root>":    false,
 		"lds plumbing docs validate <root>":  false,
+		"lds plumbing reconcile scan":        false,
 	}
 	var rows []string
 	for _, line := range strings.Split(string(skillBytes), "\n") {
