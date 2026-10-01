@@ -58,11 +58,14 @@ the latest journal observation. If a new scan changes evidence, `record` may
 append that observation without changing the decision; a decided candidate
 then requires explicit `reconsider`.
 
-The pair file is a caller-owned v1 JSON descriptor with `pairId`, `left` and
-`right` objects (`projectId`, full Git `revision`), and a declared `scope`.
+The pair file is a caller-owned JSON descriptor with required `schemaVersion: 1`,
+`pairId`, `left` and `right` objects (`projectId`, full Git `revision`), and a
+declared `scope`; no other fields are accepted at these object levels.
 `scope.leftPaths` and `scope.rightPaths` are the complete repo-relative file
 sets to inspect. `scope.candidates` contains unique stable `candidateKey`
-values and subsets of those paths for review bucketing. Any scoped path not in a
+values and subsets of those paths for review bucketing. Each bucket has exactly
+`candidateKey`, `leftPaths`, and `rightPaths` (all required); no correspondence,
+authority, or outcome is encoded in a bucket. Any scoped path not in a
 candidate bucket is emitted as a side-qualified unmatched scan candidate.
 Each side-qualified path may occur in at most one bucket; duplicate paths or
 overlapping buckets are invalid rather than silently assigning one bucket.
@@ -137,10 +140,16 @@ current correspondence. Many-to-many is outside v1 and is refused, not
 flattened. An edit to an already decided relationship requires `reconsider`;
 history remains intact.
 
-Each evidence/provenance item records `kind` (`artifact`, `missing`, or
-`synthetic`), project (or `synthetic`), pinned revision, repository-relative
-path or fixture key, SHA-256 where there is a source artifact, the bounded
-claim, and a claim-level trust value:
+Each reviewer `provenance` item has exactly `kind`, `projectId`, `revision`,
+`path`, `sha256`, `claim`, and `trust`. For `artifact`/`missing`, name a pair
+project, full pinned revision, normalized repo-relative path, and lowercase
+SHA-256 (`-` for missing). When it references a scanned row at that revision,
+`path` corresponds to the row's `key` and the hash must agree. Other reviewer
+references are assertions, not additional scanned evidence. Preserved review
+metadata can refer to an earlier pin after the observation changes. For
+`synthetic`, `projectId` is `synthetic`, `revision` and `sha256` are null, and
+`path` is the fixture key, never a claimed source path/hash. The bounded claim
+is non-empty and its claim-level trust is one of:
 `trusted`, `bounded`, `untrusted`, `contradictory`, or `synthetic`. Trust is
 about that claim, not blanket authority for a repository. Scanning never
 assigns semantic confidence: its value is `not-assessed`. A reviewer may record
@@ -173,25 +182,44 @@ top-level shape is:
 ```
 
 The journal is an append-only event history with a materialized read view; it
-does not store a second editable map. Each event has a consecutive `seq`, a
-unique caller-supplied `requestId`, `candidateId`, `type`, `actor`, UTC RFC 3339
-`at`, non-empty `rationale`, and the operation payload. `revision` is the last
-event sequence (zero for a newly created journal). The actor is supplied, never
-inferred from the host. Journal reads derive current correspondence, evidence,
-authority, and decision state by replaying events; arrays are sorted by
-`candidateId`, with history in increasing `seq` order.
+does not store a second editable map. Each event has exactly the following
+required fields, in this serialization order: `seq`, `requestId`, `candidateId`,
+`type`, `actor`, `at`, `rationale`, `request`, `scanIdentity`, `payload`.
+`seq` is a consecutive positive integer, `requestId` is unique across the
+journal, `at` is UTC RFC 3339, and `rationale` is non-empty. `revision` is the
+last event sequence (zero for a newly created journal). The actor is supplied,
+never inferred from the host. Journal reads derive current correspondence,
+evidence, authority, and decision state by replaying events; arrays are sorted
+by `candidateId`, with history in increasing `seq` order.
 The v1 event types are `candidate.recorded`, `evidence.observed`,
 `decision.recorded`, and `decision.reconsidered`; unknown event types are not
 silently ignored.
 
-All write requests are v1 JSON files with `requestId`,
-`expectedJournalRevision`, `actor`, `at`, `rationale`, and operation-specific
-fields. Each event retains the validated request fields (including the expected
-revision and evidence digest) and the consumed scan identity, so a retry can
-be compared with the original operation. For a **new** request ID, writes
+All write requests are JSON objects with required `schemaVersion: 1`,
+`requestId`, `expectedJournalRevision`, `candidateId`, `expectedEvidenceDigest`,
+`actor`, `at`, `rationale`, and the operation-specific fields below. `request`
+stores that **entire validated original request object**, not a selected subset
+or a projection reconstructed later. Equality for retry means JSON value
+equality, including every field and array order (object member order and
+whitespace are immaterial). Envelope `requestId`, `candidateId`, `actor`, `at`,
+and `rationale` must equal their request values. The request's expected revision
+must equal `seq - 1` for an appended event, and its expected evidence digest
+must equal the payload's digest.
+
+`scanIdentity` has exactly `scanSha256`, `pairSha256`, `candidateId`, and
+`evidenceDigest`. The first is the lowercase raw SHA-256 of the **exact consumed
+scan file bytes**, including whitespace and final newline; `pairSha256` is the
+raw lowercase SHA-256 reported for the consumed pair descriptor. The candidate
+and evidence values must match the selected scan candidate, envelope, request,
+and payload. Different serialized scan bytes are a different scan identity
+even when their parsed observations agree. Request equality **and** complete
+`scanIdentity` equality drive idempotence; an evidence digest alone does not.
+
+For a **new** request ID, writes
 require an exact journal revision and `expectedEvidenceDigest` for the
 candidate. `record` supplies the `candidateId`, reviewed correspondence,
-provenance/trust/confidence, and exact evidence from its scan. `decide` supplies
+provenance/trust/confidence; its exact observation is taken from the validated
+scan, not guessed from those reviewer fields. `decide` supplies
 the explicit authority declaration and outcome, and must match the latest
 observation in its scan. `reconsider` includes a fresh scan, trigger reference,
 replacement outcome, and the decision it supersedes. Under the writer lock,
@@ -204,17 +232,58 @@ have advanced the journal. The same ID with different fields or scan identity
 is a conflict. Only a new ID proceeds to revision/evidence checks and an append
 (success with `replayed: false`).
 
-The operation payloads are fixed: `record` requires `correspondence`,
-`provenance[]`, and `assessment`; `decide` requires `authority` and `outcome`;
-`reconsider` requires `supersedesSeq`, `trigger`, `authority`, and replacement
-`outcome`. A `deferred` outcome requires a non-empty trigger ID, trigger kind
+Every event `payload` begins with the same complete observation, in order:
+`candidateKey`, `snapshots`, `evidenceDigest`, `evidence`. `snapshots` is exactly
+`left` and `right`, each with `projectId` and full pinned `revision`. Each
+`evidence` item has exactly `kind`, `projectId`, `revision`, `key`, `sha256`, in
+that order, and the array follows the evidence-digest tuple sort above. This
+observation is copied from the selected valid scan candidate and its snapshots;
+its digest and candidate ID must recompute under the unchanged v1 formulas.
+Only scanned `artifact`/`missing` items enter this array. Reviewer `provenance`
+uses `path` (or the synthetic fixture key in that field), `claim`, and `trust`
+in addition to its kind/project/revision/hash; it is distinct from evidence's
+digest-bearing `key` and does not add evidence rows or alter their digest.
+
+| Event type / request operation | Additional request and payload fields after the common fields | Replay effect |
+| --- | --- | --- |
+| `candidate.recorded` / `record` | Required `correspondence`, `provenance`, `assessment`. Assessment has `code`, `confidence` (`level`, and a non-empty `rationale` for low/medium/high), and claim-level `trust`. | Introduce the previously absent candidate, exact observation and reviewed fields; authority is not declared, decision is `pending-review`, and `lastDecision` is null. |
+| `evidence.observed` / `record` | The same required reviewed fields as the first record. | Update the current observation and review metadata, never an existing authority/outcome or decision digest. On a decided candidate the supplied correspondence must equal the current one; changing it requires reconsideration. On a still-pending candidate an explicit record may replace reviewed correspondence subject to cardinality/member uniqueness. |
+| `decision.recorded` / `decide` | Required `authority`, `outcome`. | Select an outcome only for a recorded `pending-review` candidate and the same latest observed evidence; otherwise refuse, not overwrite a decision. |
+| `decision.reconsidered` / `reconsider` | Required `supersedesSeq`, `trigger`, `authority`, `outcome`; optional `correspondence`, `provenance`, `assessment` only as an all-or-none replacement group. | Validate that `supersedesSeq` names this candidate's latest decision event, then explicitly replace its outcome/authority and observed evidence. If the replacement group is absent, preserve the reviewed relationship/metadata; if present, replace it subject to all correspondence/provenance checks. Retain every superseded event. |
+
+These request-specific fields are copied unchanged into the corresponding
+payload; the common observation is derived from the consumed scan. A
+`reconsider` may consume new evidence directly without an intervening `record`;
+its expected digest must match its scan. A plain `decide` cannot. No operation
+implicitly transitions an existing decision because an observation changed.
+`trigger` is exactly `id`, `kind` (`event`, `date`, or `condition`), and
+`description`. `outcome` contains required `state` and only the fields appropriate
+to that state: `unresolved` and `divergence-retained` have no additional fields;
+`intent` requires `direction`; `deferred` requires `trigger`; `applied` requires
+`direction` and `appliedProof` subject to the existing proof refusal below.
+A `deferred` outcome requires a non-empty trigger ID, trigger kind
 (`event`, `date`, or `condition`), and explicit condition/description. The
 trigger is never polled or acted on automatically.
+
+Replay validates the whole journal before using it: known event shapes and
+types, consecutive sequences/revision, unique request IDs, request/envelope and
+request/payload agreement, operation/type agreement, identity/digest formulas,
+stable pair/project identity, and lawful lifecycle/supersession. Invalid or unknown fields/events,
+malformed payloads, contradictory identities or digests, and inconsistent
+request/sequence history are invalid v1 evidence (exit 1), not tolerated guessed
+payloads (`validation.reconcile-evidence-invalid`). A live new request with a
+stale expected revision/digest still follows the existing exit-3 refusal rules;
+malformed persisted history is not a retry conflict. The journal stores the raw
+scan hash as provenance, not the original scan bytes; replay cannot independently
+reconstruct that hash from the payload.
+Writers verify it against the consumed file and replay checks its shape and
+agreement with the stored candidate/digest identities. A journal is not an
+authenticated proof of its author's claims.
 
 | Operation | Effect and refusal boundary |
 | --- | --- |
 | `journal read` | Read and project the named journal for the named pair. Missing or incompatible files fail; read never initializes them. |
-| `journal record` | Append a reviewed correspondence, provenance/trust/confidence assessment, and the exact scan evidence. A first record enters `pending-review`, not pending port work. A repeat scan may append `evidence-observed` while preserving the candidate's existing decision. |
+| `journal record` | Append a reviewed correspondence, provenance/trust/confidence assessment, and the exact scan evidence. A first record enters `pending-review`, not pending port work. A repeat scan may append `evidence.observed` while preserving the candidate's existing decision. |
 | `journal decide` | Append one explicit D2A authority declaration and D4A outcome. Outcomes are `unresolved`, `deferred` (requires a revisit trigger), `divergence-retained`, `intent` (requires an allowed `left-to-right` or `right-to-left` direction), or `applied` (requires external proof). |
 | `journal reconsider` | Against a fresh scan, append an explicit trigger/evidence review and replacement outcome. It preserves the superseded decision and never runs automatically on changed bytes, changed maps, or a later revision. |
 
@@ -229,11 +298,47 @@ declaration. Unknown authority or an unapproved direction can only remain
 only; it is not permission to edit a source.
 
 `applied` requires an `appliedProof` reference containing an externally
-verifiable URI, SHA-256, source and destination project/revision, the transferred
-scope, verifier identity, verification time, and rationale. The referenced
-artifact must describe the actual transfer. A matching source hash, an intent,
-a map label, or a journal state is not proof. LDS records the reference and
-review; it does not perform or verify the transfer by mutating either source.
+verifiable artifact of the actual transfer. Its object has exactly these
+required fields, in serialization order; reader and writer use the same names,
+types, and nested shapes, rejecting unknown fields at every level:
+
+| Field | Required v1 type and meaning |
+| --- | --- |
+| `uri` | Absolute URI string naming the external artifact; a reference only. |
+| `sha256` | String of exactly 64 lowercase hexadecimal characters, asserting the referenced artifact's byte hash. |
+| `source` | Object with exactly `projectId` (source pair-project ID string) and `revision` (full lowercase Git object ID string: 40 or 64 hex characters), in that order. |
+| `destination` | Object with exactly `projectId` (destination pair-project ID string) and `revision` (full lowercase Git object ID string: 40 or 64 hex characters), in that order. |
+| `scope` | Object with exactly `sourcePaths` and `destinationPaths`, in that order. Each is a non-empty array of unique, normalized repo-relative file-path strings, sorted lexicographically, with the existing path/control-character restrictions. |
+| `verifier` | Non-empty supplied identity string; not inferred or authenticated. |
+| `verifiedAt` | UTC RFC 3339 string recording the supplied verification time. |
+| `rationale` | Non-empty string explaining the claimed transfer verification. |
+
+For `left-to-right`, `source.projectId` equals the pair's left project and
+`destination.projectId` its right project; `right-to-left` reverses them.
+They must be distinct pair projects. The outcome direction must be permitted
+by the declared authority, but `authoritativeProjectId` need not equal the
+source project when the owner permits a backport. Proof revisions need not
+equal the current scan pins: the artifact may describe a later destination
+transfer revision. Scope array lengths may differ for a split or merge and do
+not assert positional pairing or runtime parity.
+
+An otherwise valid live applied request omitting `appliedProof` retains exit 3,
+`refusal.reconcile-applied-proof-required`. A supplied malformed proof (including
+wrong types, unknown fields, invalid revisions/paths, or project/direction
+mismatch) is exit 1, `validation.reconcile-evidence-invalid`; validate that
+shape and project/direction agreement rather than treating it as an authority
+refusal. A structurally valid proof for a direction not permitted by the
+declaration remains exit 3, `refusal.reconcile-authority-unresolved`. A
+persisted applied event with absent or malformed proof, project/direction
+mismatch, or an impermissible authority/direction is invalid replay history:
+exit 1, `validation.reconcile-evidence-invalid`, not a live write refusal.
+
+URI, hash, verification metadata, and the claim that the artifact describes an
+actual transfer are reviewer assertions. LDS neither fetches the URI nor
+authenticates the verifier or independently verifies those assertions. A
+matching source hash, an intent, a map label, or a journal state is not proof;
+no applied outcome or runtime parity is inferred automatically. Recording the
+reference and review never performs a transfer or mutates either source.
 
 ## Scan and JSON contract — D3A, D5A
 
@@ -246,13 +351,52 @@ pair ID, `pairPath` and raw-byte `pairSha256`, explicit input paths, pinned
 snapshot IDs/revisions, sorted map path/hash observations, and sorted
 candidates. Each candidate contains its
 stable ID/key, current evidence digest, sorted per-side path/presence/byte-hash
-observations, and—when `--journal` is supplied—journal revision, last decision,
-and `evidenceStatus` (`new`, `unchanged`, `changed`, `out-of-scope`, or
-`not-compared`). The scanner does not parse semantic map claims, choose trust,
+observations, sorted digest-bearing `evidence`, and always `evidenceStatus`.
+For a complete scan response, the fixed field order is `schemaVersion`,
+`operation`, `ok`, `pairId`, `pairPath`, `pairSha256`, `leftRoot`, `rightRoot`,
+`snapshots`, `maps`, optional `journalPath`, `candidates`. Each map item is
+`projectId`, `revision`, `path`, `sha256`, sorted by that tuple. Each candidate
+is `candidateId`, `candidateKey`, `evidenceDigest`, `evidence`, `left`, `right`,
+`confidence` (always `not-assessed`), `evidenceStatus`, then the three journal
+comparison fields below when supplied. `left` and `right` are arrays sorted by
+`path` of `{path, present, sha256}`; absent files have `present: false` and
+`sha256: null` there, but their digest-bearing evidence row uses `missing`/`-`.
+Its comparison to a journal is fixed:
+
+| Inputs / candidate | `evidenceStatus` | Journal comparison fields |
+| --- | --- | --- |
+| No `--journal` | `not-compared` | `journalRevision`, `journalEvidenceDigest`, and `lastDecision` are absent, not null or inferred. |
+| Valid supplied journal; candidate absent from its replayed view | `new` | Current journal revision; `journalEvidenceDigest: null`, `lastDecision: null`. |
+| Candidate present in scan and journal; digest equals latest observed digest | `unchanged` | Current journal revision, saved observed digest, and saved last decision or null. |
+| Candidate present in both; digest differs from latest observed digest | `changed` | The same saved metadata; comparison never clears or replaces it. |
+| Journal candidate absent from current scan scope | `out-of-scope` | Preserve the saved observed digest and decision; current `evidenceDigest: null`, `evidence: []`, and both current side-path arrays empty. |
+
+`journalRevision` is the supplied journal's global revision, not a candidate
+event sequence. `journalEvidenceDigest` is its latest **observed** candidate
+digest. `lastDecision` is null before any decision, otherwise exactly
+`{seq, evidenceDigest, outcome}` from the latest decision/reconsider event.
+Its digest can differ from `journalEvidenceDigest` after an explicit record
+of changed evidence preserves an older decision; this distinction must remain
+visible. For example, decide at seq 2 on digest E0, then record at seq 3 on E1:
+scanning E1 is `unchanged` against the latest observation, but `lastDecision`
+still carries seq 2, E0, and that decision's unchanged outcome. The comparison
+does not claim the decision was made on E1. The union of current scan and
+journal candidate IDs is sorted by ID;
+journal-only keys come from saved observations, not invented current evidence.
+A missing or incompatible explicitly supplied journal fails with empty stdout
+and no initialization. For no-journal scans only current candidates are emitted.
+The scanner does not parse semantic map claims, choose trust,
 assign confidence, or create/change a journal state.
 
 Journal read emits the same envelope with `journalPath`, `pairId`, current
 `revision`, candidates sorted by ID, and append-only events sorted by sequence.
+Its candidate view contains `candidateId`, the common latest observation fields,
+`correspondence`, `provenance`, `assessment`, `authority`, `decision`,
+`lastDecision`, and `lastEventSeq`. Initially `authority` is
+`{"status":"not-declared"}` and `decision` is `{"state":"pending-review"}`;
+later they are the saved declaration and outcome. All full events appear in
+`events`; a shortened `lastEvent` object is not an event envelope. Write success
+uses this same view with its own operation name and required `replayed` boolean.
 JSON object keys have fixed v1 field order; arrays use the sorting rules above.
 No scan timestamp or host-dependent ordering enters the result. With identical
 pair bytes, canonical input paths, pinned source bytes, map bytes, and journal
@@ -299,92 +443,145 @@ source paths, hashes, and bounded claims.
 | Case 3 — TCP/SNI future versus rejected | Topic candidate; the cards do not ratify a cardinality. Assessment `accepted-defer-example`, not a shipped gap. | Scind `Future` is roadmap intent and runtime is `untrusted`; Xcind's rejection/trigger is a source-record claim, with only bounded test evidence. | `pending-review` in LDS fixtures; the example trigger is Scind promoting TCP/SNI from Future to active design. Do not auto-adopt Xcind's divergence status as an LDS decision. |
 | Case 4 — synthetic route decomposition | `split`: one left member to two right members; assessment/trust `synthetic`. | Invented nodes have no Scind/Xcind path or hash. Disposable tracked stand-ins have fixture-only paths and hashes, not source-project evidence. | `pending-review` only in disposable fixture data. Do not describe this relation as Scind/Xcind fact. |
 
-## Representative journal JSON
+## Complete pair, scan, and journal examples
 
-This is a materialized fixture projection for Case 2, not a live pair journal,
-authority declaration, or claim of applied runtime behavior. The candidate ID
-and evidence digest follow the v1 formulas above using the exact listed Stage 1
-pins and hashes.
+These are fixture-only Case 2 examples, not executed CLI output, a live journal,
+or permission to access or edit a source. The pair and scan raw-byte hashes
+below use the exact JSON fenced bodies including one final LF. Candidate and
+evidence formulas are unchanged; this example's pair ID differs from the
+independent Stage 2 fixture pair. The example `--map` inputs are the two pinned
+Xcind correspondence files, outside this minimal pair's scoped member paths.
+
+Complete minimal `pair.json`:
 
 ```json
 {
   "schemaVersion": 1,
-  "operation": "reconcile journal read",
-  "ok": true,
-  "journalPath": "/tmp/example-only/journal.json",
   "pairId": "example-stage1-fixture-not-authorized",
-  "revision": 1,
+  "left": {"projectId": "scind", "revision": "c63cbc686afd2ca6ecc01eab7825d637d49378c7"},
+  "right": {"projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66"},
+  "scope": {
+    "leftPaths": ["engineering/decisions/0017-external-proxy-mode.md"],
+    "rightPaths": ["engineering/decisions/0022-external-proxy-mode.md"],
+    "candidates": [
+      {"candidateKey": "fixture:stage1:case-2", "leftPaths": ["engineering/decisions/0017-external-proxy-mode.md"], "rightPaths": ["engineering/decisions/0022-external-proxy-mode.md"]}
+    ]
+  }
+}
+```
+
+Complete saved `scan.json`, without journal comparison:
+
+```json
+{
+  "schemaVersion": 1,
+  "operation": "reconcile scan",
+  "ok": true,
+  "pairId": "example-stage1-fixture-not-authorized",
+  "pairPath": "/tmp/example-only/pair.json",
+  "pairSha256": "cce7a44185fe70790d8eb7ff366ad3ee3c57d409289ce70ac79b3e6cd57cf8f0",
+  "leftRoot": "/tmp/example-only/scind",
+  "rightRoot": "/tmp/example-only/xcind",
   "snapshots": {
     "left": {"projectId": "scind", "revision": "c63cbc686afd2ca6ecc01eab7825d637d49378c7"},
     "right": {"projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66"}
   },
+  "maps": [
+    {"projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "path": "engineering/sync/artifacts/correspondence-map.json", "sha256": "175d69f1a499e512c571b7cb83476ca25a9dd814256d6e64447a9d29e1262c17"},
+    {"projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "path": "engineering/sync/artifacts/correspondence-map.md", "sha256": "3c121e241bd963f8cbe3792a80ac09dd8c500ed52100f228cab4d55ab6932c05"}
+  ],
   "candidates": [
     {
       "candidateId": "cand-v1-472eb3a0bf207fb4fb79879a0b6f6f8aa48d453dcb77346dd352ff85d556b1b1",
       "candidateKey": "fixture:stage1:case-2",
       "evidenceDigest": "sha256:2f88fd65187e2180dfd6ce2f6eb460dcf3e554e62088440c9a8dea7f484e5ee0",
-      "correspondence": {
-        "key": "topic:external-proxy-mode",
-        "relation": "one-to-one",
-        "leftMembers": ["scind:adr:0017"],
-        "rightMembers": ["xcind:adr:0022"]
-      },
-      "provenance": [
-        {
-          "kind": "artifact",
-          "projectId": "scind",
-          "revision": "c63cbc686afd2ca6ecc01eab7825d637d49378c7",
-          "path": "engineering/decisions/0017-external-proxy-mode.md",
-          "sha256": "9557cbfde3718cc23918e20effb76498eb788b1630e93396b49c00fddad1b7cc",
-          "claim": "Scind's ADR describes external-proxy mode and cites the Xcind proof-of-concept.",
-          "trust": "trusted"
-        },
-        {
-          "kind": "artifact",
-          "projectId": "xcind",
-          "revision": "c244856e7119547ed6dceb2b7663a01720bdde66",
-          "path": "engineering/decisions/0022-external-proxy-mode.md",
-          "sha256": "db5d802fb20b687829d46e5438334f00c33b3821ca4cb7cff3c3ef2d51377723",
-          "claim": "Xcind's ADR documents its external-proxy decision.",
-          "trust": "trusted"
-        },
-        {
-          "kind": "artifact",
-          "projectId": "xcind",
-          "revision": "c244856e7119547ed6dceb2b7663a01720bdde66",
-          "path": "engineering/sync/artifacts/correspondence-map.md",
-          "sha256": "3c121e241bd963f8cbe3792a80ac09dd8c500ed52100f228cab4d55ab6932c05",
-          "claim": "The file row says XCIND-ONLY while the topic table says MATCH.",
-          "trust": "contradictory"
-        },
-        {
-          "kind": "artifact",
-          "projectId": "xcind",
-          "revision": "c244856e7119547ed6dceb2b7663a01720bdde66",
-          "path": "engineering/sync/artifacts/correspondence-map.json",
-          "sha256": "175d69f1a499e512c571b7cb83476ca25a9dd814256d6e64447a9d29e1262c17",
-          "claim": "The file-level JSON row says scind is null and rel is XCIND-ONLY.",
-          "trust": "contradictory"
-        }
+      "evidence": [
+        {"kind": "artifact", "projectId": "scind", "revision": "c63cbc686afd2ca6ecc01eab7825d637d49378c7", "key": "engineering/decisions/0017-external-proxy-mode.md", "sha256": "9557cbfde3718cc23918e20effb76498eb788b1630e93396b49c00fddad1b7cc"},
+        {"kind": "artifact", "projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "key": "engineering/decisions/0022-external-proxy-mode.md", "sha256": "db5d802fb20b687829d46e5438334f00c33b3821ca4cb7cff3c3ef2d51377723"},
+        {"kind": "artifact", "projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "key": "engineering/sync/artifacts/correspondence-map.json", "sha256": "175d69f1a499e512c571b7cb83476ca25a9dd814256d6e64447a9d29e1262c17"},
+        {"kind": "artifact", "projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "key": "engineering/sync/artifacts/correspondence-map.md", "sha256": "3c121e241bd963f8cbe3792a80ac09dd8c500ed52100f228cab4d55ab6932c05"}
       ],
-      "assessment": {
-        "code": "unresolved-map",
-        "confidence": {"level": "not-assessed"},
-        "trust": "contradictory"
-      },
-      "authority": {"status": "not-declared"},
-      "decision": {"state": "pending-review"},
-      "lastEvent": {
-        "seq": 1,
+      "left": [{"path": "engineering/decisions/0017-external-proxy-mode.md", "present": true, "sha256": "9557cbfde3718cc23918e20effb76498eb788b1630e93396b49c00fddad1b7cc"}],
+      "right": [{"path": "engineering/decisions/0022-external-proxy-mode.md", "present": true, "sha256": "db5d802fb20b687829d46e5438334f00c33b3821ca4cb7cff3c3ef2d51377723"}],
+      "confidence": "not-assessed",
+      "evidenceStatus": "not-compared"
+    }
+  ]
+}
+```
+
+Complete stored `journal.json` after one explicit fixture-only record. The
+`request` object is also the complete supplied record request; it does not
+carry the common observation a second time. No event field is omitted:
+
+```json
+{
+  "schemaVersion": 1,
+  "pairId": "example-stage1-fixture-not-authorized",
+  "leftProjectId": "scind",
+  "rightProjectId": "xcind",
+  "revision": 1,
+  "events": [
+    {
+      "seq": 1,
+      "requestId": "fixture-record-case-2",
+      "candidateId": "cand-v1-472eb3a0bf207fb4fb79879a0b6f6f8aa48d453dcb77346dd352ff85d556b1b1",
+      "type": "candidate.recorded",
+      "actor": "fixture-only",
+      "at": "2026-10-01T00:00:00Z",
+      "rationale": "Fixture only: conflicting map claims; no transfer authorized.",
+      "request": {
+        "schemaVersion": 1,
         "requestId": "fixture-record-case-2",
+        "expectedJournalRevision": 0,
+        "candidateId": "cand-v1-472eb3a0bf207fb4fb79879a0b6f6f8aa48d453dcb77346dd352ff85d556b1b1",
+        "expectedEvidenceDigest": "sha256:2f88fd65187e2180dfd6ce2f6eb460dcf3e554e62088440c9a8dea7f484e5ee0",
         "actor": "fixture-only",
         "at": "2026-10-01T00:00:00Z",
-        "rationale": "Fixture only: the map claims conflict; no direction or applied outcome is authorized."
+        "rationale": "Fixture only: conflicting map claims; no transfer authorized.",
+        "correspondence": {"key": "topic:external-proxy-mode", "leftMembers": ["scind:adr:0017"], "rightMembers": ["xcind:adr:0022"], "relation": "one-to-one"},
+        "provenance": [
+          {"kind": "artifact", "projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "path": "engineering/sync/artifacts/correspondence-map.json", "sha256": "175d69f1a499e512c571b7cb83476ca25a9dd814256d6e64447a9d29e1262c17", "claim": "The file-level JSON row says XCIND-ONLY and scind is null.", "trust": "contradictory"},
+          {"kind": "artifact", "projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "path": "engineering/sync/artifacts/correspondence-map.md", "sha256": "3c121e241bd963f8cbe3792a80ac09dd8c500ed52100f228cab4d55ab6932c05", "claim": "The topic table says MATCH while the file row says XCIND-ONLY.", "trust": "contradictory"}
+        ],
+        "assessment": {"code": "unresolved-map", "confidence": {"level": "not-assessed"}, "trust": "contradictory"}
+      },
+      "scanIdentity": {
+        "scanSha256": "0ceb5c524c3dd066669830598c24a1c69a758d6542b577e02d5ad6de1b465e79",
+        "pairSha256": "cce7a44185fe70790d8eb7ff366ad3ee3c57d409289ce70ac79b3e6cd57cf8f0",
+        "candidateId": "cand-v1-472eb3a0bf207fb4fb79879a0b6f6f8aa48d453dcb77346dd352ff85d556b1b1",
+        "evidenceDigest": "sha256:2f88fd65187e2180dfd6ce2f6eb460dcf3e554e62088440c9a8dea7f484e5ee0"
+      },
+      "payload": {
+        "candidateKey": "fixture:stage1:case-2",
+        "snapshots": {
+          "left": {"projectId": "scind", "revision": "c63cbc686afd2ca6ecc01eab7825d637d49378c7"},
+          "right": {"projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66"}
+        },
+        "evidenceDigest": "sha256:2f88fd65187e2180dfd6ce2f6eb460dcf3e554e62088440c9a8dea7f484e5ee0",
+        "evidence": [
+          {"kind": "artifact", "projectId": "scind", "revision": "c63cbc686afd2ca6ecc01eab7825d637d49378c7", "key": "engineering/decisions/0017-external-proxy-mode.md", "sha256": "9557cbfde3718cc23918e20effb76498eb788b1630e93396b49c00fddad1b7cc"},
+          {"kind": "artifact", "projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "key": "engineering/decisions/0022-external-proxy-mode.md", "sha256": "db5d802fb20b687829d46e5438334f00c33b3821ca4cb7cff3c3ef2d51377723"},
+          {"kind": "artifact", "projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "key": "engineering/sync/artifacts/correspondence-map.json", "sha256": "175d69f1a499e512c571b7cb83476ca25a9dd814256d6e64447a9d29e1262c17"},
+          {"kind": "artifact", "projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "key": "engineering/sync/artifacts/correspondence-map.md", "sha256": "3c121e241bd963f8cbe3792a80ac09dd8c500ed52100f228cab4d55ab6932c05"}
+        ],
+        "correspondence": {"key": "topic:external-proxy-mode", "leftMembers": ["scind:adr:0017"], "rightMembers": ["xcind:adr:0022"], "relation": "one-to-one"},
+        "provenance": [
+          {"kind": "artifact", "projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "path": "engineering/sync/artifacts/correspondence-map.json", "sha256": "175d69f1a499e512c571b7cb83476ca25a9dd814256d6e64447a9d29e1262c17", "claim": "The file-level JSON row says XCIND-ONLY and scind is null.", "trust": "contradictory"},
+          {"kind": "artifact", "projectId": "xcind", "revision": "c244856e7119547ed6dceb2b7663a01720bdde66", "path": "engineering/sync/artifacts/correspondence-map.md", "sha256": "3c121e241bd963f8cbe3792a80ac09dd8c500ed52100f228cab4d55ab6932c05", "claim": "The topic table says MATCH while the file row says XCIND-ONLY.", "trust": "contradictory"}
+        ],
+        "assessment": {"code": "unresolved-map", "confidence": {"level": "not-assessed"}, "trust": "contradictory"}
       }
     }
   ]
 }
 ```
+
+Replay projects revision 1, this observation/review, `lastEventSeq: 1`,
+`authority: {"status":"not-declared"}`, `decision: {"state":"pending-review"}`,
+and `lastDecision: null`. Scanning against it yields `unchanged`,
+`journalRevision: 1`, the saved digest in `journalEvidenceDigest`, and
+`lastDecision: null`; no authority or applied outcome is inferred.
 
 ## Step 6/7 constraints
 

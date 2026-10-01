@@ -8,7 +8,7 @@ and [ADR-0003](../decisions/0003-bound-cross-project-reconciliation.md)
 define behavior; the [Stage 1 evidence](bds-252-stage-1-evidence.md) and
 [case cards](bds-252-stage-1-expected-case-cards.md) supply bounded inputs.
 
-Pinned contract SHA-256: `be51cd56e6d2c7a95962b28e27643294dae5681641de1cce890fdb975abaf702`.
+Pinned contract SHA-256: `f721bc58a7c6fd8eb3ff0ac87f3708c1bb752a4f6a2b6bb6264fafb5d4f3f587`.
 Pinned ADR-0003 SHA-256: `fee5a9862f2bf896fee233d949fd082b3ccb669afe373ac069ae2f386eb5cd92`.
 Pinned Stage 1 evidence SHA-256: `0884630e811209b1c46b2bb1af7e747e8a5d91527cba885a50163838765a74bd`.
 Pinned case-card SHA-256: `7d04c5dec48a6ebe1db2e4d9c3ed206c6ec8b0fb5b6ecb8d45daecce0204d430`.
