@@ -3,8 +3,11 @@
 LDS is a CLI for a Layered Documentation System: engineering documentation
 alongside Diátaxis user documentation. It has deterministic `lds plumbing docs`
 inventory, local-link validation, four-asset rendering, reviewed planning,
-and create-only application. Human-facing documentation workflows are not
-implemented yet.
+and create-only application, plus bounded `lds plumbing reconcile` evidence
+scanning and explicit caller-owned journal operations. Reconciliation reads
+clean pinned Git snapshots and does not infer semantic matches or mutate
+source projects. Human-facing documentation workflows and a reconciliation
+facilitator are not implemented.
 
 Built on the [toolsmith contract](https://github.com/procrastivity/toolsmith)
 (`toolsmith/v1` — the manifest declares it): a single static Go binary
@@ -42,5 +45,8 @@ and [roadmap](engineering/product/roadmap.md). The [runtime handoff](engineering
 documents supported `lds plumbing docs` behavior and its limits. No real project has
 been authorized as an adoption pilot; user-facing Diátaxis documentation for
 LDS itself is still to be written.
+The [BDS-252 engineering handoff](engineering/product/bds-252-stage-4-engineering-handoff.md)
+documents the reconciliation plumbing, bounded runtime evidence, and limits;
+it does not authorize a real-pair pilot or source transfer.
 The GitHub CI workflow runs; the generated release workflow has not been
 exercised yet.

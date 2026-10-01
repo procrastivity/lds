@@ -19,6 +19,21 @@ missing approved files after reviewed digest confirmation. See the
 [runtime handoff](adoption-operations-runtime-handoff.md) for evidence and
 limitations; no human-facing flow or real pilot is established.
 
+BDS-252 adds `lds plumbing reconcile scan` and the explicit
+`lds plumbing reconcile journal read|record|decide|reconsider` operations for
+strict, deterministic evidence inspection and caller-owned decision history.
+The actual manifest currently contains 18 leaves, including 13 qualified
+plumbing-kind projection entries. These commands do not infer semantic
+correspondence, choose real-pair authority, edit source repositories, or
+provide a human-facing reconciliation workflow. See the
+[Stage 4 engineering handoff](bds-252-stage-4-engineering-handoff.md) for the
+audited surface and boundaries.
+
+The [frozen adoption contract](adoption-contract.md) retains a pre-runtime
+roadmap-status paragraph as historical text. Its accepted adoption behavior
+is unchanged; this current-state section and the linked runtime handoffs
+supersede that paragraph only as descriptions of implementation status.
+
 ## Planning constraints and open decisions
 
 Settled: the two-track layout is the intended default, and within-project
@@ -28,7 +43,8 @@ requires one flow asset shared by the CLI verb and projected skill; every
 deterministic step must be available through plumbing. Do not design the
 two forms as independently maintained workflows.
 
-Resolve these questions before specifying the corresponding verbs:
+The following product choices remain open; they are not prerequisites for the
+implemented deterministic plumbing and must be settled before any real use:
 
 - **First usable release:** Which project is the pilot? What must `lds init`
   produce or preserve to count as useful, and how much partial adoption is
@@ -37,9 +53,12 @@ Resolve these questions before specifying the corresponding verbs:
   Which actions need a reviewable plan or human approval?
 - **LLM execution:** Will the first release include a CLI-side LLM workflow
   as well as a projected skill? If so, how will the CLI obtain an LLM?
-- **Reconciliation authority:** Who owns the journal, how are unresolved
-  ports/backports distinguished from accepted divergences, and when must a
-  divergence be reconsidered? Xcind's ledger is evidence, not LDS's schema.
+- **Reconciliation application:** Which real pair, if any, is an authorized
+  pilot? Who may declare pair/topic authority and permitted directions, and
+  what external evidence is sufficient to verify an applied transfer?
+  ADR-0003 and the v1 contract define the journal boundary and state model,
+  not these real-world values. Xcind's ledger remains evidence, not LDS's
+  universal authority rule.
 
 ## Candidate work, in dependency order
 
@@ -55,21 +74,24 @@ Resolve these questions before specifying the corresponding verbs:
    operations to adopt LDS, keep documentation aligned with code, and
    review both tracks. Keep the skill projection derived from the CLI
    manifest and shipped assets.
-4. Specify cross-project **reconciliation** separately from within-project
-   documentation maintenance. Compare corresponding concepts in two
-   projects, record each candidate change in a durable journal, and require
-   an intentional decision to port, backport, defer, or retain a divergence.
-   Xcind's [cross-project procedure](https://github.com/scinddev/xcind/blob/main/engineering/maintenance/cross-project-sync.md)
-   and ledgers are reference material, not a schema to copy blindly.
-5. Exercise the workflows on a new project and on existing adoptions such
-   as Xcind and Hypomnema, checking partial adoption and non-1:1 ports.
+4. **Implemented, bounded:** specify and implement deterministic cross-project
+   reconciliation plumbing separately from within-project documentation
+   maintenance. The v1 scan reports pinned evidence; explicit journal requests
+   record reviewed correspondence and decisions without source edits. This is
+   not semantic matching, a real-pair decision, or a facilitator. Xcind's
+   [cross-project procedure](https://github.com/scinddev/xcind/blob/main/engineering/maintenance/cross-project-sync.md)
+   and ledgers remain reference evidence, not a schema copied into LDS.
+5. Future: after explicit owner choices, consider a human-facing reconciliation
+   workflow and an authorized pilot. Disposable source-derived and synthetic
+   fixtures do not validate a live adoption, port, or parity claim.
 
 ## Candidate verbs
 
-Names and boundaries below are **proposals except the implemented docs row**. Porcelain is the human-facing
-workflow; plumbing is deterministic and suitable for JSON/exit-code use by
-skills and scripts. `toolsmith new` bootstraps the *CLI application*; a
-future `lds init` would bootstrap documentation *inside another project*.
+Names and boundaries below are proposals except the implemented docs and
+reconciliation plumbing rows. Porcelain is the human-facing workflow;
+plumbing is deterministic and suitable for JSON/exit-code use by skills and
+scripts. `toolsmith new` bootstraps the *CLI application*; a future `lds init`
+would bootstrap documentation *inside another project*.
 
 | Surface | Candidate | Purpose |
 | --- | --- | --- |
@@ -79,7 +101,7 @@ future `lds init` would bootstrap documentation *inside another project*.
 | Porcelain | `lds review` | Audit coverage, links, and cross-track consistency. |
 | Porcelain | `lds reconcile` | Compare projects and guide explicit port/backport/divergence decisions. |
 | Plumbing (implemented, bounded) | `lds plumbing docs inventory`, `validate`, `render`, `plan`, `apply` | Report scoped files/links, check supported local targets, render four assets, preview and create missing approved files without an LLM. |
-| Plumbing | reconciliation scan and journal operations | Produce candidate differences and persist decisions without assuming a 1:1 port. |
+| Plumbing (implemented, bounded) | `lds plumbing reconcile scan`; `lds plumbing reconcile journal read`, `record`, `decide`, `reconsider` | Inspect explicitly scoped pinned artifacts/maps and persist caller-reviewed correspondence and outcomes; never infer semantic matches or write a source. See the [engineering handoff](bds-252-stage-4-engineering-handoff.md). |
 
 Agent-specific skills worth evaluating: adopting a partial tree, drafting
 and reviewing an ADR, documentation impact review after code changes,

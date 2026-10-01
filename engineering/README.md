@@ -5,8 +5,10 @@ It follows [ADR-0001](decisions/0001-adopt-two-track-documentation.md):
 engineering decisions and plans live here; future user-facing documentation
 belongs in `docs/` and follows Diátaxis. The tool currently has a Toolsmith
 scaffold and harness-management commands plus five deterministic
-`lds plumbing docs` leaves; human-facing documentation workflows are not
-implemented.
+`lds plumbing docs` leaves, as well as deterministic `lds plumbing reconcile`
+scan and explicit journal operations. Reconciliation is bounded to pinned
+evidence and a caller-owned journal; human-facing documentation workflows and
+a reconciliation facilitator are not implemented.
 
 Start with the [roadmap](product/roadmap.md) for proposed capabilities and
 their status. The [source-repository map](architecture/source-repositories.md)
@@ -24,7 +26,11 @@ The [BDS-252 reconciliation decision](decisions/0003-bound-cross-project-reconci
 sets pair-specific authority, evidence trust, and caller-owned journal
 boundaries; its [pinned evidence](product/bds-252-stage-1-evidence.md) and
 [expected-case cards](product/bds-252-stage-1-expected-case-cards.md) do not
-authorize source-project edits.
+authorize source-project edits. The [Stage 4 engineering handoff](product/bds-252-stage-4-engineering-handoff.md)
+records the implemented command surface, the bounded Linux runtime audit, and
+deferred real-pair/pilot choices; the [runtime round](product/bds-252-stage-4-runtime-round.md)
+and [machine-readable evidence](product/bds-252-stage-4-runtime-evidence.json)
+record disposable execution results.
 The [LDS Linear project](https://linear.app/beausimensen/project/lds-22892af0659b)
 tracks actionable work; decisions and command contracts belong in this repo.
 
