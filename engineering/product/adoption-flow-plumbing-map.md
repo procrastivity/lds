@@ -25,7 +25,7 @@ including namespace **and** kind for projection and paired-flow rules.
 
 | Future flow step | Current CLI spelling | Inputs, facts, and approval boundary | Output, refusal, or escalation |
 | --- | --- | --- | --- |
-| Read the deterministic adoption document (C8.4 first step) | **No current leaf.** Future same-named `lds plumbing adopt` document verb; not implemented. | No target facts or approval are implied by reading the document. It is the distinct deterministic document prerequisite for a later shared adoption flow. | Readable Markdown by default and structured `--json`; the future CLI and Claude Code skill consume the same flow live, and each flow starts with this document. It is not `lds plumbing docs plan`, does not produce the target-specific four-output preflight, and does not collect human digest confirmation. |
+| Read the deterministic adoption document (C8.4 first step) | `lds plumbing adopt [--json]`; constructor: [`internal/verbs/adopt/adopt.go`](../../internal/verbs/adopt/adopt.go). | No target facts or approval are implied. Reads `flows/adopt.md` live through the existing asset resolver. | Readable Markdown by default; structured `--json` returns schema version, preparatory/unavailable-for-execution status, content, and asset source/hash. It is a document reader only: no target preflight, plan, confirmation, or writes. |
 | Inspect only the bounded documentation surface | `lds plumbing docs inventory <root> --json`; constructor: [`internal/verbs/docs/inventory.go`](../../internal/verbs/docs/inventory.go) | Explicit existing target root. It reads root `README.md` and Markdown under `engineering/` and `docs/`, not arbitrary source files as docs. No approval is inferred. | Sorted scoped Markdown paths/hashes, supported links, and skips. Symlinks in scope are skipped; a symlinked root/ancestor is refused, never traversed. Inventory is not a full repository scan or a legacy-migration decision. |
 | Check supported local links | `lds plumbing docs validate <root> --json`; constructor: [`internal/verbs/docs/validate.go`](../../internal/verbs/docs/validate.go) | Same explicit root and bounded supported Markdown syntax. External URLs are not fetched; fragments are not checked. | Missing relative file targets are findings (exit 1). External, fragment-only, image, and other recognized unsupported checks are skips, not passes. A link finding alone does not veto a plan; a separately established unsafe/legacy policy refusal still does. |
 | Obtain target facts and render candidate docs | `lds plumbing docs render <root> --facts <facts.json> --json`; constructor: [`internal/verbs/docs/render.go`](../../internal/verbs/docs/render.go) | A complete bundle for this target: owner-approved name and purpose; current capability and sources; verified user operation, prerequisites, exact invocation/input, evidence and limitations; approval/provenance. Fixtures may supply test-only approval/evidence for the disposable target. The leaf checks structure and rendering, not truth or approver identity. | Exact content and SHA-256 for only the four approved files, plus resolved asset names/source/hash. Missing/unverified facts or invalid templates refuse rendering; no project writes occur. No default target facts or automatic owner approval. |
@@ -35,13 +35,14 @@ including namespace **and** kind for projection and paired-flow rules.
 
 The qualified spellings above are the canonical CLI registrations. Step 4
 places them under the plumbing namespace and projects only namespace members
-whose kind is `plumbing`; it does not implement `lds adopt`, a flow asset,
-an LLM provider, or a paired skill workflow. C8 requires the future
-human-facing workflow and projected
-Claude Code skill to share one flow, but ADR-0002 defers shipping that pair
-until one settled provider/endpoint/model/credential source and authorized
-disposable live access exist. Actual paired execution and parity remain
-blocked; do not report them as tested.
+whose kind is `plumbing`. The document reader resolves the single shared flow
+asset live and appears in the general plumbing projection, with guidance that
+it is preparatory and not permission to execute adoption. The human-facing
+`lds adopt` workflow, provider-backed execution, and paired skill workflow
+remain unimplemented. ADR-0002 defers shipping that pair until one settled
+provider/endpoint/model/credential source and authorized disposable live access
+exist. Actual paired execution and parity remain blocked; do not report them
+as tested.
 
 ## Asymmetric disposable acceptance scenarios
 

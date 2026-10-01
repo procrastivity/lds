@@ -156,7 +156,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 		}
 	}
 	for _, path := range []string{
-		"plumbing doctor", "plumbing manifest",
+		"plumbing adopt", "plumbing doctor", "plumbing manifest",
 		"plumbing docs apply", "plumbing docs inventory", "plumbing docs plan",
 		"plumbing docs render", "plumbing docs validate",
 	} {
@@ -319,6 +319,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		"install":                 "",
 		"uninstall":               "",
 		"doctor":                  "plumbing doctor",
+		"plumbing adopt":          "",
 		"plumbing manifest":       "",
 		"plumbing doctor":         "",
 		"plumbing docs apply":     "",
@@ -345,8 +346,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 12 || len(seen) != len(want) || projectable != 7 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want twelve leaves and seven projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 13 || len(seen) != len(want) || projectable != 8 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want thirteen leaves and eight projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 
@@ -1132,6 +1133,7 @@ func TestInstallLoop(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantRows := map[string]bool{
+		"lds plumbing adopt":                 false,
 		"lds plumbing doctor":                false,
 		"lds plumbing manifest":              false,
 		"lds plumbing docs apply <root>":     false,

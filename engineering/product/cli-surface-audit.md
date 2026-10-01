@@ -1,8 +1,8 @@
 # BDS-251 Stage 2 Step 3: CLI surface audit
 
-**Status:** Step 3 audit approved; BDS-251 Step 4 placement is implemented in
-the current local tree. The first column records the pre-Step-4 spelling
-audited; the disposition column records the current command tree.
+**Status:** Step 3 audit approved; BDS-251 Step 4 placement is implemented.
+The first column records the pre-Step-4 spelling audited; Step 6 adds a
+preparation-only `lds plumbing adopt` document outside the original audit.
 
 This records the audience decision for every runnable application leaf in the
 pre-Step-4 root command. Its `docs` node was a grouping command with five
@@ -32,24 +32,26 @@ The `manifest` and `doctor` aliases use the same constructors as their
 canonical members. The manifest records `alias-of` only on these two root
 rows. No blanket move or speculative alias was added. A future adoption
 skill needs the five docs operations as plumbing; under C8.4 it will also
-need the same-named deterministic document `lds plumbing adopt` and its
-shared-flow root verb `lds adopt`. Neither verb nor a flow asset exists yet;
-ADR-0002 continues to defer that paired workflow.
+need the same-named deterministic document `lds plumbing adopt`, now available
+as a read-only preparation verb backed by one live flow asset. The paired
+shared-flow root verb `lds adopt` does not exist; ADR-0002 continues to defer
+that workflow.
 
 ## Observed projections
 
 - `lds --help` lists human root commands, the two compatibility aliases, and
   the `plumbing` group; it does not list docs leaves. `lds plumbing --help`
-  lists `manifest`, `doctor`, and the `docs` group; `lds plumbing docs --help`
-  lists the five docs leaves. Cobra's built-ins remain framework help only.
-- `lds plumbing manifest --json` reports twelve application leaves, all with
+  lists the preparation-only `adopt` reader, `manifest`, `doctor`, and the
+  `docs` group; `lds plumbing docs --help` lists the five docs leaves.
+  Cobra's built-ins remain framework help only.
+- `lds plumbing manifest --json` reports thirteen application leaves, all with
   kind `plumbing`, and records `alias-of` only on root `manifest` and
   `doctor`. The [manifest walker](../../internal/manifest/verbs.go) excludes
   framework built-ins and records canonical qualified paths for plumbing
   members.
-- `lds install claude-code` in a disposable skills directory produces seven
-  table rows: canonical `plumbing manifest`, `plumbing doctor`, and the five
-  `plumbing docs …` members. The [projection filter](../../internal/harness/harness.go)
+- `lds install claude-code` in a disposable skills directory produces eight
+  table rows: canonical `plumbing adopt`, `plumbing manifest`, `plumbing doctor`,
+  and the five `plumbing docs …` members. The [projection filter](../../internal/harness/harness.go)
   checks namespace and kind, excluding root aliases and root-only
   `version`, `install`, and `uninstall`. The generated skill is stamped and
   `lds plumbing doctor --json` reports the target as `current`.
@@ -64,4 +66,5 @@ The root registrations, leaf annotations, and projection are visible in
 [`internal/verbs`](../../internal/verbs), and the
 [CLI end-to-end tests](../../internal/cli/e2e_test.go). This audit records
 the placement decision and its Step 4 implementation; it does not implement
-the deferred `lds adopt` workflow or establish a flow asset.
+the deferred `lds adopt` workflow. The Step 6 document reads the flow asset,
+but neither CLI nor Claude Code executes a paired adoption workflow.
