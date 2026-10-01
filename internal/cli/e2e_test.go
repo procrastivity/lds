@@ -146,6 +146,19 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	if strings.Contains(plumbing.stdout, "inventory") || strings.Contains(plumbing.stdout, "apply") {
 		t.Fatalf("plumbing group help leaks nested docs leaves: %s", plumbing.stdout)
 	}
+	reconcile := run(t, nil, "plumbing", "reconcile", "--help")
+	if reconcile.exitCode != 0 || reconcile.stderr != "" || !strings.Contains(reconcile.stdout, "\n  lds plumbing reconcile ") || !strings.Contains(reconcile.stdout, "\n  journal ") || !strings.Contains(reconcile.stdout, "\n  scan ") {
+		t.Fatalf("reconcile help must list journal group and scan only: %+v", reconcile)
+	}
+	journal := run(t, nil, "plumbing", "reconcile", "journal", "--help")
+	if journal.exitCode != 0 || journal.stderr != "" || !strings.Contains(journal.stdout, "\n  lds plumbing reconcile journal ") {
+		t.Fatalf("journal help: %+v", journal)
+	}
+	for _, operation := range []string{"decide", "read", "record", "reconsider"} {
+		if !strings.Contains(journal.stdout, "\n  "+operation+" ") {
+			t.Errorf("journal help omits operation %q: %s", operation, journal.stdout)
+		}
+	}
 	docs := run(t, nil, "plumbing", "docs", "--help")
 	if docs.exitCode != 0 || docs.stderr != "" || !strings.Contains(docs.stdout, "\n  lds plumbing docs ") {
 		t.Fatalf("plumbing docs help: exit=%d stdout=%q stderr=%q", docs.exitCode, docs.stdout, docs.stderr)
@@ -157,6 +170,8 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	}
 	for _, path := range []string{
 		"plumbing adopt", "plumbing doctor", "plumbing manifest", "plumbing reconcile scan",
+		"plumbing reconcile journal read", "plumbing reconcile journal record",
+		"plumbing reconcile journal decide", "plumbing reconcile journal reconsider",
 		"plumbing docs apply", "plumbing docs inventory", "plumbing docs plan",
 		"plumbing docs render", "plumbing docs validate",
 	} {
@@ -314,20 +329,24 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		}
 	}
 	want := map[string]string{
-		"version":                 "",
-		"manifest":                "plumbing manifest",
-		"install":                 "",
-		"uninstall":               "",
-		"doctor":                  "plumbing doctor",
-		"plumbing adopt":          "",
-		"plumbing manifest":       "",
-		"plumbing doctor":         "",
-		"plumbing docs apply":     "",
-		"plumbing docs inventory": "",
-		"plumbing docs plan":      "",
-		"plumbing docs render":    "",
-		"plumbing docs validate":  "",
-		"plumbing reconcile scan": "",
+		"version":                               "",
+		"manifest":                              "plumbing manifest",
+		"install":                               "",
+		"uninstall":                             "",
+		"doctor":                                "plumbing doctor",
+		"plumbing adopt":                        "",
+		"plumbing manifest":                     "",
+		"plumbing doctor":                       "",
+		"plumbing docs apply":                   "",
+		"plumbing docs inventory":               "",
+		"plumbing docs plan":                    "",
+		"plumbing docs render":                  "",
+		"plumbing docs validate":                "",
+		"plumbing reconcile scan":               "",
+		"plumbing reconcile journal read":       "",
+		"plumbing reconcile journal record":     "",
+		"plumbing reconcile journal decide":     "",
+		"plumbing reconcile journal reconsider": "",
 	}
 	seen := map[string]bool{}
 	projectable := 0
@@ -347,8 +366,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 14 || len(seen) != len(want) || projectable != 9 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want fourteen leaves and nine projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 18 || len(seen) != len(want) || projectable != 13 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want eighteen leaves and thirteen projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 
@@ -1134,15 +1153,19 @@ func TestInstallLoop(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantRows := map[string]bool{
-		"lds plumbing adopt":                 false,
-		"lds plumbing doctor":                false,
-		"lds plumbing manifest":              false,
-		"lds plumbing docs apply <root>":     false,
-		"lds plumbing docs inventory <root>": false,
-		"lds plumbing docs plan <root>":      false,
-		"lds plumbing docs render <root>":    false,
-		"lds plumbing docs validate <root>":  false,
-		"lds plumbing reconcile scan":        false,
+		"lds plumbing adopt":                        false,
+		"lds plumbing doctor":                       false,
+		"lds plumbing manifest":                     false,
+		"lds plumbing docs apply <root>":            false,
+		"lds plumbing docs inventory <root>":        false,
+		"lds plumbing docs plan <root>":             false,
+		"lds plumbing docs render <root>":           false,
+		"lds plumbing docs validate <root>":         false,
+		"lds plumbing reconcile scan":               false,
+		"lds plumbing reconcile journal read":       false,
+		"lds plumbing reconcile journal record":     false,
+		"lds plumbing reconcile journal decide":     false,
+		"lds plumbing reconcile journal reconsider": false,
 	}
 	var rows []string
 	for _, line := range strings.Split(string(skillBytes), "\n") {

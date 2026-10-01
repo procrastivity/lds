@@ -2,12 +2,15 @@ package reconcile
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/procrastivity/lds/internal/ldserr"
 )
 
 const (
@@ -255,6 +258,222 @@ func TestScanJournalComparisonIsReadOnlyAndProjectsOutOfScope(t *testing.T) {
 	input.Journal = filepath.Join(leftRoot, "docs", "left.md")
 	_, err = Scan(input)
 	assertCode(t, err, "refusal.reconcile-write-target")
+}
+
+func TestJournalRechecksCanonicalParentBeforeReplacement(t *testing.T) {
+	base := t.TempDir()
+	source := filepath.Join(base, "source")
+	parent := filepath.Join(base, "journal")
+	for _, dir := range []string{source, parent} {
+		if err := os.Mkdir(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	target := filepath.Join(parent, "journal.json")
+	lockPath := target + ".lock"
+	lock, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := openTestJournalDirectory(t, parent)
+	defer func() {
+		if err := lock.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	if err := checkJournalPathStillSafe(target, lockPath, dir, lock, []string{source}); err != nil {
+		t.Fatalf("unchanged canonical journal parent refused: %v", err)
+	}
+	moved := filepath.Join(source, "journal")
+	if err := os.Rename(parent, moved); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(moved, parent); err != nil {
+		t.Fatal(err)
+	}
+	// The open lock and its path still name the same inode. Rechecking only
+	// that inode and the target's lexical prefix misses this parent alias.
+	assertCode(t, checkJournalPathStillSafe(target, lockPath, dir, lock, []string{source}), "refusal.reconcile-write-target")
+}
+
+func TestJournalPersistenceAnchorsIOAcrossParentPivots(t *testing.T) {
+	for _, phase := range []string{"create", "rename", "cleanup", "directory-sync"} {
+		t.Run(phase, func(t *testing.T) {
+			base := t.TempDir()
+			parent, source, moved := filepath.Join(base, "journal"), filepath.Join(base, "source"), filepath.Join(base, "moved-journal")
+			for _, path := range []string{parent, source} {
+				if err := os.Mkdir(path, 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
+			const name = "journal.json"
+			old, next, protected := []byte("old caller journal\n"), []byte("new complete caller journal\n"), []byte("protected source journal\n")
+			for path, data := range map[string][]byte{filepath.Join(parent, name): old, filepath.Join(source, name): protected} {
+				if err := os.WriteFile(path, data, 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			dir := openTestJournalDirectory(t, parent)
+			shadow := ""
+			pivot := func() error {
+				if phase == "cleanup" {
+					entries, err := os.ReadDir(parent)
+					if err != nil {
+						return err
+					}
+					for _, entry := range entries {
+						if strings.HasPrefix(entry.Name(), ".lds-journal-") {
+							shadow = entry.Name()
+						}
+					}
+					if shadow == "" {
+						return errors.New("test expected a sibling temp before rename")
+					}
+					if err := os.WriteFile(filepath.Join(source, shadow), protected, 0o600); err != nil {
+						return err
+					}
+				}
+				if err := os.Rename(parent, moved); err != nil {
+					return err
+				}
+				if err := os.Symlink(source, parent); err != nil {
+					return err
+				}
+				if phase == "cleanup" {
+					return errors.New("injected pre-rename failure after pivot")
+				}
+				return nil
+			}
+			hooks := journalWriteHooks{}
+			switch phase {
+			case "create":
+				hooks.beforeCreateTemp = pivot
+			case "rename", "cleanup":
+				hooks.beforeRename = pivot
+			case "directory-sync":
+				hooks.beforeDirectorySync = pivot
+			}
+			err := persistJournal(dir, name, next, hooks)
+			want := next
+			if phase == "cleanup" {
+				assertCode(t, err, "internal.reconcile-journal-write")
+				want = old
+			} else if err != nil {
+				t.Fatal(err)
+			}
+			got, err := os.ReadFile(filepath.Join(moved, name))
+			if err != nil || string(got) != string(want) {
+				t.Fatalf("anchored journal bytes = %q, want %q: %v", got, want, err)
+			}
+			entries, err := os.ReadDir(moved)
+			if err != nil || len(entries) != 1 || entries[0].Name() != name {
+				t.Fatalf("temp leaked outside anchored directory: %v %v", entries, err)
+			}
+			got, err = os.ReadFile(filepath.Join(source, name))
+			if err != nil || string(got) != string(protected) {
+				t.Fatalf("parent pivot changed source bytes: %q %v", got, err)
+			}
+			if shadow != "" {
+				got, err = os.ReadFile(filepath.Join(source, shadow))
+				if err != nil || string(got) != string(protected) {
+					t.Fatalf("temp cleanup followed pivot into source: %q %v", got, err)
+				}
+			}
+			sourceEntries, err := os.ReadDir(source)
+			wantCount := 1
+			if shadow != "" {
+				wantCount++
+			}
+			if err != nil || len(sourceEntries) != wantCount {
+				t.Fatalf("temp creation followed pivot into source: %v %v", sourceEntries, err)
+			}
+		})
+	}
+}
+
+func openTestJournalDirectory(t *testing.T, path string) *os.File {
+	t.Helper()
+	dir, err := openJournalDirectory(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := dir.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	return dir
+}
+
+func TestJournalAtomicReplacementFailureAndIndeterminateRecovery(t *testing.T) {
+	base := t.TempDir()
+	journalPath := filepath.Join(base, "journal.json")
+	oldEvent := makeRecordEvent(1, "candidate.recorded", "atomic-record-1", syntheticJournalObservation(journalRightRev, "a9fcf28638ddc43b9122fb54f764bd6feab099b694e6eef24d19bb8c33fbb462"))
+	oldJournal := testJournalBytes(oldEvent)
+	decision := makeDecisionEvent(2, "atomic-decide-2", syntheticJournalObservation(journalRightRev, "a9fcf28638ddc43b9122fb54f764bd6feab099b694e6eef24d19bb8c33fbb462"), Authority{
+		Owner: "fixture-owner", Status: "declared", AuthoritativeProjectID: stringPointer(journalRightID), PermittedDirections: []string{"right-to-left"},
+	}, Outcome{State: "unresolved"})
+	newJournal := testJournalBytes(oldEvent, decision)
+	if err := os.WriteFile(journalPath, oldJournal, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	dir := openTestJournalDirectory(t, base)
+
+	preRenameErr := persistJournal(dir, filepath.Base(journalPath), newJournal, journalWriteHooks{
+		beforeRename: func() error { return errors.New("injected rename failure") },
+	})
+	assertCode(t, preRenameErr, "internal.reconcile-journal-write")
+	var rendered *ldserr.Error
+	if !errors.As(preRenameErr, &rendered) || !strings.Contains(rendered.Message, "old journal bytes were preserved") {
+		t.Fatalf("pre-rename error did not explain unchanged old version: %v", preRenameErr)
+	}
+	current, err := os.ReadFile(journalPath)
+	if err != nil || string(current) != string(oldJournal) {
+		t.Fatalf("pre-rename failure changed old journal bytes: err=%v", err)
+	}
+
+	postRenameErr := persistJournal(dir, filepath.Base(journalPath), newJournal, journalWriteHooks{
+		beforeDirectorySync: func() error { return errors.New("injected directory sync failure") },
+	})
+	assertCode(t, postRenameErr, "internal.reconcile-journal-write")
+	if !errors.As(postRenameErr, &rendered) || !strings.Contains(rendered.Message, "commit outcome is indeterminate") || !strings.Contains(rendered.Message, "requestId") {
+		t.Fatalf("post-rename error did not direct revision/requestId recovery: %v", postRenameErr)
+	}
+	current, err = os.ReadFile(journalPath)
+	if err != nil || string(current) != string(newJournal) {
+		t.Fatalf("post-rename directory-sync failure did not leave the complete new journal visible: err=%v", err)
+	}
+
+	pairPath := filepath.Join(base, "pair.json")
+	pairBytes, err := json.Marshal(map[string]any{
+		"schemaVersion": 1, "pairId": journalPairID,
+		"left":  map[string]any{"projectId": journalLeftID, "revision": journalLeftRev},
+		"right": map[string]any{"projectId": journalRightID, "revision": journalRightRev},
+		"scope": map[string]any{"leftPaths": []string{}, "rightPaths": []string{}, "candidates": []any{}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(pairPath, pairBytes, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	read, err := ReadJournal(JournalInput{PairPath: pairPath, JournalPath: journalPath})
+	if err != nil || read.Revision != 2 || len(read.Events) != 2 {
+		t.Fatalf("indeterminate commit cannot be recovered by reading revision/requestId: revision=%d events=%d err=%v", read.Revision, len(read.Events), err)
+	}
+	var lastEvent journalEvent
+	if err := json.Unmarshal(read.Events[1], &lastEvent); err != nil || lastEvent.RequestID != "atomic-decide-2" || lastEvent.Seq != 2 {
+		t.Fatalf("recovery read did not expose committed request identity: event=%+v err=%v", lastEvent, err)
+	}
+	entries, err := os.ReadDir(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), ".lds-journal-") {
+			t.Errorf("atomic replacement leaked temp file %q", entry.Name())
+		}
+	}
 }
 
 func scanRecordJournal(t *testing.T, scan Response, candidate Candidate, scanBytes []byte) []byte {

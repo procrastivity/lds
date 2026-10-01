@@ -76,8 +76,8 @@ type Assessment struct {
 
 // Confidence is a qualitative reviewer assessment, not a score.
 type Confidence struct {
-	Level     string `json:"level"`
-	Rationale string `json:"rationale,omitempty"`
+	Level     string          `json:"level"`
+	Rationale json.RawMessage `json:"rationale,omitempty"`
 }
 
 // Authority is the explicit owner declaration governing permitted directions.
@@ -152,6 +152,7 @@ type journalCandidate struct {
 type journalState struct {
 	Revision   int
 	Candidates map[string]*journalCandidate
+	Events     []json.RawMessage
 }
 
 type requestCommon struct {
@@ -234,7 +235,11 @@ func parseJournal(data []byte, pairID, leftProjectID, rightProjectID string) (*j
 	if document.SchemaVersion != 1 || document.PairID != pairID || document.LeftProjectID != leftProjectID || document.RightProjectID != rightProjectID || document.Revision < 0 || document.Events == nil || document.Revision != len(document.Events) {
 		return nil, evidenceInvalid("journal schema, pair identity, revision, or events are incompatible")
 	}
-	state := &journalState{Revision: document.Revision, Candidates: make(map[string]*journalCandidate)}
+	state := &journalState{
+		Revision:   document.Revision,
+		Candidates: make(map[string]*journalCandidate),
+		Events:     make([]json.RawMessage, 0, len(document.Events)),
+	}
 	requestIDs := make(map[string]bool, len(document.Events))
 	for index, data := range document.Events {
 		event, err := parseJournalEvent(data, index+1, pairID, leftProjectID, rightProjectID)
@@ -251,6 +256,11 @@ func parseJournal(data []byte, pairID, leftProjectID, rightProjectID string) (*j
 		if err := validateCurrentCorrespondences(state); err != nil {
 			return nil, evidenceInvalid("invalid journal event %d correspondence state: %v", index+1, err)
 		}
+		canonical, err := canonicalJournalEvent(event.envelope)
+		if err != nil {
+			return nil, evidenceInvalid("cannot canonicalize journal event %d: %v", index+1, err)
+		}
+		state.Events = append(state.Events, canonical)
 	}
 	return state, nil
 }
@@ -551,10 +561,16 @@ func validateAssessment(value Assessment) error {
 	if strings.TrimSpace(value.Code) == "" || !validTrust(value.Trust) {
 		return errors.New("assessment code or trust is invalid")
 	}
+	var rationale string
+	if value.Confidence.Rationale != nil {
+		if bytes.Equal(bytes.TrimSpace(value.Confidence.Rationale), []byte("null")) || json.Unmarshal(value.Confidence.Rationale, &rationale) != nil {
+			return errors.New("confidence rationale must be a string when supplied")
+		}
+	}
 	switch value.Confidence.Level {
 	case "not-assessed":
 	case "low", "medium", "high":
-		if strings.TrimSpace(value.Confidence.Rationale) == "" {
+		if strings.TrimSpace(rationale) == "" {
 			return errors.New("assessed confidence requires a rationale")
 		}
 	default:

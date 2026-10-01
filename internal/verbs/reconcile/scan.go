@@ -13,11 +13,11 @@ import (
 	"github.com/procrastivity/lds/internal/surface"
 )
 
-// Command registers the read-only reconciliation scanner.
+// Command registers reconciliation scan and journal plumbing.
 func Command(streams *iostreams.Streams) *cobra.Command {
 	group := &cobra.Command{
 		Use:   "reconcile",
-		Short: "compare explicitly pinned project evidence without interpreting it",
+		Short: "scan pinned project evidence and review its caller-owned journal",
 	}
 	scan := &cobra.Command{
 		Use:   "scan",
@@ -61,5 +61,6 @@ func Command(streams *iostreams.Streams) *cobra.Command {
 	surface.Annotate(scan, surface.Plumbing)
 	manifest.SetOutputSchema(scan, json.RawMessage(`{"type":"object","required":["schemaVersion","operation","ok","pairId","pairPath","pairSha256","leftRoot","rightRoot","snapshots","maps","candidates"],"properties":{"schemaVersion":{"const":1},"operation":{"const":"reconcile scan"},"ok":{"const":true},"pairId":{"type":"string"},"pairPath":{"type":"string"},"pairSha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"leftRoot":{"type":"string"},"rightRoot":{"type":"string"},"journalPath":{"type":"string"},"snapshots":{"type":"object"},"maps":{"type":"array","items":{"type":"object","required":["projectId","revision","path","sha256"],"properties":{"projectId":{"type":"string"},"revision":{"type":"string"},"path":{"type":"string"},"sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"}}}},"candidates":{"type":"array","items":{"type":"object","required":["candidateId","candidateKey","evidenceDigest","evidence","left","right","confidence","evidenceStatus"],"properties":{"candidateId":{"type":"string","pattern":"^cand-v1-[0-9a-f]{64}$"},"candidateKey":{"type":"string"},"evidenceDigest":{"type":["string","null"]},"evidence":{"type":"array"},"left":{"type":"array"},"right":{"type":"array"},"confidence":{"const":"not-assessed"},"evidenceStatus":{"enum":["not-compared","new","unchanged","changed","out-of-scope"]},"journalRevision":{"type":"integer"},"journalEvidenceDigest":{"type":["string","null"]},"lastDecision":{"type":["object","null"]}}}}}}`))
 	group.AddCommand(scan)
+	group.AddCommand(JournalCommand(streams))
 	return group
 }
