@@ -12,6 +12,7 @@ import (
 	"github.com/procrastivity/lds/internal/iostreams"
 	"github.com/procrastivity/lds/internal/surface"
 	adoptverb "github.com/procrastivity/lds/internal/verbs/adopt"
+	adoptflowverb "github.com/procrastivity/lds/internal/verbs/adoptflow"
 	docsverb "github.com/procrastivity/lds/internal/verbs/docs"
 	doctorverb "github.com/procrastivity/lds/internal/verbs/doctor"
 	installverb "github.com/procrastivity/lds/internal/verbs/install"
@@ -48,11 +49,13 @@ func NewRootCommand(streams *iostreams.Streams, build buildinfo.Info) *cobra.Com
 	}
 	root.SetOut(streams.Out)
 	root.SetErr(streams.Err)
+	root.SetIn(streams.In)
 
 	root.PersistentFlags().Bool("json", false, "emit the success payload as one JSON value")
 	root.PersistentFlags().BoolP("verbose", "v", false, "extra diagnostic lines on stderr")
 
 	root.AddCommand(versionverb.Command(streams, build))
+	root.AddCommand(adoptflowverb.Command(streams))
 	plumbing := &cobra.Command{Use: "plumbing", Short: "deterministic commands for skills and scripts"}
 	plumbing.AddCommand(adoptverb.Command(streams))
 	plumbing.AddCommand(manifestverb.Command(streams, build, root))

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"unicode"
@@ -22,6 +23,22 @@ import (
 
 const documentAsset = "flows/adopt.md"
 
+// ErrInvalidDocument marks a missing or unsafe shared adoption-flow asset.
+var ErrInvalidDocument = errors.New("invalid adoption document")
+
+// ResolveDocument returns the live, validated shared adoption-flow asset.
+// The root workflow and the plumbing reader consume this same source.
+func ResolveDocument() (asset.Resolved, error) {
+	resolved, err := asset.Resolve(documentAsset)
+	if err != nil {
+		return asset.Resolved{}, fmt.Errorf("resolve %s: %w", documentAsset, err)
+	}
+	if !validDocument(resolved.Bytes()) {
+		return asset.Resolved{}, fmt.Errorf("%w: asset %q must be non-empty UTF-8 Markdown without unsafe control characters", ErrInvalidDocument, documentAsset)
+	}
+	return resolved, nil
+}
+
 // Command constructs the read-only `lds plumbing adopt` document verb.
 func Command(streams *iostreams.Streams) *cobra.Command {
 	cmd := &cobra.Command{
@@ -30,14 +47,14 @@ func Command(streams *iostreams.Streams) *cobra.Command {
 		Long:  "Print the live, preparation-only adoption flow document. This command does not run adoption, inspect a target, plan, request confirmation, or write project files.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			resolved, err := asset.Resolve(documentAsset)
+			resolved, err := ResolveDocument()
 			if err != nil {
-				return ldserr.New("internal.adopt-document-unavailable", fmt.Sprintf("resolve %s: %v", documentAsset, err))
+				if errors.Is(err, ErrInvalidDocument) {
+					return ldserr.New("validation.adopt-document-invalid", err.Error())
+				}
+				return ldserr.New("internal.adopt-document-unavailable", err.Error())
 			}
 			content := resolved.Bytes()
-			if !validDocument(content) {
-				return ldserr.New("validation.adopt-document-invalid", fmt.Sprintf("asset %q must be non-empty UTF-8 Markdown without unsafe control characters", documentAsset))
-			}
 
 			if cliflags.FromContext(cmd.Context()).JSON {
 				sum := sha256.Sum256(content)

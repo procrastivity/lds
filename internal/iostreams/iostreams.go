@@ -11,11 +11,12 @@ import (
 
 // Streams is the writer pair threaded into every verb constructor.
 type Streams struct {
+	In  io.Reader
 	Out io.Writer
 	Err io.Writer
 }
 
 // System returns the real process streams.
 func System() *Streams {
-	return &Streams{Out: os.Stdout, Err: os.Stderr}
+	return &Streams{In: os.Stdin, Out: os.Stdout, Err: os.Stderr}
 }

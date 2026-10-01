@@ -65,6 +65,13 @@ func Apply(root, factsPath, planPath, confirmation string) (ApplyResult, error) 
 	if err != nil {
 		return refusedApplyResult(PlanResult{}, "refusal.plan-invalid", "reviewed plan cannot be read")
 	}
+	return ApplyReviewed(root, factsPath, data, confirmation)
+}
+
+// ApplyReviewed consumes the exact in-memory plan shown by a host workflow.
+// It shares Apply's strict digest, stale-input, and exclusive-create checks
+// without requiring the orchestration layer to create a temporary plan file.
+func ApplyReviewed(root, factsPath string, data []byte, confirmation string) (ApplyResult, error) {
 	if err := rejectDuplicateJSONKeys(data); err != nil {
 		return refusedApplyResult(PlanResult{}, "refusal.plan-invalid", "reviewed plan contains duplicate JSON keys")
 	}

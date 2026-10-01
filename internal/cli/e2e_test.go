@@ -118,12 +118,32 @@ func TestUsageError_UnknownCommand(t *testing.T) {
 	}
 }
 
+func TestAdoptUsageAndNoninteractiveRefusal(t *testing.T) {
+	root := t.TempDir()
+	missingFacts := filepath.Join(t.TempDir(), "not-read-without-a-terminal.json")
+	text := run(t, nil, "adopt", root, "--facts", missingFacts)
+	if text.exitCode != 3 || text.stdout != "" || !strings.Contains(text.stderr, "interactive terminal") {
+		t.Fatalf("noninteractive root adopt = %+v; want refusal before reading facts or contacting provider", text)
+	}
+	jsonMode := run(t, nil, "adopt", root, "--facts", missingFacts, "--json")
+	if jsonMode.exitCode != 3 || jsonMode.stdout != "" || parseErrorEnvelope(t, jsonMode.stderr).Error.Code != "refusal.interactive-required" {
+		t.Fatalf("noninteractive JSON root adopt = %+v; want inherited JSON error envelope", jsonMode)
+	}
+	usage := run(t, nil, "adopt", root, "--json")
+	if usage.exitCode != 2 || usage.stdout != "" || !strings.HasPrefix(usage.stderr, "lds: ") || strings.HasPrefix(usage.stderr, "{") {
+		t.Fatalf("root adopt missing --facts usage must remain a text usage error: %+v", usage)
+	}
+	if entries, err := os.ReadDir(root); err != nil || len(entries) != 0 {
+		t.Fatalf("noninteractive or usage path changed target: entries=%v err=%v", entries, err)
+	}
+}
+
 func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	root := run(t, nil, "--help")
 	if root.exitCode != 0 || root.stderr != "" {
 		t.Fatalf("root help: exit=%d stderr=%q", root.exitCode, root.stderr)
 	}
-	for _, name := range []string{"doctor", "install", "manifest", "plumbing", "uninstall", "version"} {
+	for _, name := range []string{"adopt", "doctor", "install", "manifest", "plumbing", "uninstall", "version"} {
 		if !strings.Contains(root.stdout, "\n  "+name) {
 			t.Errorf("root help omits root command %q: %s", name, root.stdout)
 		}
@@ -329,6 +349,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		}
 	}
 	want := map[string]string{
+		"adopt":                                 "",
 		"version":                               "",
 		"manifest":                              "plumbing manifest",
 		"install":                               "",
@@ -354,6 +375,9 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		if strings.HasPrefix(verb.Name, "docs ") {
 			t.Errorf("manifest retained an unqualified docs leaf %q", verb.Name)
 		}
+		if verb.Name == "adopt" && verb.Kind != "llm" {
+			t.Errorf("root adopt kind = %q, want llm so it cannot enter the deterministic skill projection", verb.Kind)
+		}
 		if canonical, required := want[verb.Name]; required {
 			seen[verb.Name] = true
 			if verb.AliasOf != canonical {
@@ -366,8 +390,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 18 || len(seen) != len(want) || projectable != 13 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want eighteen leaves and thirteen projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 19 || len(seen) != len(want) || projectable != 13 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want nineteen leaves and thirteen projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 

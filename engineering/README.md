@@ -7,8 +7,11 @@ belongs in `docs/` and follows Diátaxis. The tool currently has a Toolsmith
 scaffold and harness-management commands plus five deterministic
 `lds plumbing docs` leaves, as well as deterministic `lds plumbing reconcile`
 scan and explicit journal operations. Reconciliation is bounded to pinned
-evidence and a caller-owned journal; human-facing documentation workflows and
-a reconciliation facilitator are not implemented.
+evidence and a caller-owned journal. The interactive root
+`lds adopt <root> --facts <facts.json>` form uses the live shared flow and
+those deterministic docs operations; it is not a paired skill, pilot, or
+first-release claim. The paired adoption skill and a human-facing
+reconciliation facilitator remain deferred.
 
 Start with the [roadmap](product/roadmap.md) for proposed capabilities and
 their status. The [source-repository map](architecture/source-repositories.md)

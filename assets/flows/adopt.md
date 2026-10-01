@@ -1,28 +1,34 @@
 # Prepare a create-only LDS documentation adoption
 
-**Status:** Preparation source only. This flow is not an executable paired
-CLI/skill delivery. No real target has been selected or authorized, and this
-document does not authorize writes.
+**Status:** Shared flow source consumed live by the interactive root CLI form
+and retained for later Claude Code skill parity work. The CLI implementation
+does not establish a real pilot or authorize writes by itself. No real target
+has been selected or authorized.
 
-The future `lds adopt` workflow and its Claude Code presentation must consume
-this one numbered source. Before that can be delivered, the provider,
-endpoint, model, credential source, and authorized disposable live access
-must be settled. The first step below depends on the future deterministic
-`lds plumbing adopt` document verb (Toolsmith C8.4); that verb does not exist
-yet. It is distinct from `lds plumbing docs plan` and from the later human
-confirmation of a plan digest.
+The root command `lds adopt <root> --facts <facts.json>` and any future Claude
+Code presentation must consume this one numbered source, not duplicate it.
+The CLI resolves it through the live asset chain on each invocation, so a
+valid user override affects both `lds adopt` and `lds plumbing adopt` without
+reinstalling the skill. OpenCode Go, the endpoint, `deepseek-v4-flash`, and
+the credential source are settled for this form. The plumbing document reader
+exists; it only displays this asset and remains distinct from the root
+workflow and from the later human confirmation of a plan digest.
 
 ## Shared flow
 
-1. **Read the live adoption instructions.** Obtain the readable document from
-   future `lds plumbing adopt` (structured `--json` is also required). Stop if
-   that document verb is unavailable; do not substitute this asset or infer
-   missing behavior. This is the shared-flow entry point, not a target
-   preflight and not approval.
+1. **Read the live adoption instructions.** The deterministic
+   `lds plumbing adopt` reader displays this document (structured `--json` is
+   also available); it does not execute adoption. The root `lds adopt` form
+   resolves and consumes this same live asset directly. Stop if resolution
+   fails; do not substitute a copied flow or infer missing behavior. Reading
+   the flow is not a target preflight and is not approval.
 
 2. **Establish the explicit target and bounded documentation inventory.**
-   Ask for an existing target root; never infer it from the current directory.
-   Run `lds plumbing docs inventory <root> --json`. Review scoped Markdown
+   Require an existing target root explicitly; never infer it from the
+   current directory. The root CLI requires `lds adopt <root> --facts
+   <facts.json>`; it does not execute arbitrary shell commands. Run the
+   deterministic `lds plumbing docs inventory <root> --json` operation and
+   review scoped Markdown
    paths, hashes, supported links, and skips. Inventory covers root
    `README.md` and Markdown under `engineering/` and `docs/`; it is not a
    source-code or whole-repository scan. Symlinks in scope are skipped and a
@@ -36,19 +42,25 @@ confirmation of a plan digest.
    complete Markdown or external-link validation.
 
 4. **Collect verified target facts and approval evidence.** Obtain the
-   complete fact bundle required by the
+   complete owner-supplied fact bundle required by the
    [adoption contract](../../engineering/product/adoption-contract.md) and
    [operations contract](../../engineering/product/adoption-operations-contract.md):
    owner-approved display name and purpose, current capability and sources,
    and a verified existing user operation with prerequisites, exact
    invocation and input, observed or source-backed output, limitations,
-   evidence/source references, approver, and provenance. Facts describe the
-   target, never LDS by default. Do not fabricate, infer, or turn plans into
-   current capability. A fixture may supply explicitly test-only approval
-   and source/run evidence for that disposable fixture; this is not real
-   project authorization or real-pilot evidence. Stop without planning if
+   evidence/source references, approver, and provenance. In the root CLI
+   form, supply this bundle explicitly with `--facts`. Accepting one JSON
+   facts file is a reversible Stage 4 Step 8 interface assumption, not a
+   permanent UX decision. The model may provide an advisory fact-to-output
+   mapping, but does not create, complete, rewrite, or verify the bundle.
+   Facts describe the target, never LDS by default. Do not fabricate, infer,
+   or turn plans into current capability. A fixture may supply
+   explicitly test-only approval and source/run evidence for that disposable
+   fixture; this is not real-project authorization or real-pilot evidence.
+   Stop without planning if
    any required fact is missing or unverified; ask the owner to supply or
-   verify it rather than filling gaps.
+   verify it rather than filling gaps. Structural approval/provenance values
+   are owner assertions, not authentication or model-verified truth.
 
 5. **Render and inspect the four candidate files.** Run
    `lds plumbing docs render <root> --facts <facts.json> --json`. Review the
@@ -56,7 +68,8 @@ confirmation of a plan digest.
    allowlisted outputs. Treat fact values as plain text and inspect their
    rendered Markdown context. A render/validation error stops without
    writes. Rendering is read-only and does not establish that owner claims
-   are true.
+   are true. The root CLI runs the same renderer locally; its final result
+   records the live flow asset source and byte hash as well.
 
 6. **Build and present the full read-only preflight.** Run
    `lds plumbing docs plan <root> --facts <facts.json> --json`. Present the
@@ -74,18 +87,24 @@ confirmation of a plan digest.
    created. Root `README.md` is report-only. A read-only plan never writes.
    Continue only when `veto` is `false` and `planDigest` is non-null;
    otherwise present the refusal/collision reasons and stop without asking
-   for confirmation or invoking apply.
+   for confirmation or invoking apply. Before its advisory request, the root
+   CLI asks for exact `send` consent; it sends the live flow, owner-supplied
+   facts, and aggregate inventory/link counts, but no target source contents,
+   rendered content, or plan digest. Declining stops before the provider call.
 
-7. **Obtain a fresh human decision for this exact plan.** Show all of the
-   reviewed plan again and ask the human to approve or decline the exact
+7. **Obtain a fresh human decision for this exact plan.** Show the complete
+   reviewed plan and ask the human to approve or decline the exact
    displayed digest. Do not infer approval from facts, prior consent, a
    printed/extracted digest, or fixture metadata. A decline or noninteractive
    invocation stops with no writes. Any changed facts, assets, diagnostics,
    target, or other displayed plan field requires a new full review and
-   fresh decision; never silently substitute a newly computed plan.
+   fresh decision; never silently substitute a newly computed plan. The
+   interactive root CLI accepts only the exact host-prompted line
+   `apply <planDigest>`; model output cannot supply or confirm it.
 
 8. **Apply only the reviewed, eligible plan.** After explicit fresh
-   confirmation, invoke
+   confirmation, the root CLI invokes the same deterministic apply operation
+   in-process; a caller using plumbing invokes
    `lds plumbing docs apply <root> --facts <facts.json> --plan <reviewed.json> --confirm <digest> --json`
    with the exact reviewed JSON and digest. Apply revalidates the plan and
    refuses stale inputs, vetoes, unsafe paths, or unsupported platform
@@ -100,14 +119,15 @@ confirmation of a plan digest.
 
 ## Presentation boundary
 
-The numbered actions and decision gates above are shared. A future CLI may
-collect explicit arguments and display JSON; Claude Code may ask for values
-and present the same results conversationally. Neither presentation may
-omit the full plan, turn diagnostics into hidden decisions, or bypass the
-fresh exact-digest human gate. Noninteractive execution stops without
-writing. This preparation source does not claim that `lds adopt`,
-`lds plumbing adopt`, a provider-backed workflow, or a projected skill is
-implemented or tested, and it does not establish CLI/skill parity.
+The numbered actions and decision gates above are shared. The root CLI takes
+the explicit target and owner-supplied facts file, runs deterministic
+operations locally, and presents the same full plan before its host-side
+decision gate. A future Claude Code skill may ask for values and present the
+same results conversationally. Neither presentation may omit the full plan,
+turn diagnostics into hidden decisions, or bypass the fresh exact-digest
+human gate. Noninteractive execution stops without writing. The plumbing
+reader remains read-only. This flow does not claim installed-skill parity,
+successful live workflow reliability, or a real-project adoption.
 
 ## Accepted boundaries
 

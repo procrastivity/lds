@@ -12,17 +12,25 @@ resolution, and harness management. The root porcelain retains `version`,
 `install`, and `uninstall`; the canonical plumbing members are
 `lds plumbing manifest` and `lds plumbing doctor`, with reviewed root
 aliases. These commands manage the CLI and projected agent skills; they do
-**not** create, assess, or reconcile project documentation.
+not assess or reconcile project documentation; BDS-251 Stage 4 adds a
+separate explicit adoption form described below.
 Five bounded `lds plumbing docs` leaves now inventory, check supported local
 links, render the four adoption assets, preview a plan, and exclusively create
-missing approved files after reviewed digest confirmation. See the
+missing approved files after reviewed digest confirmation. The root
+`lds adopt <root> --facts <facts.json>` CLI form now uses the shared live flow,
+OpenCode Go / `deepseek-v4-flash`, and those deterministic operations. It
+requires owner-supplied facts and interactive exact-digest human confirmation;
+the model is advisory and has no tools or source-file access. This is not an
+installed-skill parity result, a named pilot, or first-release inclusion. See
+the [flow/plumbing map](adoption-flow-plumbing-map.md) for its bounded
+behavior and the
 [runtime handoff](adoption-operations-runtime-handoff.md) for evidence and
-limitations; no human-facing flow or real pilot is established.
+limitations; no real pilot is established.
 
 BDS-252 adds `lds plumbing reconcile scan` and the explicit
 `lds plumbing reconcile journal read|record|decide|reconsider` operations for
 strict, deterministic evidence inspection and caller-owned decision history.
-The actual manifest currently contains 18 leaves, including 13 qualified
+The actual manifest currently contains 19 leaves, including 13 qualified
 plumbing-kind projection entries. These commands do not infer semantic
 correspondence, choose real-pair authority, edit source repositories, or
 provide a human-facing reconciliation workflow. See the
@@ -51,8 +59,10 @@ implemented deterministic plumbing and must be settled before any real use:
   supported?
 - **Write safety:** When may LDS create, update, or replace existing files?
   Which actions need a reviewable plan or human approval?
-- **LLM execution:** Will the first release include a CLI-side LLM workflow
-  as well as a projected skill? If so, how will the CLI obtain an LLM?
+- **LLM release and pairing:** Step 8 implements the CLI-side form using the
+  selected provider, but first-release inclusion and an installed paired skill
+  remain open pending S10 acceptance and separate release choice. Do not infer
+  endpoint reliability or CLI/skill parity from this implementation.
 - **Reconciliation application:** Which real pair, if any, is an authorized
   pilot? Who may declare pair/topic authority and permitted directions, and
   what external evidence is sufficient to verify an applied transfer?
@@ -72,8 +82,10 @@ implemented deterministic plumbing and must be settled before any real use:
    Provide machine-readable results and tests before agent-driven flows.
 3. Add human-facing flows and agent-specific skills that use those
    operations to adopt LDS, keep documentation aligned with code, and
-   review both tracks. Keep the skill projection derived from the CLI
-   manifest and shipped assets.
+   review both tracks. The create-only `lds adopt` CLI form is implemented
+   under BDS-251 Stage 4 Step 8; the paired Claude Code skill and parity gate
+   remain later work. Keep the skill projection derived from the CLI manifest
+   and shipped assets.
 4. **Implemented, bounded:** specify and implement deterministic cross-project
    reconciliation plumbing separately from within-project documentation
    maintenance. The v1 scan reports pinned evidence; explicit journal requests
@@ -99,6 +111,7 @@ would bootstrap documentation *inside another project*.
 | Porcelain | `lds assess` | Inventory an existing project's docs and plan adoption. |
 | Porcelain | `lds update` | Bring one project's docs into line with its changed code and decisions. |
 | Porcelain | `lds review` | Audit coverage, links, and cross-track consistency. |
+| Porcelain (implemented, outside first-release claim) | `lds adopt <root> --facts <facts.json>` | Interactively review a create-only four-output documentation plan and apply only after fresh exact-digest human consent. |
 | Porcelain | `lds reconcile` | Compare projects and guide explicit port/backport/divergence decisions. |
 | Plumbing (implemented, bounded) | `lds plumbing docs inventory`, `validate`, `render`, `plan`, `apply` | Report scoped files/links, check supported local targets, render four assets, preview and create missing approved files without an LLM. |
 | Plumbing (implemented, bounded) | `lds plumbing reconcile scan`; `lds plumbing reconcile journal read`, `record`, `decide`, `reconsider` | Inspect explicitly scoped pinned artifacts/maps and persist caller-reviewed correspondence and outcomes; never infer semantic matches or write a source. See the [engineering handoff](bds-252-stage-4-engineering-handoff.md). |

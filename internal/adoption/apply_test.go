@@ -32,6 +32,40 @@ func TestApply_CreatesOnlyReviewedOutputsAndIdenticalRerunIsCurrent(t *testing.T
 	}
 }
 
+func TestApplyReviewedUsesRawDisplayedFieldsAndDigest(t *testing.T) {
+	useIsolatedAssetDirectories(t)
+	acceptedRoot := t.TempDir()
+	plan, err := Plan(acceptedRoot, applyFactsPath)
+	if err != nil || plan.PlanDigest == nil {
+		t.Fatalf("Plan: digest=%v err=%v", plan.PlanDigest, err)
+	}
+	raw, err := json.Marshal(plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	accepted, err := ApplyReviewed(acceptedRoot, applyFactsPath, raw, *plan.PlanDigest)
+	if err != nil || accepted.Status != "applied" || len(accepted.Created) != 4 {
+		t.Fatalf("exact in-memory reviewed bytes = %+v, %v", accepted, err)
+	}
+
+	changedRoot := t.TempDir()
+	changedPlan, err := Plan(changedRoot, applyFactsPath)
+	if err != nil || changedPlan.PlanDigest == nil {
+		t.Fatalf("second Plan: digest=%v err=%v", changedPlan.PlanDigest, err)
+	}
+	changedBytes, err := json.Marshal(changedPlan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changedBytes = bytes.Replace(changedBytes, []byte(`"veto":false`), []byte(`"veto":true`), 1)
+	if !bytes.Contains(changedBytes, []byte(`"veto":true`)) {
+		t.Fatal("asymmetric reviewed-field mutation did not alter the raw plan")
+	}
+	refused, err := ApplyReviewed(changedRoot, applyFactsPath, changedBytes, *changedPlan.PlanDigest)
+	assertApplyRefused(t, refused, err, "refusal.plan-invalid")
+	assertNoApprovedOutputs(t, changedRoot)
+}
+
 func TestApply_DeclineTamperAndStaleInputsWriteNothing(t *testing.T) {
 	t.Run("declined", func(t *testing.T) {
 		useIsolatedAssetDirectories(t)
