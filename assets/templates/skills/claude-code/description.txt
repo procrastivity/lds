@@ -1,1 +1,1 @@
-Use when inspecting or maintaining the installed LDS CLI and its generated deterministic skill; the interactive root adoption form has no paired skill workflow yet.
+Use when inspecting or maintaining the LDS CLI or its generated skill, or when preparing a create-only documentation adoption for an explicit target with complete owner-verified facts.

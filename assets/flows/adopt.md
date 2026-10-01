@@ -1,12 +1,13 @@
 # Prepare a create-only LDS documentation adoption
 
 **Status:** Shared flow source consumed live by the interactive root CLI form
-and retained for later Claude Code skill parity work. The CLI implementation
-does not establish a real pilot or authorize writes by itself. No real target
-has been selected or authorized.
+and by the generated Claude Code skill route at use time. The generated skill
+does not embed this document or enforce its gates. Neither form establishes a
+real pilot or authorizes writes by itself. No real target has been selected or
+authorized.
 
-The root command `lds adopt <root> --facts <facts.json>` and any future Claude
-Code presentation must consume this one numbered source, not duplicate it.
+The root command `lds adopt <root> --facts <facts.json>` and the generated
+Claude Code skill route consume this one numbered source, not duplicate it.
 The CLI resolves it through the live asset chain on each invocation, so a
 valid user override affects both `lds adopt` and `lds plumbing adopt` without
 reinstalling the skill. OpenCode Go, the endpoint, `deepseek-v4-flash`, and
@@ -122,8 +123,9 @@ workflow and from the later human confirmation of a plan digest.
 The numbered actions and decision gates above are shared. The root CLI takes
 the explicit target and owner-supplied facts file, runs deterministic
 operations locally, and presents the same full plan before its host-side
-decision gate. A future Claude Code skill may ask for values and present the
-same results conversationally. Neither presentation may omit the full plan,
+decision gate. The generated Claude Code skill fetches this live document
+and may present the same results conversationally. Neither presentation may
+omit the full plan,
 turn diagnostics into hidden decisions, or bypass the fresh exact-digest
 human gate. Noninteractive execution stops without writing. The plumbing
 reader remains read-only. This flow does not claim installed-skill parity,

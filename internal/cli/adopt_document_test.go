@@ -134,8 +134,32 @@ func TestAdoptDocument_OverrideIsLiveAfterInstallAndMalformedOverrideRefuses(t *
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(skill), "plumbing adopt") || !strings.Contains(string(skill), "does not start adoption") || strings.Contains(string(skill), "# Prepare a create-only LDS documentation adoption") {
+	if !strings.Contains(string(skill), "name: lds") ||
+		!strings.Contains(string(skill), "Use when inspecting or maintaining the LDS CLI") ||
+		!strings.Contains(string(skill), "lds plumbing adopt --json") ||
+		!strings.Contains(string(skill), "unavailable-for-execution` availability") ||
+		!strings.Contains(string(skill), "sole source of workflow sequencing") ||
+		!strings.Contains(string(skill), "display the entire exact plan") ||
+		!strings.Contains(string(skill), "veto` is false and `planDigest` is") ||
+		!strings.Contains(string(skill), "fresh human decision for that completely displayed") ||
+		!strings.Contains(string(skill), "findings/skips alone do not veto") ||
+		!strings.Contains(string(skill), "Keep any plan artifact") ||
+		!strings.Contains(string(skill), "not behavioral enforcement") ||
+		strings.Contains(string(skill), "# Prepare a create-only LDS documentation adoption") {
 		t.Fatalf("generated skill does not project cautiously or copied the flow: %s", skill)
+	}
+	if strings.Contains(string(skill), "| `lds adopt <root>") || strings.Contains(string(skill), "root adoption form has no paired skill workflow yet") {
+		t.Fatalf("generated skill must not project the root LLM form or stale description: %s", skill)
+	}
+	orderedItems := 0
+	for _, line := range strings.Split(string(skill), "\n") {
+		line = strings.TrimSpace(line)
+		if len(line) >= 3 && line[0] >= '1' && line[0] <= '9' && line[1] == '.' && line[2] == ' ' {
+			orderedItems++
+		}
+	}
+	if orderedItems != 1 {
+		t.Fatalf("generated skill defines %d numbered steps; only the live-flow fetch may be procedural, with all workflow steps delegated to its current content", orderedItems)
 	}
 
 	override := []byte("# Changed live adoption document\n\nPreparation only.\n")

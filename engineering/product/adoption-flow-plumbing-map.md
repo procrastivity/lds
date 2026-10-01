@@ -1,8 +1,9 @@
 # BDS-251 adoption flow and plumbing map
 
-**Status:** Acceptance map for the create-only root `lds adopt` CLI form and
-its deterministic plumbing; not a flow asset or evidence of paired
-CLI/skill execution. The Claude Code counterpart remains a later gate.
+**Status:** Acceptance map for the create-only root `lds adopt` CLI form,
+deterministic plumbing, and the generated Claude Code skill route. It is not
+a flow asset or evidence of paired CLI/skill execution; S10 owns that runtime
+matrix.
 
 This map connects accepted [ADR-0002](../decisions/0002-bds-251-adoption-workflow-boundary.md)
 to the [adoption behavior contract](adoption-contract.md), the
@@ -41,8 +42,11 @@ only namespace members whose kind is `plumbing`; root `lds adopt` is kind
 `llm` and is not projected. Both forms resolve the single shared flow asset
 live, so an asset override is observed without reinstalling. The plumbing
 reader remains read-only. ADR-0002's provider gate is settled for the CLI
-form, but the installed Claude Code skill counterpart, independent paired
-acceptance, first-release inclusion, and real pilot remain unclaimed.
+form. The generated Claude Code skill asks for the live reader output at use
+time and follows it; it does not embed the flow. Its generated instructions
+are guidance, not behavioral enforcement. Independent installed-skill and
+endpoint execution/paired acceptance, first-release inclusion, and a real
+pilot remain unclaimed.
 
 ## Asymmetric disposable acceptance scenarios
 
