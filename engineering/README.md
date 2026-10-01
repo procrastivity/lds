@@ -20,6 +20,11 @@ reviewed root-command audience, kind, namespace placement, and compatibility
 alias decisions.
 The [flow-to-plumbing map](product/adoption-flow-plumbing-map.md) connects
 those decisions to existing documentation operations and disposable cases.
+The [BDS-252 reconciliation decision](decisions/0003-bound-cross-project-reconciliation.md)
+sets pair-specific authority, evidence trust, and caller-owned journal
+boundaries; its [pinned evidence](product/bds-252-stage-1-evidence.md) and
+[expected-case cards](product/bds-252-stage-1-expected-case-cards.md) do not
+authorize source-project edits.
 The [LDS Linear project](https://linear.app/beausimensen/project/lds-22892af0659b)
 tracks actionable work; decisions and command contracts belong in this repo.
 
