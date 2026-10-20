@@ -21,11 +21,21 @@ missing approved files after reviewed digest confirmation. The root
 OpenCode Go / `deepseek-v4-flash`, and those deterministic operations. It
 requires owner-supplied facts and interactive exact-digest human confirmation;
 the model is advisory and has no tools or source-file access. This is not an
-installed-skill parity result, a named pilot, or first-release inclusion. See
-the [flow/plumbing map](adoption-flow-plumbing-map.md) for its bounded
-behavior and the
-[runtime handoff](adoption-operations-runtime-handoff.md) for evidence and
-limitations; no real pilot is established.
+installed-skill parity result, a named pilot, or first-release inclusion.
+Stage 4 Step 9 added generated Claude Code `/lds` adoption guidance: it reads
+`lds plumbing adopt --json` live and delegates sequencing to
+`assets/flows/adopt.md`. The reader still reports `preparatory` and
+`unavailable-for-execution`; the guidance is not behavioral enforcement.
+S10 is accepted under reduced scope for completed executor CLI cases and
+independent High offline review, without independent live CLI replay or native
+skill execution/parity; neither further test wave is required for this
+acceptance. See the [S10 preparation record](bds-251-stage-4-step10-preparation.md)
+for evidence limits, the [flow/plumbing map](adoption-flow-plumbing-map.md)
+for bounded behavior, and the
+[BDS-251 engineering handoff](bds-251-stage-4-engineering-handoff.md) for offline
+regressions and observed limits. The
+[runtime handoff](adoption-operations-runtime-handoff.md) covers deterministic
+documentation operations. No real pilot is established.
 
 BDS-252 adds `lds plumbing reconcile scan` and the explicit
 `lds plumbing reconcile journal read|record|decide|reconsider` operations for
@@ -60,9 +70,11 @@ implemented deterministic plumbing and must be settled before any real use:
 - **Write safety:** When may LDS create, update, or replace existing files?
   Which actions need a reviewable plan or human approval?
 - **LLM release and pairing:** Step 8 implements the CLI-side form using the
-  selected provider, but first-release inclusion and an installed paired skill
-  remain open pending S10 acceptance and separate release choice. Do not infer
-  endpoint reliability or CLI/skill parity from this implementation.
+  selected provider and Step 9 projects adoption guidance into Claude Code.
+  S10's reduced-scope acceptance is not native adoption or a parity PASS;
+  first-release inclusion remains a separate choice. Do not infer provider
+  reliability, Anthropic support, or resolution of the original failed S7
+  attempt from this evidence.
 - **Reconciliation application:** Which real pair, if any, is an authorized
   pilot? Who may declare pair/topic authority and permitted directions, and
   what external evidence is sufficient to verify an applied transfer?
@@ -83,9 +95,10 @@ implemented deterministic plumbing and must be settled before any real use:
 3. Add human-facing flows and agent-specific skills that use those
    operations to adopt LDS, keep documentation aligned with code, and
    review both tracks. The create-only `lds adopt` CLI form is implemented
-   under BDS-251 Stage 4 Step 8; the paired Claude Code skill and parity gate
-   remain later work. Keep the skill projection derived from the CLI manifest
-   and shipped assets.
+   under BDS-251 Stage 4 Step 8; Step 9 implements generated Claude Code
+   adoption guidance, but native execution and CLI/skill parity remain
+   unverified. Keep the skill projection derived from the CLI manifest and
+   shipped assets.
 4. **Implemented, bounded:** specify and implement deterministic cross-project
    reconciliation plumbing separately from within-project documentation
    maintenance. The v1 scan reports pinned evidence; explicit journal requests

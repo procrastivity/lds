@@ -9,15 +9,21 @@ scaffold and harness-management commands plus five deterministic
 scan and explicit journal operations. Reconciliation is bounded to pinned
 evidence and a caller-owned journal. The interactive root
 `lds adopt <root> --facts <facts.json>` form uses the live shared flow and
-those deterministic docs operations; it is not a paired skill, pilot, or
-first-release claim. The paired adoption skill and a human-facing
-reconciliation facilitator remain deferred.
+those deterministic docs operations. Generated Claude Code `/lds` adoption
+guidance fetches that flow live through `lds plumbing adopt --json`; the reader
+is preparatory and the guidance is not behavioral enforcement. S10 accepts
+executor CLI evidence and independent offline review, not native adoption or
+CLI/skill parity. No pilot or first-release claim follows; a human-facing
+reconciliation facilitator remains deferred.
 
 Start with the [roadmap](product/roadmap.md) for proposed capabilities and
 their status. The [source-repository map](architecture/source-repositories.md)
 records what other projects contribute and how their local checkouts are found.
 The [adoption runtime handoff](product/adoption-operations-runtime-handoff.md)
 records the implemented plumbing, executable disposable evidence, and limits.
+The [BDS-251 engineering handoff](product/bds-251-stage-4-engineering-handoff.md)
+records the owner-reduced acceptance, offline regressions, and unverified
+native parity boundary.
 The [BDS-251 workflow decision](decisions/0002-bds-251-adoption-workflow-boundary.md)
 records the accepted preparation scope and gates for paired delivery.
 The [BDS-251 CLI surface audit](product/cli-surface-audit.md) records the

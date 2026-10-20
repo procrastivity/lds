@@ -8,9 +8,14 @@ scanning and explicit caller-owned journal operations. Reconciliation reads
 clean pinned Git snapshots and does not infer semantic matches or mutate
 source projects. The interactive root `lds adopt <root> --facts <facts.json>`
 form uses those deterministic docs operations with an advisory OpenCode Go
-request and a fresh exact-plan human gate; it is not a paired skill,
-real-pilot authorization, or first-release claim. The paired adoption skill
-and a human-facing reconciliation facilitator remain deferred.
+request and a fresh exact-plan human gate. Generated Claude Code `/lds`
+adoption guidance fetches `lds plumbing adopt --json` live and follows the
+shared `assets/flows/adopt.md` procedure; the reader remains preparatory and
+unavailable for execution, and the guidance does not enforce behavior. S10
+was accepted for executor CLI cases and independent offline review, not native
+skill execution or CLI/skill parity. Neither form authorizes a real pilot or
+establishes first-release inclusion. A human-facing reconciliation facilitator
+remains deferred.
 
 Built on the [toolsmith contract](https://github.com/procrastivity/toolsmith)
 (`toolsmith/v1` — the manifest declares it): a single static Go binary
@@ -47,9 +52,12 @@ record, starting with the [adoption decision](engineering/decisions/0001-adopt-t
 and [roadmap](engineering/product/roadmap.md). The [runtime handoff](engineering/product/adoption-operations-runtime-handoff.md)
 documents supported `lds plumbing docs` behavior and its limits; the
 [flow/plumbing map](engineering/product/adoption-flow-plumbing-map.md)
-records the root form's boundaries. No real project has been authorized as
-an adoption pilot; user-facing Diátaxis documentation for
-LDS itself is still to be written.
+records the root form's boundaries. The [S10 preparation record](engineering/product/bds-251-stage-4-step10-preparation.md)
+sets out the reduced-scope acceptance and evidence limits; the
+[BDS-251 engineering handoff](engineering/product/bds-251-stage-4-engineering-handoff.md)
+records offline regressions and remaining limits. No real project has been
+authorized as an adoption pilot; user-facing Diátaxis documentation for LDS
+itself is still to be written.
 The [BDS-252 engineering handoff](engineering/product/bds-252-stage-4-engineering-handoff.md)
 documents the reconciliation plumbing, bounded runtime evidence, and limits;
 it does not authorize a real-pair pilot or source transfer.
