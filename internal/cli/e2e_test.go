@@ -18,6 +18,7 @@ import (
 
 	rootassets "github.com/procrastivity/lds/assets"
 	"github.com/procrastivity/lds/internal/adoption"
+	"github.com/procrastivity/lds/internal/testgit"
 )
 
 var binPath string
@@ -43,7 +44,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	code := m.Run()
+	code := testgit.Run(m)
 	_ = os.RemoveAll(tmpDir)
 	os.Exit(code)
 }

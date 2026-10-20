@@ -13,7 +13,12 @@ import (
 	"time"
 
 	"github.com/procrastivity/lds/internal/ldserr"
+	"github.com/procrastivity/lds/internal/testgit"
 )
+
+func TestMain(m *testing.M) {
+	os.Exit(testgit.Run(m))
+}
 
 func TestCandidateIDIndependentVectors(t *testing.T) {
 	cases := []struct {
