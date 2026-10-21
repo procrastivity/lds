@@ -4,8 +4,12 @@ LDS inventories and validates a bounded documentation layer, can propose four
 create-only adoption files for a project, and scans explicitly pinned pairs of
 Git projects for reconciliation evidence. It also collects maintenance evidence
 and reviewer-authored proposals in a report without editing the target.
-Use an existing local CLI build or,
-with Nix installed, build from an LDS checkout:
+The `lds assess` workflow adds model-authored proposals after
+explicit consent to disclose the complete scoped source-content packet; the
+offline authored-brief path remains available without a provider.
+
+Use an existing local CLI build or, with Nix installed, build from an LDS
+checkout:
 
 ```sh
 nix build .#default
@@ -24,8 +28,9 @@ tutorial or deterministic plumbing.
   offline first run.
 - [Adopt documentation in a project](how-to/adopt-a-project.md) — prepare facts,
   inspect the complete plan, and make a separate human decision.
-- [Assess documentation](how-to/assess-documentation.md) — collect evidence,
-  proposed text and questions outside the project; no automatic edits.
+- [Assess documentation](how-to/assess-documentation.md) — an offline
+  authored-brief report, collect/observed binding, and a consent-gated
+  model workflow; all reports stay outside the project and never apply edits.
 - [Reconcile two projects](how-to/reconcile-projects.md) — scan clean pinned
   snapshots and keep an explicit review journal.
 - [Command reference](reference/commands.md) and [fact bundle reference](reference/facts.md).
@@ -45,3 +50,8 @@ adopting a project. The generated `/lds` guidance reads the live flow via
 `lds plumbing adopt --json`, but that reader is preparatory, not an adoption
 execution. Installing or discovering a skill does not establish native
 execution or parity with the root CLI.
+
+The assessment projection likewise uses the live
+`flows/assess.md` through `lds plumbing assess --json`; that reader only
+returns a preparatory flow, and installing guidance does not prove native
+assessment execution or CLI/skill parity.

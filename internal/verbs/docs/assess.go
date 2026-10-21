@@ -24,19 +24,16 @@ func assessCommand(streams *iostreams.Streams) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			brief, _ := cmd.Flags().GetString("brief")
 			output, _ := cmd.Flags().GetString("output")
-			result, err := adoption.Assess(args[0], brief, output)
+			observed, _ := cmd.Flags().GetString("observed")
+			var result adoption.AssessmentResult
+			var err error
+			if observed != "" {
+				result, err = adoption.AssessWithObservation(args[0], brief, observed, output)
+			} else {
+				result, err = adoption.Assess(args[0], brief, output)
+			}
 			if err != nil {
-				var structured *ldserr.Error
-				switch {
-				case errors.As(err, &structured):
-					return structured
-				case errors.Is(err, adoption.ErrUnsafeTarget):
-					return ldserr.New("refusal.unsafe-target", err.Error())
-				case errors.Is(err, os.ErrNotExist):
-					return ldserr.New("validation.assessment-path-missing", err.Error())
-				default:
-					return ldserr.New("internal.assessment-failed", err.Error())
-				}
+				return assessmentError(err)
 			}
 			if cliflags.FromContext(cmd.Context()).JSON {
 				data, err := json.Marshal(result)
@@ -51,6 +48,7 @@ func assessCommand(streams *iostreams.Streams) *cobra.Command {
 		},
 	}
 	cmd.Flags().String("brief", "", "path to the strict v1 review brief JSON")
+	cmd.Flags().String("observed", "", "original docs collect JSON; refuse changed scope or observations before reporting")
 	cmd.Flags().String("output", "", "absolute path to a new Markdown report outside the target (existing parent required)")
 	for _, name := range []string{"brief", "output"} {
 		if err := cmd.MarkFlagRequired(name); err != nil {
@@ -58,6 +56,22 @@ func assessCommand(streams *iostreams.Streams) *cobra.Command {
 		}
 	}
 	surface.Annotate(cmd, surface.Plumbing)
-	manifest.SetOutputSchema(cmd, json.RawMessage(`{"type":"object","required":["schemaVersion","operation","status","targetRoot","targetIdentity","reportPath","briefSha256","brief","inventory","inventoryExitCode","validation","validationExitCode","evidence"],"properties":{"schemaVersion":{"const":1},"operation":{"const":"docs assess"},"status":{"const":"review-required"},"targetRoot":{"type":"string"},"targetIdentity":{"type":"string"},"reportPath":{"type":"string"},"briefSha256":{"type":"string"},"brief":{"type":"object"},"inventory":{"type":"object"},"inventoryExitCode":{"const":0},"validation":{"type":"object"},"validationExitCode":{"enum":[0,1]},"evidence":{"type":"array"}}}`))
+	manifest.SetOutputSchema(cmd, json.RawMessage(assessmentOutputSchema))
 	return cmd
+}
+
+const assessmentOutputSchema = `{"type":"object","required":["schemaVersion","operation","status","targetRoot","targetIdentity","reportPath","briefSha256","brief","inventory","inventoryExitCode","validation","validationExitCode","evidence"],"properties":{"schemaVersion":{"const":1},"operation":{"const":"docs assess"},"status":{"const":"review-required"},"targetRoot":{"type":"string"},"targetIdentity":{"type":"string"},"reportPath":{"type":"string"},"briefSha256":{"type":"string"},"brief":{"type":"object"},"inventory":{"type":"object"},"inventoryExitCode":{"const":0},"validation":{"type":"object"},"validationExitCode":{"enum":[0,1]},"evidence":{"type":"array"}}}`
+
+func assessmentError(err error) error {
+	var structured *ldserr.Error
+	switch {
+	case errors.As(err, &structured):
+		return structured
+	case errors.Is(err, adoption.ErrUnsafeTarget):
+		return ldserr.New("refusal.unsafe-target", err.Error())
+	case errors.Is(err, os.ErrNotExist):
+		return ldserr.New("validation.assessment-path-missing", err.Error())
+	default:
+		return ldserr.New("internal.assessment-failed", err.Error())
+	}
 }

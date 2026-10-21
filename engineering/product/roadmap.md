@@ -14,16 +14,18 @@ resolution, and harness management. The root porcelain retains `version`,
 aliases. These commands manage the CLI and projected agent skills; they do
 not assess or reconcile project documentation; BDS-251 Stage 4 adds a
 separate explicit adoption form described below.
-Six bounded `lds plumbing docs` leaves now inventory, check supported local
+Seven bounded `lds plumbing docs` leaves now inventory, check supported local
 links, render the four adoption assets, preview a plan, and exclusively create
 missing approved files after reviewed digest confirmation, plus collect
-maintenance evidence/authored proposals in an external assessment report.
-Assessment does not infer semantic impacts or edit target files. The root
-`lds adopt <root> --facts <facts.json>` CLI form now uses the shared live flow,
-OpenCode Go / `deepseek-v4-flash`, and those deterministic operations. It
-requires owner-supplied facts and interactive exact-digest human confirmation;
-the model is advisory and has no tools or source-file access. This is not an
-installed-skill parity result, a named pilot, or first-release inclusion.
+maintenance evidence, compute source hashes, and bind authored proposals to
+observations in an external assessment report.
+That deterministic assessment does not infer semantic impacts or edit target
+files. The root `lds adopt <root> --facts <facts.json>` CLI form now uses the
+shared live flow, OpenCode Go / `deepseek-v4-flash`, and those deterministic
+operations. It requires owner-supplied facts and interactive exact-digest human
+confirmation; the model is advisory and has no tools or source-file access.
+This is not an installed-skill parity result, a named pilot, or first-release
+inclusion.
 Stage 4 Step 9 added generated Claude Code `/lds` adoption guidance: it reads
 `lds plumbing adopt --json` live and delegates sequencing to
 `assets/flows/adopt.md`. The reader still reports `preparatory` and
@@ -42,10 +44,12 @@ documentation operations. No real pilot is established.
 BDS-252 adds `lds plumbing reconcile scan` and the explicit
 `lds plumbing reconcile journal read|record|decide|reconsider` operations for
 strict, deterministic evidence inspection and caller-owned decision history.
-The actual manifest currently contains 20 leaves, including 14 qualified
-plumbing-kind projection entries. These commands do not infer semantic
-correspondence, choose real-pair authority, edit source repositories, or
-provide a human-facing reconciliation workflow. See the
+The human-facing assessment workflow is implemented. The manifest has 23
+leaves, including 16 qualified plumbing-kind projection entries and seven
+`docs` leaves; these counts do not establish native execution or parity.
+Reconciliation commands do not infer semantic correspondence, choose real-pair
+authority, edit source repositories,
+or provide a human-facing reconciliation workflow. See the
 [Stage 4 engineering handoff](bds-252-stage-4-engineering-handoff.md) for the
 audited surface and boundaries.
 
@@ -69,9 +73,21 @@ first implementation scope. Local Matter `lds-maintenance-assessment` tracks
 `lds plumbing docs assess`: repeated inventory/link checks, explicitly hashed
 source evidence, and caller-authored proposals/questions in a new report.
 It needs no provider, pilot or target edits. Semantic impact analysis and
-drafting remain reviewer responsibilities, not automated capabilities.
+drafting remain reviewer responsibilities on this deterministic route.
+Local Matter `lds-human-maintenance-assessment` tracks the implemented root
+`lds assess` workflow: automatic scoped collection, fresh consent to transfer
+the complete packet to OpenCode Go, one bounded tool-free model request, and
+unverified proposed text in an external report. Offline
+`lds plumbing docs collect` and optional `--observed` on `docs assess` bind an
+authored brief to the full baseline. The root CLI and projected skill use the
+same live `flows/assess.md`; `lds plumbing assess` only reads that preparatory
+flow. Mocked terminal/provider tests and disposable offline examples cover
+reporting, consent/refusal, stale evidence, invalid drafts, preservation and
+live flow resolution. No live provider/native execution, parity, release
+inclusion or owner checkpoint wave is claimed or required for this slice.
+
 LDS-managed existing-file edits would require a separate write contract and
-approval. Root `assess`, `review`, and `update` remain candidate workflows.
+approval. Root `review` and `update` remain candidate workflows.
 Pilot selection and first-release inclusion remain separate decisions.
 
 ## Planning constraints and open decisions
@@ -134,8 +150,8 @@ implemented deterministic plumbing and must be settled before any real use:
 
 ## Candidate verbs
 
-Names and boundaries below are proposals except the implemented docs and
-reconciliation plumbing rows. Porcelain is the human-facing workflow;
+Names and boundaries below are proposals except the marked implemented rows.
+Porcelain is the human-facing workflow;
 plumbing is deterministic and suitable for JSON/exit-code use by skills and
 scripts. `toolsmith new` bootstraps the *CLI application*; a future `lds init`
 would bootstrap documentation *inside another project*.
@@ -143,13 +159,15 @@ would bootstrap documentation *inside another project*.
 | Surface | Candidate | Purpose |
 | --- | --- | --- |
 | Porcelain | `lds init` | Set up the selected documentation tracks and templates. |
-| Porcelain | `lds assess` | Inventory an existing project's docs and plan adoption. |
+| Porcelain (implemented, outside first-release claim) | `lds assess <root> --reason <text> --audience <text> --output <absolute-new-report.md> [--source <relative-file> ...] [--json]` | Collect scoped documentation and named source bytes, ask fresh transfer consent, and request reviewable model-authored maintenance proposals; no target edits. |
 | Porcelain | `lds update` | Bring one project's docs into line with its changed code and decisions. |
 | Porcelain | `lds review` | Audit coverage, links, and cross-track consistency. |
 | Porcelain (implemented, outside first-release claim) | `lds adopt <root> --facts <facts.json>` | Interactively review a create-only four-output documentation plan and apply only after fresh exact-digest human consent. |
 | Porcelain | `lds reconcile` | Compare projects and guide explicit port/backport/divergence decisions. |
 | Plumbing (implemented, bounded) | `lds plumbing docs inventory`, `validate`, `render`, `plan`, `apply` | Report scoped files/links, check supported local targets, render four assets, preview and create missing approved files without an LLM. |
 | Plumbing (implemented, bounded) | `lds plumbing docs assess` | Collect documentation and explicitly hashed source evidence, link findings and authored proposals/questions in one new external report; no provider, semantic inference or target edits. See the [design](documentation-maintenance-workflow.md). |
+| Plumbing (implemented, bounded) | `lds plumbing docs collect`; `lds plumbing docs assess --observed <collected.json>` | Offline full baseline packet with automatic source hashes; optional observed binding for a strict authored brief and external report. |
+| Plumbing flow reader (implemented) | `lds plumbing assess [--json]` | Read live `flows/assess.md` content/source/hash; preparatory, unavailable for execution. |
 | Plumbing (implemented, bounded) | `lds plumbing reconcile scan`; `lds plumbing reconcile journal read`, `record`, `decide`, `reconsider` | Inspect explicitly scoped pinned artifacts/maps and persist caller-reviewed correspondence and outcomes; never infer semantic matches or write a source. See the [engineering handoff](bds-252-stage-4-engineering-handoff.md). |
 
 Agent-specific skills worth evaluating: adopting a partial tree, drafting

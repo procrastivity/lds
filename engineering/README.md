@@ -22,7 +22,12 @@ records what other projects contribute and how their local checkouts are found.
 The [within-project maintenance design](product/documentation-maintenance-workflow.md)
 records the accepted assessment-first scope. `lds plumbing docs assess`
 collects bounded evidence and authored proposals in an external report;
-it does not infer semantic impacts, call a model or edit target files.
+it does not infer semantic impacts, call a model or edit target files. Its
+human-facing implementation adds the `lds assess` flow,
+offline `docs collect`, and an optional observed packet for `docs assess`.
+The root CLI and generated skill use the same live `flows/assess.md`; the
+plumbing flow reader does not execute it. Model-authored proposals remain
+unverified advice, not target edits or native skill/CLI parity evidence.
 The [adoption runtime handoff](product/adoption-operations-runtime-handoff.md)
 records the implemented plumbing, executable disposable evidence, and limits.
 The [BDS-251 engineering handoff](product/bds-251-stage-4-engineering-handoff.md)

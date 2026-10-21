@@ -13,6 +13,7 @@ import (
 	"github.com/procrastivity/lds/internal/surface"
 	adoptverb "github.com/procrastivity/lds/internal/verbs/adopt"
 	adoptflowverb "github.com/procrastivity/lds/internal/verbs/adoptflow"
+	assessverb "github.com/procrastivity/lds/internal/verbs/assess"
 	docsverb "github.com/procrastivity/lds/internal/verbs/docs"
 	doctorverb "github.com/procrastivity/lds/internal/verbs/doctor"
 	installverb "github.com/procrastivity/lds/internal/verbs/install"
@@ -56,8 +57,10 @@ func NewRootCommand(streams *iostreams.Streams, build buildinfo.Info) *cobra.Com
 
 	root.AddCommand(versionverb.Command(streams, build))
 	root.AddCommand(adoptflowverb.Command(streams))
+	root.AddCommand(assessverb.Command(streams))
 	plumbing := &cobra.Command{Use: "plumbing", Short: "deterministic commands for skills and scripts"}
 	plumbing.AddCommand(adoptverb.Command(streams))
+	plumbing.AddCommand(assessverb.DocumentCommand(streams))
 	plumbing.AddCommand(manifestverb.Command(streams, build, root))
 	plumbing.AddCommand(doctorverb.Command(streams, build, root))
 	plumbing.AddCommand(docsverb.Command(streams))

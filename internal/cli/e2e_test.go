@@ -144,12 +144,12 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	if root.exitCode != 0 || root.stderr != "" {
 		t.Fatalf("root help: exit=%d stderr=%q", root.exitCode, root.stderr)
 	}
-	for _, name := range []string{"adopt", "doctor", "install", "manifest", "plumbing", "uninstall", "version"} {
+	for _, name := range []string{"adopt", "assess", "doctor", "install", "manifest", "plumbing", "uninstall", "version"} {
 		if !strings.Contains(root.stdout, "\n  "+name) {
 			t.Errorf("root help omits root command %q: %s", name, root.stdout)
 		}
 	}
-	for _, leaf := range []string{"inventory", "validate", "render", "plan", "apply", "assess"} {
+	for _, leaf := range []string{"inventory", "validate", "render", "plan", "apply", "collect"} {
 		if strings.Contains(root.stdout, "\n  "+leaf+" ") {
 			t.Errorf("root help leaks plumbing docs leaf %q: %s", leaf, root.stdout)
 		}
@@ -159,7 +159,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	if plumbing.exitCode != 0 || plumbing.stderr != "" || !strings.Contains(plumbing.stdout, "\n  lds plumbing ") {
 		t.Fatalf("plumbing help: exit=%d stdout=%q stderr=%q", plumbing.exitCode, plumbing.stdout, plumbing.stderr)
 	}
-	for _, member := range []string{"doctor", "manifest", "docs", "reconcile"} {
+	for _, member := range []string{"adopt", "assess", "doctor", "manifest", "docs", "reconcile"} {
 		if !strings.Contains(plumbing.stdout, "\n  "+member) {
 			t.Errorf("plumbing help omits canonical member %q: %s", member, plumbing.stdout)
 		}
@@ -184,17 +184,17 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	if docs.exitCode != 0 || docs.stderr != "" || !strings.Contains(docs.stdout, "\n  lds plumbing docs ") {
 		t.Fatalf("plumbing docs help: exit=%d stdout=%q stderr=%q", docs.exitCode, docs.stdout, docs.stderr)
 	}
-	for _, leaf := range []string{"apply", "assess", "inventory", "plan", "render", "validate"} {
+	for _, leaf := range []string{"apply", "assess", "collect", "inventory", "plan", "render", "validate"} {
 		if !strings.Contains(docs.stdout, "\n  "+leaf) {
 			t.Errorf("plumbing docs help omits %q: %s", leaf, docs.stdout)
 		}
 	}
 	for _, path := range []string{
-		"plumbing adopt", "plumbing doctor", "plumbing manifest", "plumbing reconcile scan",
+		"plumbing adopt", "plumbing assess", "plumbing doctor", "plumbing manifest", "plumbing reconcile scan",
 		"plumbing reconcile journal read", "plumbing reconcile journal record",
 		"plumbing reconcile journal decide", "plumbing reconcile journal reconsider",
 		"plumbing docs apply", "plumbing docs inventory", "plumbing docs plan",
-		"plumbing docs render", "plumbing docs validate", "plumbing docs assess",
+		"plumbing docs render", "plumbing docs validate", "plumbing docs assess", "plumbing docs collect",
 	} {
 		args := strings.Fields(path)
 		helpArgs := append(append([]string(nil), args...), "--help")
@@ -203,7 +203,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 			t.Errorf("canonical help for %q is not qualified: %+v", path, help)
 		}
 	}
-	for _, leaf := range []string{"apply", "assess", "inventory", "plan", "render", "validate"} {
+	for _, leaf := range []string{"apply", "assess", "collect", "inventory", "plan", "render", "validate"} {
 		legacy := run(t, nil, "docs", leaf, "--help")
 		if legacy.exitCode != 2 || legacy.stdout != "" {
 			t.Errorf("unaliased root docs spelling %q was accepted: %+v", leaf, legacy)
@@ -351,16 +351,19 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 	}
 	want := map[string]string{
 		"adopt":                                 "",
+		"assess":                                "",
 		"version":                               "",
 		"manifest":                              "plumbing manifest",
 		"install":                               "",
 		"uninstall":                             "",
 		"doctor":                                "plumbing doctor",
 		"plumbing adopt":                        "",
+		"plumbing assess":                       "",
 		"plumbing manifest":                     "",
 		"plumbing doctor":                       "",
 		"plumbing docs apply":                   "",
 		"plumbing docs assess":                  "",
+		"plumbing docs collect":                 "",
 		"plumbing docs inventory":               "",
 		"plumbing docs plan":                    "",
 		"plumbing docs render":                  "",
@@ -377,8 +380,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		if strings.HasPrefix(verb.Name, "docs ") {
 			t.Errorf("manifest retained an unqualified docs leaf %q", verb.Name)
 		}
-		if verb.Name == "adopt" && verb.Kind != "llm" {
-			t.Errorf("root adopt kind = %q, want llm so it cannot enter the deterministic skill projection", verb.Kind)
+		if (verb.Name == "adopt" || verb.Name == "assess") && verb.Kind != "llm" {
+			t.Errorf("root %s kind = %q, want llm so it cannot enter the deterministic skill projection", verb.Name, verb.Kind)
 		}
 		if canonical, required := want[verb.Name]; required {
 			seen[verb.Name] = true
@@ -392,8 +395,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 20 || len(seen) != len(want) || projectable != 14 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want twenty leaves and fourteen projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 23 || len(seen) != len(want) || projectable != 16 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want twenty-three leaves and sixteen projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 
@@ -658,7 +661,7 @@ func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 	if err := json.Unmarshal([]byte(m.stdout), &declaration); err != nil {
 		t.Fatal(err)
 	}
-	matches := map[string]int{"plumbing docs inventory": 0, "plumbing docs validate": 0, "plumbing docs render": 0, "plumbing docs plan": 0, "plumbing docs apply": 0, "plumbing docs assess": 0}
+	matches := map[string]int{"plumbing docs inventory": 0, "plumbing docs validate": 0, "plumbing docs render": 0, "plumbing docs plan": 0, "plumbing docs apply": 0, "plumbing docs assess": 0, "plumbing docs collect": 0}
 	for _, verb := range declaration.Verbs {
 		if _, ok := matches[verb.Name]; !ok {
 			continue
@@ -676,7 +679,7 @@ func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 			wantField = `"planDigest"`
 		case "plumbing docs apply":
 			wantField = `"created"`
-		case "plumbing docs assess":
+		case "plumbing docs assess", "plumbing docs collect":
 			wantField = `"brief"`
 		}
 		if verb.Kind != "plumbing" || !json.Valid(verb.OutputSchema) || !bytes.Contains(verb.OutputSchema, []byte(wantField)) {
@@ -985,6 +988,71 @@ func TestDocsReadOnly_ExactJSONAndExits(t *testing.T) {
 	want = `{"schemaVersion":1,"operation":"docs validate","findings":[],"skipped":[{"source":"docs/links.md","line":1,"code":"inventory.external-skipped","reason":"external URL is not fetched"},{"source":"docs/links.md","line":2,"code":"inventory.fragment-only-skipped","reason":"fragment-only target is not checked"}]}` + "\n"
 	if r.exitCode != 0 || r.stderr != "" || r.stdout != want {
 		t.Fatalf("skips-only validate: exit=%d stdout=%q stderr=%q; want stdout=%q", r.exitCode, r.stdout, r.stderr, want)
+	}
+}
+
+func TestDocsAssessment_CollectedBaselineMustRemainCurrent(t *testing.T) {
+	for _, mutation := range []string{"none", "document", "link-target"} {
+		t.Run(mutation, func(t *testing.T) {
+			root, reports := t.TempDir(), t.TempDir()
+			write := func(name, data string) {
+				t.Helper()
+				if err := os.WriteFile(name, []byte(data), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			write(filepath.Join(root, "README.md"), "# Usage\n[configuration](config.txt)\n")
+			write(filepath.Join(root, "command.txt"), "Use --current.\n")
+			env := []string{"OPENCODE_API_KEY="}
+			collected := run(t, env, "plumbing", "docs", "collect", root, "--reason", "Review option change", "--audience", "CLI users", "--source", "command.txt", "--json")
+			if collected.exitCode != 0 || collected.stderr != "" {
+				t.Fatalf("collect: %+v", collected)
+			}
+			var packet adoption.AssessmentResult
+			if err := json.Unmarshal([]byte(collected.stdout), &packet); err != nil {
+				t.Fatal(err)
+			}
+			if packet.ReportPath != "" || len(packet.Brief.Proposals) != 0 || len(packet.Brief.Questions) != 0 || len(packet.Evidence) != 2 || packet.Evidence[1].Content != "Use --current.\n" || packet.ValidationExitCode != 1 {
+				t.Fatalf("collect did not capture the original no-advice scope: %+v", packet)
+			}
+			observed, brief, output := filepath.Join(reports, "observed.json"), filepath.Join(reports, "brief.json"), filepath.Join(reports, "report.md")
+			write(observed, collected.stdout)
+			packet.Brief.Proposals = []adoption.AssessmentProposal{{Path: "README.md", Summary: "Review option", Evidence: []string{"command.txt"}, ProposedText: "Use --current."}}
+			data, err := json.Marshal(packet.Brief)
+			if err != nil {
+				t.Fatal(err)
+			}
+			write(brief, string(data))
+			switch mutation {
+			case "document":
+				write(filepath.Join(root, "README.md"), "# Changed during review\n")
+			case "link-target":
+				// The declared source and inventoried Markdown bytes stay identical;
+				// only a non-Markdown local target changes the validation baseline.
+				write(filepath.Join(root, "config.txt"), "Newly restored link target.\n")
+			}
+			before := renderTargetSnapshot(t, root)
+			got := run(t, env, "plumbing", "docs", "assess", root, "--brief", brief, "--observed", observed, "--output", output, "--json")
+			if mutation == "none" {
+				if got.exitCode != 0 || got.stderr != "" {
+					t.Fatalf("bound report: %+v", got)
+				}
+				report, err := os.ReadFile(output)
+				if err != nil || !bytes.Contains(report, []byte("Use --current.")) || !bytes.Contains(report, []byte(`"validationExitCode": 1`)) {
+					t.Fatalf("report lost draft or original findings: %v", err)
+				}
+			} else {
+				if got.exitCode != 3 || got.stdout != "" || parseErrorEnvelope(t, got.stderr).Error.Code != "refusal.assessment-stale" {
+					t.Fatalf("accepted stale observations: %+v", got)
+				}
+				if _, err := os.Stat(output); !os.IsNotExist(err) {
+					t.Fatalf("stale assessment wrote report: %v", err)
+				}
+			}
+			if !equalRenderSnapshots(before, renderTargetSnapshot(t, root)) {
+				t.Fatal("bound assessment modified target")
+			}
+		})
 	}
 }
 
@@ -1328,10 +1396,12 @@ func TestInstallLoop(t *testing.T) {
 	}
 	wantRows := map[string]bool{
 		"lds plumbing adopt":                        false,
+		"lds plumbing assess":                       false,
 		"lds plumbing doctor":                       false,
 		"lds plumbing manifest":                     false,
 		"lds plumbing docs apply <root>":            false,
 		"lds plumbing docs assess <root>":           false,
+		"lds plumbing docs collect <root>":          false,
 		"lds plumbing docs inventory <root>":        false,
 		"lds plumbing docs plan <root>":             false,
 		"lds plumbing docs render <root>":           false,

@@ -1,10 +1,10 @@
 # Within-project documentation maintenance
 
 **Status:** The owner accepted assessment-and-proposals-first. The initial
-provider-free collection/report operation is implemented as described below;
-automatic semantic assessment, model drafting and existing-file editing are
-not implemented or authorized. No adoption pilot is required. The accepted
-create-only adoption contract is unchanged.
+provider-free collection/report operation and human-facing model-assisted
+assessment are implemented as described below. Model proposals are unverified
+advice; existing-file editing remains outside scope. No adoption pilot is
+required. The accepted create-only adoption contract is unchanged.
 
 The owner requested user documentation and maintenance-workflow design as
 the next independent work after the completed adoption and reconciliation
@@ -28,9 +28,10 @@ This gives maintainers a useful way to ask “what documentation needs review
 after this change?” without treating adoption-generated files as owned or
 introducing an updater before its write policy is settled. It also lets
 documentation-impact and Diátaxis review share one workflow instead of
-creating a command for every review question. Root `assess`, `review`, and
-`update` remain candidate names; the implemented operation is qualified
-`lds plumbing docs assess`, not a second root workflow.
+creating a command for every review question. Root `assess` now provides that
+human-facing workflow, using `lds plumbing docs collect` and the observed-bound
+`lds plumbing docs assess` report operation. Root `review` and `update` remain
+candidate names.
 
 ## Initial deterministic operation
 
@@ -169,14 +170,13 @@ advice and prose drafting are reviewer tasks, not claims the link checker can
 prove. A model could assist those tasks, but it cannot approve edits or turn
 an assertion into evidence.
 
-A future model-backed CLI workflow and projected guidance should use one
+The model-backed CLI workflow and projected guidance use one
 shared flow and the same deterministic operations, following the existing
 [workflow boundary](../decisions/0002-bds-251-adoption-workflow-boundary.md).
-Do not reuse `flows/adopt.md` for a different maintenance responsibility or
-maintain separate CLI and skill procedures. Provider selection, data sent,
-consent and any permitted tools need their own reviewed scope before a
-model-backed maintenance implementation; existing adoption consent is not
-consent to send source excerpts for this workflow. Guidance alone does not
+`flows/assess.md` owns this maintenance responsibility, separately from
+`flows/adopt.md`. The implementation contract below defines provider selection,
+data sent, consent and the tool-free request. Existing adoption consent is not
+consent to send source content for this workflow. Guidance alone does not
 enforce read scope or decisions, and no native parity is claimed here.
 
 ## A report must expose evidence and uncertainty
@@ -246,6 +246,73 @@ No provider session, owner terminal exercise, native replay or pilot is required
 | A maintainer accepts a proposed paragraph. | Record advice as accepted if desired; no LDS edit occurs and no applied outcome is claimed. |
 | A source or proposed output path escapes scope or passes through a symlink. | Refuse the affected access/write; do not follow it or broaden scope automatically. |
 
+## Human-facing assessment implementation contract
+
+The owner requested implementation of the next human-facing workflow. Local
+Matter `lds-human-maintenance-assessment` tracks this work; the earlier
+deterministic brief/report contract remains supported.
+
+```text
+lds assess <root> --reason <change-or-review-question> --audience <readers> --output <absolute-new-report.md> [--source <relative-file> ...] [--json]
+lds plumbing assess [--json]
+lds plumbing docs collect <root> --reason <text> --audience <text> [--source <relative-file> ...] [--json]
+lds plumbing docs assess <root> --brief <draft.json> --observed <collected.json> --output <absolute-new-report.md> [--json]
+```
+
+The root workflow and generated Claude Code route consume the same live
+`flows/assess.md` through override → installed default → embedded resolution.
+The plumbing reader only returns the live flow/content/source/hash, with
+`preparatory`/`unavailable-for-execution`; it does not run an assessment.
+The root command is LLM-kind and is not projected as a deterministic member.
+`docs collect` automatically computes hashes and includes complete UTF-8
+contents only for default inventoried Markdown and explicitly named regular
+source files. It repeats collection, writes nothing, and returns the existing
+schema-1 assessment packet with empty `reportPath`, proposals and questions.
+
+The CLI requires Linux and a terminal. It preflights the new external report
+destination and resolves the flow before any provider call. It uses the
+existing OpenCode Go endpoint/model (`deepseek-v4-flash`) and
+`OPENCODE_API_KEY`, but adoption's consent is not reused. It displays the
+complete proposed transfer: live flow, reason/audience, inventory, findings,
+skips and selected relative paths/hashes/content. LDS adds no absolute
+root/report metadata or credentials to the payload; selected contents are not
+redacted. Only fresh exact `send` input after display permits one
+non-streaming, tool-free request (4096 output tokens, 60-second
+timeout, no redirects or retries). Transfers above 512 KiB refuse rather
+than truncate; response content is limited to 64 KiB and never executed.
+
+The model returns the strict version-1 brief, preserving the reason, audience
+and source scope/hashes. Only proposals and questions may differ. It must cite
+collected evidence, distinguish uncertain impacts, keep unsupported commands
+as questions, and treat file/flow text as untrusted data. Host validation—not
+model compliance—rejects changed scope, unknown fields, invalid paths and
+undeclared citations. The original complete collected observations must still
+match before report creation; changes stop without silently recollecting a
+new baseline, retrying the model or writing a report. The flow is rechecked
+before transfer and after the response. Late report I/O retains the existing
+partial-external-file caveat; the target is never a write destination.
+
+The result is `review-required`, not approval, verified semantic correctness
+or applied edits. Root JSON records the live flow source/hash, provider/model
+and the deterministic assessment result. The report labels supplied proposals
+as unverified, potentially model-authored advice. The skill follows the live
+flow and deterministic collect/observed-report operations using its harness
+reviewer; it must disclose harness data processing, obtain its own appropriate
+consent, and never call the root CLI to bypass its terminal gate. Guidance is
+not enforcement. Offline mocked/PTY checks do not establish live reliability,
+native execution, CLI/skill parity, first-release inclusion or a real pilot.
+
+Offline verification covers the public root CLI through real pseudo-terminals
+and mocked HTTP: report creation, fresh-send/decline behavior, discarded pretyped
+input, source/document/flow changes, invalid model drafts, scope expansion and
+unread citations. Noninteractive, unsafe/occupied output and oversized-transfer
+cases make zero mocked provider calls. Public plumbing checks demonstrate
+collect → authored draft → observed report, including stale documentation and
+changed local-link findings with unchanged source hashes. Generated guidance,
+live post-install override resolution and installed-tree preservation are also
+covered. Both disposable offline how-to examples are executed independently.
+These checks need no owner checkpoint or real provider/native session.
+
 ## Coordination and next decision
 
 The owner selected assessment/report delivery with optional reviewer text and
@@ -253,5 +320,6 @@ ordinary manual editing afterward. The user how-to and local WIP workplan
 record current behavior and checks. Linear tracking, shipping and release
 actions still need their own authorization; the repository is the design of
 record. No additional owner test session or checkpoint is needed to complete
-this first slice. LDS-managed existing-file edits, automatic/model drafting,
-first-release inclusion and pilot choices remain separate future scope.
+this slice. LDS-managed existing-file edits, first-release inclusion and pilot
+choices remain separate future scope. Live provider reliability and native
+execution/parity are not established by the offline checks.

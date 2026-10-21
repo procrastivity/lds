@@ -1,5 +1,6 @@
 Use this generated Claude Code skill to inspect LDS or, when explicitly
-asked, prepare a create-only documentation adoption for one named target.
+asked, prepare a create-only documentation adoption or a report-only
+maintenance assessment for one named target.
 The steps below are guidance, not a security boundary: this installation
 cannot authenticate the owner, verify their claims, enforce approval, or
 prove that commands are being used safely. No real target or pilot is
@@ -18,7 +19,27 @@ authorized by this skill.
    sole source of workflow sequencing; do not rely on prior conversation,
    copied text, or a flow embedded in this skill.
 
-## Guardrails while following the live flow
+## Assessment route
+
+When asked to assess documentation impacts or propose maintenance, first run
+`lds plumbing assess --json`. Require schema version 1, operation `assess`,
+`preparatory` status, `unavailable-for-execution` availability and nonempty
+live content. Stop on reader errors or unexpected content; follow that live
+flow as the sole source of assessment sequencing, not a cached copy here.
+
+- Disclose this harness's processing of selected documentation/source content
+  and obtain appropriate consent before reading it. Do not infer source read
+  scope, reuse adoption consent, or equate skill installation with permission.
+- Use the deterministic collector and preserve its original JSON outside the
+  target. Draft only evidence-linked proposals/questions; preserve the reason,
+  audience and declared source hashes. Report generation must use that original
+  packet with `--observed`, never a silently refreshed baseline.
+- An assessment produces only a new external review report. Never use adoption
+  apply, a model-supplied command or this skill to edit the target. Root
+  `lds assess` is a separate terminal/provider form, not a subprocess to drive
+  with relayed input. No native execution or CLI/skill parity is claimed.
+
+## Adoption guardrails while following the live flow
 
 These constraints do not define another sequence; use the live document for
 the order and mechanics of each operation.

@@ -5,15 +5,36 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	"github.com/procrastivity/lds/internal/opencode"
 )
 
-func TestRequestAdvisoryAtSendsBoundedFlowFactsAndAggregateEvidence(t *testing.T) {
-	if providerEndpoint != "https://opencode.ai/zen/go/v1/chat/completions" || providerModel != "deepseek-v4-flash" {
-		t.Fatal("adoption provider endpoint/model differ from the owner-selected OpenCode Go route")
+type localTransport func(*http.Request) (*http.Response, error)
+
+func (f localTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+func localProviderClient(t *testing.T, server *httptest.Server) *opencode.Client {
+	t.Helper()
+	target, err := url.Parse(server.URL + "/v1/chat/completions")
+	if err != nil {
+		t.Fatal(err)
 	}
+	return opencode.NewClient(localTransport(func(r *http.Request) (*http.Response, error) {
+		if r.URL.String() != "https://opencode.ai/zen/go/v1/chat/completions" {
+			t.Errorf("unexpected provider endpoint: %s", r.URL)
+		}
+		local := r.Clone(r.Context())
+		local.URL = target
+		local.Host = target.Host
+		return server.Client().Transport.RoundTrip(local)
+	}))
+}
+
+func TestRequestAdvisoryAtSendsBoundedFlowFactsAndAggregateEvidence(t *testing.T) {
 	const (
 		dummyKey = "test-only-not-a-credential"
 		flow     = "LIVE FLOW MARKER"
@@ -28,6 +49,9 @@ func TestRequestAdvisoryAtSendsBoundedFlowFactsAndAggregateEvidence(t *testing.T
 		if r.Header.Get("Authorization") != "Bearer "+dummyKey {
 			t.Error("provider request did not use the supplied test credential")
 		}
+		if r.Header.Get("User-Agent") != providerUserAgent || r.Header.Get("x-opencode-session") != providerSession {
+			t.Error("provider request omitted adoption identity headers")
+		}
 		var request map[string]json.RawMessage
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 			t.Errorf("decode provider request: %v", err)
@@ -39,7 +63,7 @@ func TestRequestAdvisoryAtSendsBoundedFlowFactsAndAggregateEvidence(t *testing.T
 		if _, hasTools := request["tools"]; hasTools {
 			t.Error("provider request unexpectedly enabled tools")
 		}
-		var messages []providerMessage
+		var messages []struct{ Role, Content string }
 		if err := json.Unmarshal(request["messages"], &messages); err != nil || len(messages) != 2 {
 			t.Errorf("provider messages count=%d decode=%v; want system and user only", len(messages), err)
 			return
@@ -61,7 +85,7 @@ func TestRequestAdvisoryAtSendsBoundedFlowFactsAndAggregateEvidence(t *testing.T
 	defer server.Close()
 
 	evidence := providerEvidence{InventoryFiles: 3, OutputClassifications: map[string]int{"create": 4}}
-	got, err := requestAdvisoryAt(context.Background(), server.Client(), server.URL+"/v1/chat/completions", dummyKey, flow, []byte(facts), evidence)
+	got, err := requestAdvisoryWithClient(context.Background(), localProviderClient(t, server), dummyKey, flow, []byte(facts), evidence)
 	if err != nil || got != "Maps the supplied display name to the overview." || !called.Load() {
 		t.Fatalf("provider advisory = %q, called=%t, err=%v", got, called.Load(), err)
 	}
@@ -81,7 +105,7 @@ func TestRequestAdvisoryAtRejectsWrongModelAndDoesNotFollowRedirects(t *testing.
 	}))
 	defer wrongModel.Close()
 
-	_, err := requestAdvisoryAt(context.Background(), wrongModel.Client(), wrongModel.URL, "test-only-not-a-credential", "flow", []byte(`{}`), providerEvidence{})
+	_, err := requestAdvisoryWithClient(context.Background(), localProviderClient(t, wrongModel), "test-only-not-a-credential", "flow", []byte(`{}`), providerEvidence{})
 	if err == nil || !strings.Contains(err.Error(), "unexpected HTTP status") || redirected.Load() {
 		t.Fatalf("redirect result err=%v redirected=%t; want refusal without following", err, redirected.Load())
 	}
@@ -90,8 +114,23 @@ func TestRequestAdvisoryAtRejectsWrongModelAndDoesNotFollowRedirects(t *testing.
 		_, _ = w.Write([]byte(`{"model":"different-model","choices":[{"message":{"content":"Looks fine."}}]}`))
 	}))
 	defer wrongResponse.Close()
-	_, err = requestAdvisoryAt(context.Background(), wrongResponse.Client(), wrongResponse.URL, "test-only-not-a-credential", "flow", []byte(`{}`), providerEvidence{})
+	_, err = requestAdvisoryWithClient(context.Background(), localProviderClient(t, wrongResponse), "test-only-not-a-credential", "flow", []byte(`{}`), providerEvidence{})
 	if err == nil || !strings.Contains(err.Error(), "selected model contract") {
 		t.Fatalf("wrong-model response err=%v, want fixed-model refusal", err)
+	}
+}
+
+func TestRequestAdvisoryRetains16KiBLimit(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		response := map[string]any{
+			"model":   "deepseek-v4-flash",
+			"choices": []any{map[string]any{"message": map[string]string{"content": strings.Repeat("a", 16*1024+1)}}},
+		}
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+	got, err := requestAdvisoryWithClient(context.Background(), localProviderClient(t, server), "test-only-not-a-credential", "flow", []byte(`{}`), providerEvidence{})
+	if got != "" || err == nil || !strings.Contains(err.Error(), "unsafe text") {
+		t.Fatalf("oversized adoption advisory got length=%d, err=%v", len(got), err)
 	}
 }

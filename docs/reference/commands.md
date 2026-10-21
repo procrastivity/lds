@@ -13,6 +13,10 @@ historical `lds docs ...` spellings):
 | `lds plumbing docs plan <root> --facts <file> --json` | Full read-only create/identical/collision/refusal plan and digest. |
 | `lds plumbing docs apply <root> --facts <file> --plan <reviewed.json> --confirm <digest> --json` | Linux create-only application after separate review and exact confirmation. |
 | `lds plumbing docs assess <root> --brief <file> --output <absolute-new-report.md> --json` | Linux evidence/report collection with authored proposals; exit 0 means report created, not semantic approval. No target edits. See the [brief contract and example](../how-to/assess-documentation.md). |
+| `lds plumbing docs collect <root> --reason <text> --audience <text> [--source <relative-file> ...] [--json]` | Offline scoped collection, automatic hashes and complete UTF-8 contents in a schema-1 packet; no report, provider or target writes. |
+| `lds plumbing docs assess <root> --brief <draft.json> --observed <collected.json> --output <absolute-new-report.md> [--json]` | Bind a strict authored brief to the complete collected baseline before creating a new external review report. The existing no-`--observed` form remains supported. |
+| `lds assess <root> --reason <text> --audience <text> --output <absolute-new-report.md> [--source <relative-file> ...] [--json]` | Linux interactive model-assisted proposals; displays complete transfer for fresh `send` consent, then creates only an external review report. Requires `OPENCODE_API_KEY`; sends scoped source content. |
+| `lds plumbing assess [--json]` | Return live `flows/assess.md` content/source/hash as `preparatory`/`unavailable-for-execution`; does not run assessment. |
 | `lds adopt <root> --facts <file>` | Interactive root flow with advisory provider and fresh human gate. |
 | `lds plumbing adopt --json` | Read live preparatory flow; **does not execute adoption**. |
 | `lds plumbing manifest --json` | Describe command surface and projection eligibility. |
@@ -28,6 +32,10 @@ historical `lds docs ...` spellings):
 without `--json`. Exit 0 is success; 1 is validation/evidence finding,
 2 usage, 3 refusal/staleness, 4 unexpected internal/I/O failure. Some docs
 diagnostics emit a JSON result to stdout **and** an error to stderr: inspect
-exit code and both streams. Cobra usage errors are human diagnostics. There
-are no root `init`, `assess`, `update`, `review`, or `reconcile` commands;
-assessment is the qualified plumbing operation above.
+exit code and both streams. Cobra usage errors are human diagnostics. Root
+`init`, `update`, `review`, and `reconcile` remain candidates. The manifest
+has 23 leaves, 16 qualified plumbing-kind projection entries and seven `docs`
+leaves; a projection count is not evidence of native execution or parity. The root
+LLM-kind command is not a deterministic projected member. See the
+[assessment how-to](../how-to/assess-documentation.md) for the separate
+provider-free and consent-gated routes.

@@ -18,6 +18,15 @@ skill execution or CLI/skill parity. Neither form authorizes a real pilot or
 establishes first-release inclusion. A human-facing reconciliation facilitator
 remains deferred.
 
+The human maintenance workflow `lds assess <root>` produces
+model-assisted, review-required proposals in a new report **outside** the
+target, after fresh consent to send the complete scoped documentation and
+selected source contents to OpenCode Go. `lds plumbing docs collect` prepares
+the same evidence offline; `lds plumbing docs assess` also accepts an observed
+packet with an authored brief. Offline checks do not establish live-provider
+reliability or installed-skill parity. No assessment edits the target.
+See the [assessment how-to](docs/how-to/assess-documentation.md).
+
 Built on the [toolsmith contract](https://github.com/procrastivity/toolsmith)
 (`toolsmith/v1` — the manifest declares it): a single static Go binary
 that projects itself into agent harnesses as generated, stamped skills.
@@ -39,9 +48,8 @@ Start with the [user documentation](docs/README.md) for an offline inspection
 tutorial, adoption and reconciliation how-tos, command reference, and the
 current safety boundaries. The [assessment how-to](docs/how-to/assess-documentation.md)
 collects evidence and proposed text outside the target without editing it.
-These guides describe implemented behavior; they
-do not select an adoption pilot or add automatic maintenance of existing
-documentation.
+These guides describe implemented behavior. None selects an adoption pilot or
+adds automatic edits to existing documentation.
 
 ## Develop
 
@@ -70,7 +78,10 @@ records offline regressions and remaining limits. No real project has been
 authorized as an adoption pilot. The
 [maintenance-workflow design](engineering/product/documentation-maintenance-workflow.md)
 records the accepted assessment/report boundary and implemented deterministic
-collection; automatic drafting and existing-file updates remain unimplemented.
+authored-brief report. Its human-facing assessment workflow adds scoped
+collection and model-authored proposals; existing-file updates remain outside
+scope.
+
 The [BDS-252 engineering handoff](engineering/product/bds-252-stage-4-engineering-handoff.md)
 documents the reconciliation plumbing, bounded runtime evidence, and limits;
 it does not authorize a real-pair pilot or source transfer.

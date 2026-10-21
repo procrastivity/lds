@@ -58,5 +58,6 @@ func Command(streams *iostreams.Streams) *cobra.Command {
 	docs.AddCommand(planCommand(streams))
 	docs.AddCommand(applyCommand(streams))
 	docs.AddCommand(assessCommand(streams))
+	docs.AddCommand(collectCommand(streams))
 	return docs
 }

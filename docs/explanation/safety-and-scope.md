@@ -8,15 +8,41 @@ or parse every Markdown/HTML link form. Unsupported checks are skips, not
 passes. A missing-link finding does not itself veto adoption.
 
 Assessment creates a new external report, not any adoption output or target
-edit. The report and JSON contain default documentation bytes and additional
-UTF-8 source files explicitly permitted by the brief's paths/hashes; protect
-them accordingly. Proposals and questions are reviewer input, not inferred or
-verified facts. Repeated collection detects changed evidence but is not an
-atomic snapshot. Exit 0 means report creation, even with missing-link findings.
+edit. The existing authored-brief report and JSON contain default documentation
+bytes and additional UTF-8 source files permitted by the brief's paths/hashes;
+protect them accordingly. Proposals and questions are reviewer input, not
+inferred or verified facts. Repeated collection detects changed evidence but
+is not an atomic snapshot. Exit 0 means report creation, even with missing-link
+findings.
 Linux no-follow/exclusive output creation requires trusted, quiescent ancestors;
-a late I/O error may leave a partial external report. Assessment has no provider,
-automatic drafting, apply or overwrite mode. See the
+a late I/O error may leave a partial external report. The existing authored-brief
+assessment has no provider, automatic drafting, apply or overwrite mode. See the
 [assessment how-to](../how-to/assess-documentation.md) for its brief and limits.
+
+The human route collects the same bounded default documents and
+only explicitly selected regular UTF-8 source files, with automatic hashes.
+Offline `docs collect` sends nothing; optional `docs assess --observed` checks
+the complete prior packet against current observations, not just named source
+hashes. Collection and rechecks are not semantic proof, a clean Git pin or an
+atomic filesystem snapshot. The interactive `lds assess` preflights a new
+external report and live flow before provider access; it displays the **full**
+proposed transfer (flow, reason/audience, inventory, findings, skips, relative
+paths, hashes and content). Only fresh exact `send` allows that transfer to
+OpenCode Go (`deepseek-v4-flash`) using `OPENCODE_API_KEY`. LDS adds no absolute
+root/report metadata or credentials to the model payload. Selected contents
+are not redacted: do not include secrets. Transfers above 512 KiB refuse rather
+than truncate; response content is limited to 64 KiB. One non-streaming request
+has a 4096-token output bound, 60-second timeout, no tools, redirects or retries;
+model output is never executed.
+Adoption consent does not authorize this disclosure. A decline or changed
+baseline/flow stops instead of recollecting or silently retrying. The report
+labels model-authored proposals as unverified, `review-required` advice. It
+never edits the target. The CLI and generated skill share the live
+`flows/assess.md`, but `lds plumbing assess` is only a preparatory reader; a
+skill must obtain its own consent and disclose harness data processing.
+Guidance is not enforcement, and offline checks establish neither live
+provider reliability nor native skill execution/parity, release inclusion or
+a pilot.
 
 Adoption facts are caller assertions: structural validation cannot verify
 approval, evidence, or current capability. The interactive provider sees

@@ -1,1 +1,1 @@
-Use when inspecting or maintaining the LDS CLI or its generated skill, or when preparing a create-only documentation adoption for an explicit target with complete owner-verified facts.
+Use when inspecting or maintaining the LDS CLI or its generated skill, preparing a create-only documentation adoption with owner-verified facts, or assessing documentation impacts and drafting report-only maintenance proposals for an explicit target and read scope.
