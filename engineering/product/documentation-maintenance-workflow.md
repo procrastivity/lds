@@ -203,28 +203,24 @@ stale-evidence detection, not a filesystem race or transaction guarantee.
 
 ## Any future editing operation needs a separate decision
 
-Read-only assessment deliberately leaves these choices outside its scope:
+The separate [proposed v1 existing-file update contract](documentation-update-contract.md)
+recommends a deliberately narrow later slice: explicitly selected, existing
+regular UTF-8 Markdown files, reviewed full before/after bytes and original
+evidence in a digest-bound plan, fresh human confirmation, Linux-only
+no-follow/staged per-file replacement and an actual-effects result. It rules
+out implicit ownership of generated-looking files, creates, moves, deletions,
+and broad discovery. Stale observations refuse rather than silently adopting
+a new baseline; partial effects require inspection and a new review, not an
+automatic retry. The design states its trusted-quiescent-ancestor and
+concurrency limits rather than claiming hostile-writer CAS, cross-file
+atomicity or rollback.
 
-- **Eligible edits:** which explicitly selected files may be modified, and
-  whether creates, moves, renames or deletions are allowed. No generated-file
-  heuristic or standing adoption approval supplies that permission.
-- **Review artifact:** exact before/after bytes or a complete diff, affected
-  paths, provenance, baseline identities and a digest binding the entire
-  proposed edit set. Approval must be fresh and tied to that artifact;
-  approving a report or an adoption digest is not interchangeable with it.
-- **Revalidation and safety:** refuse changed inputs, occupied new paths,
-  unsafe roots/ancestors and stale approval rather than overwriting or
-  silently replanning. Define supported platforms and identity/race limits;
-  do not borrow a stronger safety claim from create-only apply.
-- **Failure and recovery:** define reporting for actual partial effects,
-  preservation and unattempted edits. State any atomicity limits explicitly;
-  do not promise rollback or retry without knowing what reached disk.
-- **Authority and interaction:** decide how a human approves existing-file
-  edits and which deterministic surface performs them. A proposed workflow
-  name or model response cannot supply that authority.
-
-These need not be settled for the accepted assessment-only implementation.
-Existing files remain outside its write authority by construction.
+This is **not accepted write authority or a working command**. The accepted
+assessment/report path still writes no target file; its advice acceptance and
+model-transfer consent cannot approve an update. Adoption remains four-output
+create-only. The owner must separately decide whether to implement managed
+replacement, authorize any real target/reviewer, and accept the proposed
+replacement metadata tradeoff and approval UX before real use.
 
 ## Review scenarios and implementation boundary
 

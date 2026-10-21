@@ -4,7 +4,7 @@ This is the design of record for people and agents building the `lds` tool.
 It follows [ADR-0001](decisions/0001-adopt-two-track-documentation.md):
 engineering decisions and plans live here; [user documentation](../docs/README.md)
 lives in `docs/` and follows Diátaxis. The tool currently has a Toolsmith
-scaffold and harness-management commands plus six deterministic
+scaffold and harness-management commands plus seven deterministic
 `lds plumbing docs` leaves, as well as deterministic `lds plumbing reconcile`
 scan and explicit journal operations. Reconciliation is bounded to pinned
 evidence and a caller-owned journal. The interactive root
@@ -13,8 +13,8 @@ those deterministic docs operations. Generated Claude Code `/lds` adoption
 guidance fetches that flow live through `lds plumbing adopt --json`; the reader
 is preparatory and the guidance is not behavioral enforcement. S10 accepts
 executor CLI evidence and independent offline review, not native adoption or
-CLI/skill parity. No pilot or first-release claim follows; a human-facing
-reconciliation facilitator remains deferred.
+CLI/skill parity. No pilot or first-release claim follows; implementation of
+a human-facing reconciliation facilitator remains deferred.
 
 Start with the [roadmap](product/roadmap.md) for proposed capabilities and
 their status. The [source-repository map](architecture/source-repositories.md)
@@ -28,6 +28,13 @@ offline `docs collect`, and an optional observed packet for `docs assess`.
 The root CLI and generated skill use the same live `flows/assess.md`; the
 plumbing flow reader does not execute it. Model-authored proposals remain
 unverified advice, not target edits or native skill/CLI parity evidence.
+The proposed [existing-file update contract](product/documentation-update-contract.md)
+and [human-facing reconciliation workflow](product/reconciliation-workflow.md)
+are the next design workstreams. Updates require a separate exact-byte review
+and write policy; the proposed reconciliation first slice is report-only.
+Neither design implements a command, authorizes target/journal writes, or
+requires a pilot or another owner-driven test wave. The roadmap also records
+the source-checked, still-unimplemented Toolsmith BDS-234 dependency.
 The [adoption runtime handoff](product/adoption-operations-runtime-handoff.md)
 records the implemented plumbing, executable disposable evidence, and limits.
 The [BDS-251 engineering handoff](product/bds-251-stage-4-engineering-handoff.md)

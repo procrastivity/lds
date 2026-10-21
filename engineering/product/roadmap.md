@@ -90,6 +90,30 @@ LDS-managed existing-file edits would require a separate write contract and
 approval. Root `review` and `update` remain candidate workflows.
 Pilot selection and first-release inclusion remain separate decisions.
 
+## Next designs: reviewed updates and report-only reconciliation
+
+The owner requested these two design workstreams after the assessment workflow
+was delivered. They proceed without selecting a pilot or reopening S10:
+
+- **Reviewed existing-file updates:** local Matter
+  `lds-reviewed-documentation-updates` tracks the proposed
+  [update contract](documentation-update-contract.md). The recommended first
+  slice replaces only explicitly selected existing Markdown files after full
+  before/after review and fresh digest-bound approval. Creates, deletes, moves,
+  inferred ownership, automatic assessment acceptance and target writes are
+  not authorized by this design work. Accepted adoption remains create-only.
+- **Human-facing reconciliation:** local Matter
+  `lds-human-reconciliation-workflow` tracks the proposed
+  [workflow contract](reconciliation-workflow.md). The recommended first slice
+  produces a private external review report from explicit pinned pair/map and
+  optional existing-journal evidence. It does not write either source or the
+  journal; journal decision UX and real-pair authority remain separate.
+
+These are proposed contracts, not implemented commands or accepted permission
+to edit projects. Implementation can be scoped from the reviewed contracts;
+any live provider access, real target writes, pilot or release needs its own
+authorization. Existing assessment and reconciliation plumbing remain usable.
+
 ## Planning constraints and open decisions
 
 Settled: the two-track layout is the intended default, and within-project
@@ -105,8 +129,10 @@ implemented deterministic plumbing and must be settled before any real use:
 - **First usable release:** Which project is the pilot? What must `lds init`
   produce or preserve to count as useful, and how much partial adoption is
   supported?
-- **Write safety:** When may LDS create, update, or replace existing files?
-  Which actions need a reviewable plan or human approval?
+- **Existing-file write safety:** Review the proposed bounded update contract,
+  including exact before/after approval, stale-input refusal, per-file
+  replacement and partial-result recovery. Adoption's accepted create-only
+  policy does not authorize these updates.
 - **LLM release and pairing:** Step 8 implements the CLI-side form using the
   selected provider and Step 9 projects adoption guidance into Claude Code.
   S10's reduced-scope acceptance is not native adoption or a parity PASS;
@@ -126,7 +152,15 @@ implemented deterministic plumbing and must be settled before any real use:
    from the reference repositories. Ship defaults as embedded assets with
    the existing installed/user override chain. Repository-local overrides
    depend on [Toolsmith BDS-234](https://linear.app/beausimensen/issue/BDS-234/support-repository-local-overrides-for-generated-tools-assets-and);
-   do not claim they work in LDS yet.
+   do not claim they work in LDS yet. Read-only follow-up on 2026-10-21 found
+   the issue still Backlog, with no comments or linked implementation, no open
+   Toolsmith PRs, and no PR matching BDS-234. Remote Toolsmith main
+   [`20e9e44`](https://github.com/procrastivity/toolsmith/commit/20e9e44b2a70e37216b28a58142b5e3e17cf2259)
+   still specifies only user-XDG → installed → embedded in
+   [C5](https://github.com/procrastivity/toolsmith/blob/20e9e44b2a70e37216b28a58142b5e3e17cf2259/CONTRACT.md#L242-L257)
+   and the [generated resolver](https://github.com/procrastivity/toolsmith/blob/20e9e44b2a70e37216b28a58142b5e3e17cf2259/assets/_skeleton/internal/asset/asset.go#L67-L143).
+   The feature is not implemented on that main; existing generated LDS source
+   would also need an explicit port/rebuild after upstream support lands.
 2. Implement deterministic operations for inventorying files and links,
    validating the chosen layout, and rendering/scaffolding templates.
    Provide machine-readable results and tests before agent-driven flows.
@@ -144,9 +178,10 @@ implemented deterministic plumbing and must be settled before any real use:
    not semantic matching, a real-pair decision, or a facilitator. Xcind's
    [cross-project procedure](https://github.com/scinddev/xcind/blob/main/engineering/maintenance/cross-project-sync.md)
    and ledgers remain reference evidence, not a schema copied into LDS.
-5. Future: after explicit owner choices, consider a human-facing reconciliation
-   workflow and an authorized pilot. Disposable source-derived and synthetic
-   fixtures do not validate a live adoption, port, or parity claim.
+5. Design the human-facing reconciliation report workflow separately from
+   journal writes and any authorized pilot, as proposed above. Disposable
+   source-derived and synthetic fixtures do not validate a live adoption,
+   port, or parity claim.
 
 ## Candidate verbs
 
@@ -160,10 +195,10 @@ would bootstrap documentation *inside another project*.
 | --- | --- | --- |
 | Porcelain | `lds init` | Set up the selected documentation tracks and templates. |
 | Porcelain (implemented, outside first-release claim) | `lds assess <root> --reason <text> --audience <text> --output <absolute-new-report.md> [--source <relative-file> ...] [--json]` | Collect scoped documentation and named source bytes, ask fresh transfer consent, and request reviewable model-authored maintenance proposals; no target edits. |
-| Porcelain | `lds update` | Bring one project's docs into line with its changed code and decisions. |
+| Porcelain (candidate; not specified or implemented) | `lds update` | Future human-facing update orchestration. The [proposed first slice](documentation-update-contract.md) specifies deterministic `docs update-plan` / `docs update-apply` plumbing only, with exact-byte review and separate approval. |
 | Porcelain | `lds review` | Audit coverage, links, and cross-track consistency. |
 | Porcelain (implemented, outside first-release claim) | `lds adopt <root> --facts <facts.json>` | Interactively review a create-only four-output documentation plan and apply only after fresh exact-digest human consent. |
-| Porcelain | `lds reconcile` | Compare projects and guide explicit port/backport/divergence decisions. |
+| Porcelain (proposed design, not implemented) | `lds reconcile` | Produce an external reconciliation review report; no source or journal edits in the proposed [first slice](reconciliation-workflow.md). |
 | Plumbing (implemented, bounded) | `lds plumbing docs inventory`, `validate`, `render`, `plan`, `apply` | Report scoped files/links, check supported local targets, render four assets, preview and create missing approved files without an LLM. |
 | Plumbing (implemented, bounded) | `lds plumbing docs assess` | Collect documentation and explicitly hashed source evidence, link findings and authored proposals/questions in one new external report; no provider, semantic inference or target edits. See the [design](documentation-maintenance-workflow.md). |
 | Plumbing (implemented, bounded) | `lds plumbing docs collect`; `lds plumbing docs assess --observed <collected.json>` | Offline full baseline packet with automatic source hashes; optional observed binding for a strict authored brief and external report. |
