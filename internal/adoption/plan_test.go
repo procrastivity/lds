@@ -220,6 +220,10 @@ func TestCanonicalJSON_RFC8785AcceptanceVector(t *testing.T) {
 	if strings.Index(string(ordered), `"𐀀"`) > strings.Index(string(ordered), `""`) || strings.Contains(string(ordered), `\u003c`) {
 		t.Fatalf("canonical UTF-16 key/string encoding = %s", ordered)
 	}
+	controls, err := canonicalJSON([]byte(`{"text":"\u0001\u007f\u0085"}`))
+	if err != nil || string(controls) != "{\"text\":\"\\u0001\x7f\u0085\"}" {
+		t.Fatalf("RFC 8785 escapes only U+0000..U+001F: %q, %v", controls, err)
+	}
 }
 
 func TestPlanDigestCommitsToEveryDisplayedField(t *testing.T) {

@@ -55,6 +55,12 @@ var ErrUnsafeTarget = errors.New("unsafe target path")
 // Inspect reads only root README.md and regular Markdown below engineering/
 // and docs/. It never follows a symlink, including a symlink at the root.
 func Inspect(root string) (Inventory, error) {
+	return inspectWithOverlay(root, nil)
+}
+
+// An update preview substitutes bytes only after opening an existing regular
+// leaf. It cannot simulate creates or hide an unsafe/missing selected path.
+func inspectWithOverlay(root string, overlay map[string]string) (Inventory, error) {
 	result := Inventory{Files: []File{}, Links: []Link{}, Skipped: []Skip{}}
 	dir, err := openRoot(root)
 	if err != nil {
@@ -105,6 +111,9 @@ func Inspect(root string) (Inventory, error) {
 		data, err := io.ReadAll(file)
 		if err != nil {
 			return fmt.Errorf("read %s: %w", rel, err)
+		}
+		if content, ok := overlay[rel]; ok {
+			data = []byte(content)
 		}
 		result.Files = append(result.Files, File{Path: rel, SHA256: fmt.Sprintf("%x", sha256.Sum256(data)), Size: len(data)})
 		links, skipped := extractLinks(rel, string(data))

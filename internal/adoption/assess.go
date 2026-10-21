@@ -238,6 +238,10 @@ func assessmentText(text string) bool {
 }
 
 func collectAssessment(root, reportPath string, data []byte, brief AssessmentBrief) (AssessmentResult, error) {
+	return collectAssessmentWithOverlay(root, reportPath, data, brief, nil)
+}
+
+func collectAssessmentWithOverlay(root, reportPath string, data []byte, brief AssessmentBrief, overlay map[string]string) (AssessmentResult, error) {
 	result := AssessmentResult{
 		SchemaVersion: 1, Operation: "docs assess", Status: "review-required",
 		TargetRoot: root, ReportPath: reportPath, BriefSHA256: sha256Hex(data), Brief: brief,
@@ -252,11 +256,11 @@ func collectAssessment(root, reportPath string, data []byte, brief AssessmentBri
 	if err != nil {
 		return result, err
 	}
-	result.Inventory, err = Inspect(root)
+	result.Inventory, err = inspectWithOverlay(root, overlay)
 	if err != nil {
 		return result, err
 	}
-	result.Validation, err = Validate(root)
+	result.Validation, err = validateWithOverlay(root, overlay)
 	if err != nil {
 		return result, err
 	}
@@ -299,6 +303,9 @@ func collectAssessment(root, reportPath string, data []byte, brief AssessmentBri
 		}
 		if err != nil {
 			return result, err
+		}
+		if content, ok := overlay[name]; ok && probe.exists {
+			probe.data = []byte(content)
 		}
 		entry := AssessmentEvidence{Path: name, Exists: probe.exists}
 		if probe.exists {

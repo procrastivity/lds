@@ -15,6 +15,8 @@ historical `lds docs ...` spellings):
 | `lds plumbing docs assess <root> --brief <file> --output <absolute-new-report.md> --json` | Linux evidence/report collection with authored proposals; exit 0 means report created, not semantic approval. No target edits. See the [brief contract and example](../how-to/assess-documentation.md). |
 | `lds plumbing docs collect <root> --reason <text> --audience <text> [--source <relative-file> ...] [--json]` | Offline scoped collection, automatic hashes and complete UTF-8 contents in a schema-1 packet; no report, provider or target writes. |
 | `lds plumbing docs assess <root> --brief <draft.json> --observed <collected.json> --output <absolute-new-report.md> [--json]` | Bind a strict authored brief to the complete collected baseline before creating a new external review report. The existing no-`--observed` form remains supported. |
+| `lds plumbing docs update-plan <root> --observed <collected.json> --request <edits.json> --json` | Linux read-only plan for explicitly selected existing UTF-8 Markdown; complete exact before/after, evidence, metadata, diagnostics and digest on stdout only. Caller persists it privately outside the target. |
+| `lds plumbing docs update-apply <root> --plan <reviewed.json> --confirm <sha256:digest> --json` | Linux staged same-parent, per-file replacement after full artifact review and fresh exact digest confirmation; structured actual effects, not a transaction or automatic retry. See the [update how-to](../how-to/update-documentation.md). |
 | `lds assess <root> --reason <text> --audience <text> --output <absolute-new-report.md> [--source <relative-file> ...] [--json]` | Linux interactive model-assisted proposals; displays complete transfer for fresh `send` consent, then creates only an external review report. Requires `OPENCODE_API_KEY`; sends scoped source content. |
 | `lds plumbing assess [--json]` | Return live `flows/assess.md` content/source/hash as `preparatory`/`unavailable-for-execution`; does not run assessment. |
 | `lds adopt <root> --facts <file>` | Interactive root flow with advisory provider and fresh human gate. |
@@ -47,6 +49,22 @@ output must be absolute and outside both roots and their Git common
 directories; the output path must have no symlink components. Roots must be
 clean and match full pins. Original inputs are revalidated before publication.
 
+The update request is strict schema-1 UTF-8 JSON:
+`{"schemaVersion":1,"edits":[{"path":"README.md","after":"exact full new UTF-8 content\n","rationale":"nonempty reason","citations":["README.md"]}]}`.
+Only existing root `README.md` or Markdown below `docs/` and `engineering/`
+can be selected. Unknown, duplicate, case-aliased or null fields refuse; max
+32 edits, 8 MiB per selected file/after and 32 MiB per input JSON. The observed
+input must be an original `docs collect` packet, not an authored report. The
+planner does not create the reviewed file: the host must use an external,
+trusted private directory, exclusive no-follow creation and existing parents.
+The entire artifact, including the original observation and diagnostics, is
+digest-bound; do not automate confirmation. Apply may return `applied`,
+`refused`, `partial` or `indeterminate`; inspect actual effects and recover
+with a new observation/plan after uncertainty.
+The result separates `replaced`, observed `untouched`, path-string
+`unattempted`, and `failed` (phase/code and optional actual observation), plus
+any residual `scratch` and `cleanupError`. It never promises rollback.
+
 `lds manifest` is also an alias. Scan and journal successes emit JSON even
 without `--json`; report prints a human summary by default and JSON with
 `--json`. Exit 0 is success; 1 is validation/evidence finding,
@@ -55,7 +73,7 @@ diagnostics emit a JSON result to stdout **and** an error to stderr: inspect
 exit code and both streams. Cobra usage errors are human diagnostics. Root
 `init`, `update`, and `review` remain candidates; root `reconcile` has only the
 offline `report` slice, not an assisted facilitator. Earlier manifest counts
-pre-date this report addition; projection eligibility is not evidence of native
+pre-date the report and update additions; projection eligibility is not evidence of native
 execution or parity. The root
 LLM-kind command is not a deterministic projected member. See the
 [assessment how-to](../how-to/assess-documentation.md) for the separate

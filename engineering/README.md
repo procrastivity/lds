@@ -3,9 +3,10 @@
 This is the design of record for people and agents building the `lds` tool.
 It follows [ADR-0001](decisions/0001-adopt-two-track-documentation.md):
 engineering decisions and plans live here; [user documentation](../docs/README.md)
-lives in `docs/` and follows Diátaxis. The tool currently has a Toolsmith
-scaffold and harness-management commands plus seven deterministic
-`lds plumbing docs` leaves, as well as deterministic `lds plumbing reconcile`
+lives in `docs/` and follows Diátaxis. The tool has a Toolsmith scaffold and
+harness-management commands plus nine deterministic `lds plumbing docs`
+leaves, including separate existing-file update planning/application,
+as well as deterministic `lds plumbing reconcile`
 scan, explicit journal operations, and an offline report primitive. Root
 `lds reconcile report` produces a private new external review packet through
 the identical deterministic plumbing operation; only the qualified plumbing
@@ -31,12 +32,14 @@ offline `docs collect`, and an optional observed packet for `docs assess`.
 The root CLI and generated skill use the same live `flows/assess.md`; the
 plumbing flow reader does not execute it. Model-authored proposals remain
 unverified advice, not target edits or native skill/CLI parity evidence.
-The proposed [existing-file update contract](product/documentation-update-contract.md)
-and [human-facing reconciliation workflow](product/reconciliation-workflow.md)
-record further design work. Updates require a separate exact-byte review
-and write policy; the reconciliation first slice implements only a Linux
-offline report, not the proposed assisted facilitator. Neither design
-authorizes target/journal writes, a pilot, or another owner-driven test wave.
+The [existing-file update contract](product/documentation-update-contract.md)
+describes implemented `docs update-plan` / `docs update-apply` plumbing
+with exact-byte review, fresh digest confirmation and
+bounded per-file replacement; the [update how-to](../docs/how-to/update-documentation.md)
+uses a disposable target. The [human-facing reconciliation workflow](product/reconciliation-workflow.md)
+remains a proposal beyond its Linux offline report slice, not an assisted
+facilitator. No real-target update, journal/source transfer, pilot or native
+skill/parity result is authorized or established by these documents.
 The roadmap also records
 the source-checked, still-unimplemented Toolsmith BDS-234 dependency.
 The [adoption runtime handoff](product/adoption-operations-runtime-handoff.md)

@@ -29,8 +29,12 @@ type Validation struct {
 // Fragments are not checked; external, query-bearing, unsafe and other
 // unsupported targets are reported as skips rather than successes.
 func Validate(root string) (Validation, error) {
+	return validateWithOverlay(root, nil)
+}
+
+func validateWithOverlay(root string, overlay map[string]string) (Validation, error) {
 	result := Validation{Findings: []Finding{}, Skipped: []Skip{}}
-	inventory, err := Inspect(root)
+	inventory, err := inspectWithOverlay(root, overlay)
 	if err != nil {
 		return result, err
 	}

@@ -3,8 +3,10 @@
 **Status:** The owner accepted assessment-and-proposals-first. The initial
 provider-free collection/report operation and human-facing model-assisted
 assessment are implemented as described below. Model proposals are unverified
-advice; existing-file editing remains outside scope. No adoption pilot is
-required. The accepted create-only adoption contract is unchanged.
+advice; assessment itself still cannot edit files. A separate bounded
+[existing-file update contract](documentation-update-contract.md) now governs
+implemented reviewed replacements, without real-target or
+pilot authorization. The accepted create-only adoption contract is unchanged.
 
 The owner requested user documentation and maintenance-workflow design as
 the next independent work after the completed adoption and reconciliation
@@ -20,9 +22,10 @@ keeps user guidance in `docs/` and product design here. Local Matter
 The accepted first maintenance slice produces an evidence-backed review
 report and proposed text outside the target tree. It **does not apply edits**.
 A maintainer can use an ordinary editor and the project's existing review
-process to accept selected changes. A later LDS editing operation would need
-a separate behavior contract and approval; accepting this assessment design
-would not authorize that operation.
+process to accept selected changes. LDS-managed editing needs
+a separate behavior contract and approval; that separate `docs update-plan` /
+`docs update-apply` contract is now implemented. Accepting
+this assessment design alone does not authorize an update.
 
 This gives maintainers a useful way to ask “what documentation needs review
 after this change?” without treating adoption-generated files as owned or
@@ -201,10 +204,10 @@ Before using a report to guide later edits, the maintainer must check that
 its cited baseline is still relevant. This is
 stale-evidence detection, not a filesystem race or transaction guarantee.
 
-## Any future editing operation needs a separate decision
+## Separate reviewed editing operation
 
-The separate [proposed v1 existing-file update contract](documentation-update-contract.md)
-recommends a deliberately narrow later slice: explicitly selected, existing
+The separate [v1 existing-file update contract](documentation-update-contract.md)
+governs a deliberately narrow plumbing slice: explicitly selected, existing
 regular UTF-8 Markdown files, reviewed full before/after bytes and original
 evidence in a digest-bound plan, fresh human confirmation, Linux-only
 no-follow/staged per-file replacement and an actual-effects result. It rules
@@ -215,12 +218,12 @@ automatic retry. The design states its trusted-quiescent-ancestor and
 concurrency limits rather than claiming hostile-writer CAS, cross-file
 atomicity or rollback.
 
-This is **not accepted write authority or a working command**. The accepted
+This is **not real-target write authority**. The accepted
 assessment/report path still writes no target file; its advice acceptance and
 model-transfer consent cannot approve an update. Adoption remains four-output
-create-only. The owner must separately decide whether to implement managed
-replacement, authorize any real target/reviewer, and accept the proposed
-replacement metadata tradeoff and approval UX before real use.
+create-only. The owner must separately authorize any real target/reviewer and
+accept inode/timestamp replacement for that target before real use. See the
+[disposable update how-to](../../docs/how-to/update-documentation.md).
 
 ## Review scenarios and implementation boundary
 
@@ -316,6 +319,6 @@ ordinary manual editing afterward. The user how-to and local WIP workplan
 record current behavior and checks. Linear tracking, shipping and release
 actions still need their own authorization; the repository is the design of
 record. No additional owner test session or checkpoint is needed to complete
-this slice. LDS-managed existing-file edits, first-release inclusion and pilot
-choices remain separate future scope. Live provider reliability and native
-execution/parity are not established by the offline checks.
+this assessment slice. Real-target existing-file edits, first-release
+inclusion and pilot choices remain separate decisions. Live provider
+reliability and native execution/parity are not established by the offline checks.

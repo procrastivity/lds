@@ -4,7 +4,8 @@ LDS is a CLI for a Layered Documentation System: engineering documentation
 alongside Diátaxis user documentation. It has deterministic `lds plumbing docs`
 inventory, local-link validation, four-asset rendering, reviewed planning,
 create-only application, and maintenance assessment reports with
-reviewer-authored proposals, plus bounded `lds plumbing reconcile` evidence
+reviewer-authored proposals, plus separately reviewed existing-file update
+planning/application and bounded `lds plumbing reconcile` evidence
 scanning, explicit caller-owned journal operations, and an offline
 `lds reconcile report` review packet. Reconciliation reads clean pinned Git
 snapshots and does not infer semantic matches or mutate source projects. The
@@ -32,6 +33,12 @@ packet with an authored brief. Offline checks do not establish live-provider
 reliability or installed-skill parity. No assessment edits the target.
 See the [assessment how-to](docs/how-to/assess-documentation.md).
 
+The separate offline `lds plumbing docs update-plan` / `update-apply` path
+replaces only explicitly selected existing documentation files after full
+before/after plan review and fresh exact-digest confirmation. It does not
+apply assessment advice or alter create-only adoption; no real target or pilot
+is authorized. See the [update how-to](docs/how-to/update-documentation.md).
+
 Built on the [toolsmith contract](https://github.com/procrastivity/toolsmith)
 (`toolsmith/v1` — the manifest declares it): a single static Go binary
 that projects itself into agent harnesses as generated, stamped skills.
@@ -55,8 +62,9 @@ current safety boundaries. The [assessment how-to](docs/how-to/assess-documentat
 collects evidence and proposed text outside the target without editing it.
 The [reconciliation how-to](docs/how-to/reconcile-projects.md) includes a
 disposable offline report example using an empty review brief.
-These guides describe implemented behavior. None selects an adoption pilot or
-adds automatic edits to existing documentation.
+The [update how-to](docs/how-to/update-documentation.md) shows a disposable
+collect/request/plan example and a separate human apply command. None selects
+an adoption pilot or authorizes automatic edits to existing documentation.
 
 ## Develop
 
@@ -86,8 +94,9 @@ authorized as an adoption pilot. The
 [maintenance-workflow design](engineering/product/documentation-maintenance-workflow.md)
 records the accepted assessment/report boundary and implemented deterministic
 authored-brief report. Its human-facing assessment workflow adds scoped
-collection and model-authored proposals; existing-file updates remain outside
-scope.
+collection and model-authored proposals. The separate
+[existing-file update contract](engineering/product/documentation-update-contract.md)
+defines reviewed replacement; assessment itself still cannot edit files.
 
 The [BDS-252 engineering handoff](engineering/product/bds-252-stage-4-engineering-handoff.md)
 documents the reconciliation plumbing, bounded runtime evidence, and limits;

@@ -1,9 +1,12 @@
-# Proposed v1 contract: reviewed existing-file documentation updates
+# V1 contract: reviewed existing-file documentation updates
 
-**Status: Proposed design only.** This document authorizes no target writes and
-exposes no working new command. It is a candidate next slice after the
-[accepted assessment workflow](documentation-maintenance-workflow.md), not an
-extension of [create-only adoption](adoption-contract.md). Adoption's four
+**Status: implemented and verified in disposable offline fixtures.** The
+owner requested `lds plumbing docs update-plan` followed by
+`lds plumbing docs update-apply`; this contract describes that implementation,
+not authority to run it on a real target. No real target, reviewer or pilot is
+authorized. It is separate from the
+[accepted assessment workflow](documentation-maintenance-workflow.md) and
+[create-only adoption](adoption-contract.md). Adoption's four
 outputs, collision veto, facts approval and `docs plan`/`docs apply` remain
 unchanged. A generated-looking file has no special ownership status.
 
@@ -20,9 +23,9 @@ provider calls, or implicit expansion to cited source files. A maintainer can
 always continue editing manually instead. Model transfer consent permits a
 request, not a write; acceptance of assessment advice is not edit approval.
 
-Recommended provisional plumbing names are `docs update-plan` and
-`docs update-apply` (not aliases for adoption apply); no porcelain or model
-orchestration is specified. The caller supplies the original **collected**
+The plumbing names are `docs update-plan` and `docs update-apply` (not aliases
+for adoption apply); no porcelain or model orchestration is specified. The
+caller supplies the original **collected**
 `docs collect` observation packet and an explicit edit request. The packet's
 empty proposals/questions and `reportPath` distinguish it from a later authored
 assessment report. A report may motivate an edit, but is not an executable
@@ -32,12 +35,27 @@ collected evidence. Evidence claims remain reviewer assertions, not verified
 semantic facts. The caller must inspect any sensitive content before sharing
 the plan; no extra repository files are read because a citation suggests them.
 
+The command forms are:
+
+```text
+lds plumbing docs update-plan <root> --observed <collected.json> --request <edits.json> --json
+lds plumbing docs update-apply <root> --plan <reviewed.json> --confirm <sha256:digest> --json
+```
+
+The request is strict UTF-8 schema-1 JSON with exactly `schemaVersion` and
+`edits`; each edit has exactly `path`, `after`, `rationale`, and `citations`.
+Unknown, duplicate, case-aliased, missing or null fields refuse. At most 32
+edits are allowed; each selected file and after content is at most 8 MiB, and
+each input JSON at most 32 MiB. The original packet is produced by
+`docs collect`, not an authored assessment report. See the
+[disposable how-to](../../docs/how-to/update-documentation.md).
+
 ## Review artifact and read-only plan
 
-The read-only planner returns its artifact on stdout; if a host persists it,
+The read-only planner returns its artifact on stdout only; if a host persists it,
 the destination must be an explicitly named new file **outside** the target,
-created exclusively with no-follow existing parents, never a target-side
-scratch or an occupied path. An external artifact write failure may leave a
+created exclusively with no-follow existing trusted private parents, never a
+target-side scratch or an occupied path. An external artifact write failure may leave a
 partial external file and conveys no target-write permission.
 
 Return one version-1 JSON artifact with `operation: "docs update-plan"`,
@@ -48,6 +66,13 @@ byte lengths and SHA-256 hashes of both, and observed file identity (`dev:ino`),
 link count, UID/GID, permission mode and metadata eligibility checks. Include
 selected path and ancestor identities, veto, findings and skips (including
 original inventory/validation diagnostics).
+`before` contains `content`, `sha256`, `bytes`, `identity`, `mode` (numeric
+permission bits), `uid`, `gid`, `links`, and `metadata`. After content is the
+`after` string, with `afterSha256` and `afterBytes`. Each edit also binds
+`afterObservationSha256`: SHA-256 of the compact JSON observation with only
+that entry and earlier sorted entries overlaid, retaining the original brief.
+It is a bounded inventory/link/evidence checkpoint, not semantic verification.
+Apply reads actual bytes without an overlay and compares them to that checkpoint.
 The packet retains reason/audience, inventory, validation, their skips and
 captured source content; its original brief hash and observation fields are
 not reduced to a list of selected hashes. All displayed review metadata is
@@ -162,6 +187,24 @@ uncertain post-rename or crash outcome, inspect actual target and scratch
 state and start a *new* plan/review against the observed baseline before any
 further attempt. If a result itself cannot be emitted, the caller must inspect
 the tree rather than assume nothing happened. No durable journal is implied.
+`unattempted` is an array of path strings. `failed.observed` is an observation
+object or null; `scratch` and `cleanupError` are empty strings when absent.
+
+## Executed offline checks
+
+`make check` passed with zero lint issues and all Go packages passing;
+`go test -race -count=1 ./...` passed. Linux/amd64 and Darwin/arm64 static
+builds passed; Darwin update support is not claimed. The documented disposable
+recipe ran through the real CLI: decline exited 3 without target changes;
+confirmed apply exited 0 with exact bytes, ownership and permission mode.
+An independent JSON/SHA-256 calculation matched the displayed plan digest.
+Real filesystem controls refused xattrs, parent default ACLs, hardlinks,
+special modes and symlink leaves without writes. Unique edit-count boundaries
+accepted 32 and refused 33. Regression tests also cover changed source,
+inventory/link diagnostics, selected bytes/identity/mode/ancestors, strict raw
+JSON, completed-edit overlays, partial/uncertain effects and foreign scratch
+preservation. Fault-injected failure tests are not evidence of hostile-writer
+immunity. No provider, native harness or real-project update ran.
 
 ## Implementation separation and adversarial acceptance
 
@@ -187,12 +230,11 @@ the four-output adoption contract.
 | Failure writing scratch before rename versus failure after first rename in a two-file set | Former: no replacement, report owned scratch/cleanup; latter: report verified first replacement, failed/uncertain second and unattempted remainder, no rollback. |
 | Hostile writer swaps leaf immediately after last check | Explicit concurrency limitation, not a claimed successful CAS guarantee; do not assert tests can prove immunity. |
 
-Recommended defaults above settle reversible engineering choices: Linux-only,
+The implemented contract settles the bounded engineering choices: Linux-only,
 existing selected Markdown, no hardlinks, exact-content artifact, same-parent
 staging, ownership/mode preservation with richer metadata refused, stable
-ordering and explicit partial results. **Owner decisions still
-needed before implementation or real-target use:** whether LDS-managed
-replacement is wanted at all; which real project/paths and reviewer may be
-authorized; and whether inode/timestamp replacement is acceptable for that
-target. Approval UX and any release/pilot claim also
-need separate authorization. None is supplied by this proposal.
+ordering and explicit partial results. **Owner decisions still needed before
+real-target use:** which real project/paths and reviewer may be authorized,
+and whether inode/timestamp replacement is acceptable for that target.
+Release/pilot claims need separate authorization. None is supplied by this
+implementation request.

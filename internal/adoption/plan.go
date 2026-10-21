@@ -13,7 +13,6 @@ import (
 	"sort"
 	"strings"
 	"syscall"
-	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
 )
@@ -740,7 +739,7 @@ func appendCanonicalString(out *strings.Builder, value string) {
 		case '\r':
 			out.WriteString(`\r`)
 		default:
-			if unicode.IsControl(r) {
+			if r < 0x20 {
 				out.WriteString(`\u00`)
 				out.WriteByte(hexDigits[byte(r)>>4])
 				out.WriteByte(hexDigits[byte(r)&0x0f])

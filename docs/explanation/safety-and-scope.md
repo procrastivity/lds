@@ -55,14 +55,39 @@ reads the live flow, while `lds plumbing adopt --json` itself is
 `preparatory`/`unavailable-for-execution`. Guidance is not enforcement;
 installation does not prove native adoption or parity.
 
-Docs apply is Linux-only supported creation: four fixed paths and required
-parent directories, never a root README rewrite. Different occupied files
-veto every create, identical ones remain untouched, and there is no update,
-delete, or migration. Assets resolve user-XDG → installed-default → embedded;
+Adoption's `docs apply` is Linux-only supported creation: four fixed paths and
+required parent directories, never a root README rewrite. Different occupied
+files veto every create, identical ones remain untouched; it has no update,
+delete, or migration mode. Assets resolve user-XDG → installed-default → embedded;
 the target repo cannot override them. Apply rechecks the plan and uses
 exclusive/no-follow creates, but a late failure may leave some files created.
 It does not roll back or provide a transaction. Inspect state and make a new
 plan and decision before any rerun.
+
+Separately, `docs update-plan` and `docs update-apply` handle only explicitly
+selected **existing** root `README.md` or Markdown below `docs/` and
+`engineering/`. They do not infer ownership from generated-looking content,
+create missing files, move, delete, run project commands, use a provider, or
+apply assessment advice. The original `docs collect` packet—not an authored
+report—binds the complete observation. The planner emits a full exact
+before/after and evidence/metadata/diagnostics artifact to stdout only. The
+host must persist it exclusively with no-follow handling outside the target
+in a trusted private directory. Personally review all of it and freshly
+confirm its digest; a digest copied by script is not authorization.
+
+Linux update apply refuses symlinks, multi-linked or nonregular selected
+files, special mode bits, selected xattrs/extended ACLs, default ACLs on
+staging parents and unsupported or unreadable metadata. It preserves UID/GID
+and permission bits without `chown`; inode, timestamps and open-handle
+behavior are **not** preserved. Selected content/metadata, ancestors and
+original inventory, source evidence, findings and skips are rechecked for
+staleness. Each file is staged in its verified parent and replaced separately:
+there is no multi-file transaction, rollback, hostile-writer compare-and-swap,
+or safe automatic retry. Trusted, quiescent root/parents and other writers are
+required. `refused`, `partial` and `indeterminate` results demand inspection
+of actual target/scratch state followed by a new observation, plan and human
+review before another attempt. No real target or pilot is authorized merely
+by this implemented command. See the [update how-to](../how-to/update-documentation.md).
 
 Reconciliation checks named clean roots against full pins, reads only scoped
 tracked evidence and explicit raw maps, and optionally compares a named

@@ -3,7 +3,8 @@
 LDS inventories and validates a bounded documentation layer, can propose four
 create-only adoption files for a project, and scans explicitly pinned pairs of
 Git projects for reconciliation evidence. It also collects maintenance evidence
-and reviewer-authored proposals in a report without editing the target.
+and reviewer-authored proposals in a report without editing the target, and
+separately supports reviewed existing-file updates.
 The `lds assess` workflow adds model-authored proposals after
 explicit consent to disclose the complete scoped source-content packet; the
 offline authored-brief path remains available without a provider.
@@ -31,6 +32,9 @@ tutorial or deterministic plumbing.
 - [Assess documentation](how-to/assess-documentation.md) — an offline
   authored-brief report, collect/observed binding, and a consent-gated
   model workflow; all reports stay outside the project and never apply edits.
+- [Update existing documentation](how-to/update-documentation.md) — collect,
+  review the complete exact-byte plan and freshly confirm a separate Linux
+  apply; no real target is authorized by this guide.
 - [Reconcile two projects](how-to/reconcile-projects.md) — scan clean pinned
   snapshots and keep an explicit review journal.
 - [Command reference](reference/commands.md) and [fact bundle reference](reference/facts.md).
