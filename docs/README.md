@@ -33,8 +33,9 @@ tutorial or deterministic plumbing.
   authored-brief report, collect/observed binding, and a consent-gated
   model workflow; all reports stay outside the project and never apply edits.
 - [Update existing documentation](how-to/update-documentation.md) — collect,
-  review the complete exact-byte plan and freshly confirm a separate Linux
-  apply; no real target is authorized by this guide.
+  author exact edits, then invoke the offline Linux root workflow for complete
+  plan display and fresh terminal confirmation, or use the separate manual
+  plumbing plan/apply route. No real target is authorized by this guide.
 - [Reconcile two projects](how-to/reconcile-projects.md) — scan clean pinned
   snapshots and keep an explicit review journal.
 - [Command reference](reference/commands.md) and [fact bundle reference](reference/facts.md).

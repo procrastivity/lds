@@ -17,6 +17,7 @@ historical `lds docs ...` spellings):
 | `lds plumbing docs assess <root> --brief <draft.json> --observed <collected.json> --output <absolute-new-report.md> [--json]` | Bind a strict authored brief to the complete collected baseline before creating a new external review report. The existing no-`--observed` form remains supported. |
 | `lds plumbing docs update-plan <root> --observed <collected.json> --request <edits.json> --json` | Linux read-only plan for explicitly selected existing UTF-8 Markdown; complete exact before/after, evidence, metadata, diagnostics and digest on stdout only. Caller persists it privately outside the target. |
 | `lds plumbing docs update-apply <root> --plan <reviewed.json> --confirm <sha256:digest> --json` | Linux staged same-parent, per-file replacement after full artifact review and fresh exact digest confirmation; structured actual effects, not a transaction or automatic retry. See the [update how-to](../how-to/update-documentation.md). |
+| `lds update <root> --observed <collected.json> --request <edits.json> [--json]` | Offline Linux human-facing update: display the complete deterministic plan on stderr, refuse veto before prompting, flush queued input and accept only freshly typed `apply sha256:<exact displayed digest>` or `decline`. No confirmation flag, provider, new collection or temporary plan/report artifact. Uses the same strict in-memory apply. |
 | `lds assess <root> --reason <text> --audience <text> --output <absolute-new-report.md> [--source <relative-file> ...] [--json]` | Linux interactive model-assisted proposals; displays complete transfer for fresh `send` consent, then creates only an external review report. Requires `OPENCODE_API_KEY`; sends scoped source content. |
 | `lds plumbing assess [--json]` | Return live `flows/assess.md` content/source/hash as `preparatory`/`unavailable-for-execution`; does not run assessment. |
 | `lds adopt <root> --facts <file>` | Interactive root flow with advisory provider and fresh human gate. |
@@ -64,6 +65,15 @@ with a new observation/plan after uncertainty.
 The result separates `replaced`, observed `untouched`, path-string
 `unattempted`, and `failed` (phase/code and optional actual observation), plus
 any residual `scratch` and `cleanupError`. It never promises rollback.
+Root `lds update` takes the same original collected packet and explicit edits,
+not an assessment report or inferred proposal. With `--json`, final stdout is
+schema-1 JSON containing `operation: "update"`, `status`, the complete `plan`, and `apply`
+(null if vetoed or declined); plan display, prompt and errors go to stderr.
+Without `--json`, stdout is a human status summary.
+Wrong input or EOF refuses. It is root-only plumbing-kind, not projected:
+only qualified `plumbing ...` members are eligible. It is not a same-deliverable
+alias for either canonical deterministic step. There is no update flow asset
+or preparatory reader for this offline host.
 
 `lds manifest` is also an alias. Scan and journal successes emit JSON even
 without `--json`; report prints a human summary by default and JSON with
@@ -71,10 +81,11 @@ without `--json`; report prints a human summary by default and JSON with
 2 usage, 3 refusal/staleness, 4 unexpected internal/I/O failure. Some docs
 diagnostics emit a JSON result to stdout **and** an error to stderr: inspect
 exit code and both streams. Cobra usage errors are human diagnostics. Root
-`init`, `update`, and `review` remain candidates; root `reconcile` has only the
-offline `report` slice, not an assisted facilitator. Earlier manifest counts
-pre-date the report and update additions; projection eligibility is not evidence of native
-execution or parity. The root
+`init` and `review` remain candidates; model-assisted update orchestration is
+deferred. Root `reconcile` has only the offline `report` slice, not an assisted
+facilitator. The manifest has 28 application leaves, 19 qualified
+projected plumbing-kind entries and nine docs leaves; projection eligibility
+is not evidence of native execution or parity. The root
 LLM-kind command is not a deterministic projected member. See the
 [assessment how-to](../how-to/assess-documentation.md) for the separate
 provider-free and consent-gated routes.

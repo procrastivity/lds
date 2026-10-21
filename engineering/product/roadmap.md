@@ -50,8 +50,9 @@ plus a reviewer-authored brief in a new private external Markdown report with
 provenance JSON. It never writes sources or the journal. The root form is
 deterministic; only the qualified plumbing form enters the generated skill
 table. Neither is a native execution or parity finding.
-The human-facing assessment workflow and bounded existing-file update plumbing
-are implemented. The manifest has 27 leaves, including 19 qualified
+The human-facing assessment workflow, bounded existing-file update plumbing
+and offline human-facing root `lds update` are implemented. The manifest
+has 28 leaves, including 19 qualified
 plumbing-kind projection entries and nine `docs` leaves; these counts do not
 establish native execution or parity.
 Reconciliation commands do not
@@ -95,8 +96,13 @@ inclusion or owner checkpoint wave is claimed or required for this slice.
 
 Bounded `docs update-plan` and `docs update-apply` are implemented under the separate
 [update contract](documentation-update-contract.md), with full exact-byte
-review and a fresh digest gate. This is not approval for any real target.
-Root `review` and `update` remain candidate workflows.
+review and a fresh digest gate. Local WIP Matter
+`lds-human-update-workflow` tracks the offline Linux root `lds update` host:
+complete plan display on stderr, fresh terminal-only digest approval and the
+same strict in-memory apply. It takes the original collected packet and
+explicit edits, without a provider, new baseline or temporary artifact.
+This is not approval for any real target. Model-assisted update orchestration
+and root `review` remain deferred; root `init` remains a candidate.
 Pilot selection and first-release inclusion remain separate decisions.
 
 ## Separate update implementation and assisted reconciliation design
@@ -120,7 +126,7 @@ was delivered. They proceed without selecting a pilot or reopening S10:
   either source or the journal. Optional model assistance, a shared CLI/skill
   flow, journal decision UX, and real-pair authority remain deferred.
 
-The implemented update plumbing does not grant
+The implemented update plumbing and offline root host do not grant
 permission to edit a real project. The remainder of the reconciliation
 workflow is proposed. Any live provider access, real target write, pilot or
 release needs its own authorization. Existing
@@ -209,7 +215,7 @@ would bootstrap documentation *inside another project*.
 | --- | --- | --- |
 | Porcelain | `lds init` | Set up the selected documentation tracks and templates. |
 | Porcelain (implemented, outside first-release claim) | `lds assess <root> --reason <text> --audience <text> --output <absolute-new-report.md> [--source <relative-file> ...] [--json]` | Collect scoped documentation and named source bytes, ask fresh transfer consent, and request reviewable model-authored maintenance proposals; no target edits. |
-| Porcelain (candidate; not specified or implemented) | `lds update` | Future human-facing update orchestration. The [bounded implementation contract](documentation-update-contract.md) specifies deterministic `docs update-plan` / `docs update-apply` plumbing only, with exact-byte review and separate approval. |
+| Porcelain (implemented offline slice) | `lds update <root> --observed <collected.json> --request <edits.json> [--json]` | Linux terminal host of the complete deterministic plan and fresh exact-digest human gate; reuses original packet and authored edits, then strict in-memory apply. No model or temporary plan/report; assisted orchestration deferred. Not projected despite plumbing kind because root-only. See the [update how-to](../../docs/how-to/update-documentation.md). |
 | Porcelain | `lds review` | Audit coverage, links, and cross-track consistency. |
 | Porcelain (implemented, outside first-release claim) | `lds adopt <root> --facts <facts.json>` | Interactively review a create-only four-output documentation plan and apply only after fresh exact-digest human consent. |
 | Porcelain (implemented offline slice) | `lds reconcile report --pair <absolute-pair.json> --left-root <absolute-dir> --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] [--journal <absolute-existing-journal.json>] --review <absolute-review.json> --output <absolute-new-report.md> [--json]` | Linux private external report from clean pinned evidence and reviewer assertions; no model, source/journal writes, or project commands. See the [how-to](../../docs/how-to/reconcile-projects.md). |

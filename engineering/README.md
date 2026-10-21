@@ -33,10 +33,11 @@ The root CLI and generated skill use the same live `flows/assess.md`; the
 plumbing flow reader does not execute it. Model-authored proposals remain
 unverified advice, not target edits or native skill/CLI parity evidence.
 The [existing-file update contract](product/documentation-update-contract.md)
-describes implemented `docs update-plan` / `docs update-apply` plumbing
-with exact-byte review, fresh digest confirmation and
-bounded per-file replacement; the [update how-to](../docs/how-to/update-documentation.md)
-uses a disposable target. The [human-facing reconciliation workflow](product/reconciliation-workflow.md)
+describes implemented `docs update-plan` / `docs update-apply` plumbing and
+the offline human-facing `lds update` host, with exact-byte review, fresh
+digest confirmation and bounded per-file replacement; the
+[update how-to](../docs/how-to/update-documentation.md) uses a disposable
+target. The [human-facing reconciliation workflow](product/reconciliation-workflow.md)
 remains a proposal beyond its Linux offline report slice, not an assisted
 facilitator. No real-target update, journal/source transfer, pilot or native
 skill/parity result is authorized or established by these documents.

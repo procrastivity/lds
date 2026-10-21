@@ -165,6 +165,8 @@ func TestUpdateRequiresFreshConfirmationAndExactRawArtifact(t *testing.T) {
 			}
 			result, err := ApplyUpdates(root, path, plan.PlanDigest)
 			assertUpdateRefusal(t, result, err, "refusal.update-plan-invalid")
+			result, err = ApplyUpdatesReviewed(root, raw, plan.PlanDigest)
+			assertUpdateRefusal(t, result, err, "refusal.update-plan-invalid")
 		})
 	}
 	if !reflect.DeepEqual(before, snapshotPlanTarget(t, root)) {

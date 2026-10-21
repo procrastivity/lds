@@ -2,8 +2,11 @@
 
 **Status:** Stage 2 Step 3 audit approved; Stage 2 Step 4 placement is
 implemented. The original rows record the pre-Step-4 root leaves; Stage 4
-Step 8 adds the separately classified root LLM form shown as the final row.
+Step 8 added the separately classified root LLM form shown below.
 Step 6 also added the preparation-only `lds plumbing adopt` reader.
+The later offline root `lds update` slice is classified below separately;
+historical Step 4/Step 8 counts and projection observations are not current
+manifest measurements.
 
 This records the audience decision for every runnable application leaf in the
 pre-Step-4 root command. Its `docs` node was a grouping command with five
@@ -29,6 +32,7 @@ requires both a canonical `lds plumbing` path and kind `plumbing`.
 | `lds docs render <root>` | Future adoption skill/script rendering candidate documentation · `plumbing` | Canonical `lds plumbing docs render`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified. |
 | `lds docs validate <root>` | Future adoption skill/script checking supported local links · `plumbing` | Canonical `lds plumbing docs validate`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified. |
 | `lds adopt <root> --facts <facts.json>` | Human/operator running the bounded CLI-side LLM adoption form · `llm` | Retain as root porcelain; it is separate from the read-only `lds plumbing adopt` reader. | No: root-only and kind `llm`; both gates exclude it. | No projected skill or shipped consumer calls it; no compatibility alias. |
+| `lds update <root> --observed <collected.json> --request <edits.json> [--json]` | Human/operator reviewing an offline plan and making a fresh terminal decision · `plumbing` | Root porcelain host of the existing canonical `docs update-plan` and `docs update-apply` steps, not a same-deliverable alias for either. | No: root-only despite plumbing kind; only qualified `plumbing ...` members project. | No compatibility alias. |
 
 The `manifest` and `doctor` aliases use the same constructors as their
 canonical members. The manifest records `alias-of` only on these two root
@@ -74,3 +78,16 @@ the host-gated root form in `internal/verbs/adoptflow`; the existing plumbing
 reader remains read-only. The installed skill still projects only deterministic
 plumbing and does not execute the paired adoption flow. No skill parity,
 real pilot, or first-release inclusion is claimed.
+
+The offline root update host adds no LLM/shared flow asset or preparatory
+reader. It takes the original `docs collect` packet and explicit schema-1 edits,
+displays the complete deterministic plan on stderr, vetoes before a prompt,
+flushes queued input, and requires freshly typed
+`apply sha256:<exact displayed digest>` or `decline` without a confirmation
+flag. It then uses strict in-memory apply and, with `--json`, returns schema-1
+`operation: "update"`, `status`, `plan` and nullable `apply` on stdout. No provider,
+temporary plan/report or native skill execution is involved. The current
+manifest is 28 leaves, 19 projected qualified plumbing-kind entries,
+and nine docs leaves; the historical observations above do not verify the
+new root command's terminal behavior. See the
+[update contract](documentation-update-contract.md).

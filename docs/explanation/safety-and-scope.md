@@ -64,16 +64,24 @@ exclusive/no-follow creates, but a late failure may leave some files created.
 It does not roll back or provide a transaction. Inspect state and make a new
 plan and decision before any rerun.
 
-Separately, `docs update-plan` and `docs update-apply` handle only explicitly
-selected **existing** root `README.md` or Markdown below `docs/` and
-`engineering/`. They do not infer ownership from generated-looking content,
-create missing files, move, delete, run project commands, use a provider, or
-apply assessment advice. The original `docs collect` packet—not an authored
-report—binds the complete observation. The planner emits a full exact
-before/after and evidence/metadata/diagnostics artifact to stdout only. The
-host must persist it exclusively with no-follow handling outside the target
-in a trusted private directory. Personally review all of it and freshly
-confirm its digest; a digest copied by script is not authorization.
+Separately, `lds update` and the canonical `docs update-plan` /
+`docs update-apply` steps handle only explicitly selected **existing** root
+`README.md` or Markdown below `docs/` and `engineering/`. They do not infer
+ownership from generated-looking content, create missing files, move, delete,
+run project commands, use a provider, or apply assessment advice. The original
+`docs collect` packet—not an authored report—binds the complete observation.
+The planner emits exact before/after content and evidence, metadata and
+diagnostics to stdout only. The manual route must persist that artifact
+exclusively without following symlinks, outside the target in a trusted
+private directory. Root `lds update` instead
+builds the same plan in memory and displays it **completely** on stderr without
+a temporary plan/report artifact or new collection. It refuses a veto before
+prompting, flushes queued terminal input after display, and accepts only a
+freshly typed `apply sha256:<exact displayed digest>` or `decline`; all other
+input or EOF refuses. No `--confirm`/`--yes` bypass or credential is needed.
+Personally review the whole plan and freshly confirm its digest; a digest
+copied by script is not authorization. Root update is not projected into a
+skill and does not add model-assisted update orchestration.
 
 Linux update apply refuses symlinks, multi-linked or nonregular selected
 files, special mode bits, selected xattrs/extended ACLs, default ACLs on

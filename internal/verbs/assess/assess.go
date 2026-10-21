@@ -41,7 +41,7 @@ func Command(streams *iostreams.Streams) *cobra.Command {
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			streams := &iostreams.Streams{In: cmd.InOrStdin(), Out: streams.Out, Err: streams.Err}
-			if !isInteractive(streams) {
+			if !streams.IsInteractive() {
 				return ldserr.New("refusal.interactive-required", "lds assess requires a Linux terminal; no provider request or report was made")
 			}
 			key := os.Getenv("OPENCODE_API_KEY")
@@ -99,7 +99,7 @@ func runWorkflow(ctx context.Context, root, reason, audience string, sources []s
 	if _, err := fmt.Fprintf(streams.Err, "OpenCode Go / deepseek-v4-flash will receive the complete selected file contents below, not just adoption's aggregate counts.\nSystem instructions:\n%s\nComplete user payload:\n%s\n", systemPrompt, payload); err != nil {
 		return err
 	}
-	reader, err := freshConsent(streams)
+	reader, err := streams.FreshInput()
 	if err != nil {
 		return ldserr.New("refusal.consent-input-unavailable", "fresh terminal input could not be established; no provider request or report was made")
 	}

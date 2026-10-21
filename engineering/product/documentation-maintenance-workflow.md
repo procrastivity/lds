@@ -33,8 +33,9 @@ introducing an updater before its write policy is settled. It also lets
 documentation-impact and Diátaxis review share one workflow instead of
 creating a command for every review question. Root `assess` now provides that
 human-facing workflow, using `lds plumbing docs collect` and the observed-bound
-`lds plumbing docs assess` report operation. Root `review` and `update` remain
-candidate names.
+`lds plumbing docs assess` report operation. Root `review` remains a candidate;
+the offline `lds update` host is implemented under the separate
+[update contract](documentation-update-contract.md).
 
 ## Initial deterministic operation
 

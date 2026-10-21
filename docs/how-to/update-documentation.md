@@ -1,19 +1,22 @@
 # Update an existing documentation file
 
-`lds plumbing docs update-plan` previews explicitly requested full-file
-replacements; `update-apply` requires a separately reviewed plan and fresh
-exact-digest human confirmation. This offline Linux workflow does not use a
-provider, an agent skill, or an assessment report as write authority. It is
-separate from create-only adoption. Use it only on a target and paths you are
-authorized to change; no real project is selected by this guide.
+`lds update` is an offline, human-facing Linux workflow for explicitly
+requested full-file replacements. It displays the complete deterministic plan
+and requires fresh exact-digest terminal confirmation. The separate
+`lds plumbing docs update-plan` / `update-apply` route lets you persist and
+review a plan before a distinct apply command. Neither route uses a provider,
+agent skill, or assessment report as write authority. They are separate from
+create-only adoption. Use them only on a target and paths you are authorized
+to change; no real project is selected by this guide.
 
-## Prepare a disposable plan
+## Prepare disposable inputs
 
 With a current `lds` binary on `PATH`, run the following in a trusted shell.
 The two new private directories are separate, and the review directory is
 outside the target. `set -C` protects this example's shell redirections from
-accidentally overwriting files; the host is responsible for exclusive,
-no-follow persistence of planner stdout in a trusted existing directory.
+accidentally overwriting files; for the manual route below, the host is
+responsible for exclusive, no-follow persistence of planner stdout in a
+trusted existing directory.
 
 ```sh
 umask 077
@@ -27,9 +30,6 @@ lds plumbing docs collect "$project" \
 cat > "$review/edits.json" <<'JSON'
 {"schemaVersion":1,"edits":[{"path":"README.md","after":"# Example\nNew instructions.\n","rationale":"Replace the obsolete example wording","citations":["README.md"]}]}
 JSON
-lds plumbing docs update-plan "$project" \
-  --observed "$review/collected.json" --request "$review/edits.json" --json \
-  > "$review/plan.json"
 ```
 
 Do not feed an assessment *report* to `--observed`: it requires the original
@@ -39,6 +39,45 @@ new UTF-8 file, not a diff), nonempty `rationale`, and nonempty `citations`
 referencing collected evidence. Unknown, duplicate, case-aliased or null
 fields refuse. Select only existing root `README.md` or `.md` files below
 `docs/` or `engineering/`; no creation, move or deletion is requested.
+
+## Invoke the human-facing update
+
+Run this yourself in a Linux terminal with an unchanged disposable fixture:
+
+```sh
+lds update "$project" \
+  --observed "$review/collected.json" --request "$review/edits.json" --json
+```
+
+The command builds a plan in memory from those original inputs (it does not
+collect a new baseline or write a temporary plan/report). It displays the
+**complete** deterministic plan on stderr, including original observations,
+exact before/after text, metadata, findings, skips, veto and `planDigest`.
+Review all of it and the authorized target, not just the digest. A veto refuses
+before prompting. Only after you have inspected the whole display, type
+`apply sha256:<exact displayed digest>` freshly at the prompt to authorize
+that plan, or type `decline`. Queued input from before the display is flushed;
+anything else or EOF refuses. There is no `--yes` or `--confirm` bypass.
+
+The command then uses the same strict in-memory apply as the manual route.
+Its final schema-1 JSON on stdout has `operation: "update"`, `status`, `plan`,
+and `apply` (null on veto or decline); presentation, prompts and errors use
+stderr. Inspect exit status, both streams and actual effects: `refused`,
+`partial` or `indeterminate` does not mean success. No credential or provider
+is involved. This is an *alternative* to the manual route below, not a
+prelude to automatically applying its plan. If you applied it, do not reuse
+the old observation or request against the changed fixture.
+
+## Alternatively, review a separate plumbing plan
+
+For an unchanged fixture (recreate and recollect if the root route already
+applied), run:
+
+```sh
+lds plumbing docs update-plan "$project" \
+  --observed "$review/collected.json" --request "$review/edits.json" --json \
+  > "$review/plan.json"
+```
 
 Read **the entire** `"$review/plan.json"`, not only its digest: check target,
 original observation, every exact `before` and `after`, citations, selected

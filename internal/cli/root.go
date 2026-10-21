@@ -20,6 +20,7 @@ import (
 	manifestverb "github.com/procrastivity/lds/internal/verbs/manifest"
 	reconcileverb "github.com/procrastivity/lds/internal/verbs/reconcile"
 	uninstallverb "github.com/procrastivity/lds/internal/verbs/uninstall"
+	updateverb "github.com/procrastivity/lds/internal/verbs/update"
 	versionverb "github.com/procrastivity/lds/internal/verbs/version"
 )
 
@@ -58,6 +59,7 @@ func NewRootCommand(streams *iostreams.Streams, build buildinfo.Info) *cobra.Com
 	root.AddCommand(versionverb.Command(streams, build))
 	root.AddCommand(adoptflowverb.Command(streams))
 	root.AddCommand(assessverb.Command(streams))
+	root.AddCommand(updateverb.Command(streams))
 	root.AddCommand(reconcileverb.RootCommand(streams))
 	plumbing := &cobra.Command{Use: "plumbing", Short: "deterministic commands for skills and scripts"}
 	plumbing.AddCommand(adoptverb.Command(streams))

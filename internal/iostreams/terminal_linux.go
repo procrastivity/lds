@@ -1,6 +1,6 @@
 //go:build linux
 
-package assess
+package iostreams
 
 import (
 	"bufio"
@@ -8,11 +8,10 @@ import (
 	"os"
 
 	"golang.org/x/sys/unix"
-
-	"github.com/procrastivity/lds/internal/iostreams"
 )
 
-func isInteractive(streams *iostreams.Streams) bool {
+// IsInteractive reports whether input and presentation use Linux terminals.
+func (streams *Streams) IsInteractive() bool {
 	in, ok := streams.In.(*os.File)
 	if !ok {
 		return false
@@ -26,8 +25,10 @@ func isInteractive(streams *iostreams.Streams) bool {
 	return inErr == nil && outErr == nil
 }
 
-func freshConsent(streams *iostreams.Streams) (*bufio.Reader, error) {
-	if !isInteractive(streams) {
+// FreshInput discards queued terminal input after presenting a review, then
+// returns a new reader. Input from before this boundary cannot grant consent.
+func (streams *Streams) FreshInput() (*bufio.Reader, error) {
+	if !streams.IsInteractive() {
 		return nil, errors.New("interactive terminal unavailable")
 	}
 	file := streams.In.(*os.File)

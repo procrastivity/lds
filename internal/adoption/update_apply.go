@@ -52,6 +52,16 @@ func ApplyUpdates(root, planPath, confirmation string) (UpdateResult, error) {
 	return applyUpdatesReviewed(root, plan, confirmation)
 }
 
+// ApplyUpdatesReviewed consumes the exact JSON bytes presented by an interactive
+// host, with the same strict raw-artifact checks as the file-based command.
+func ApplyUpdatesReviewed(root string, displayed []byte, confirmation string) (UpdateResult, error) {
+	var plan UpdatePlan
+	if err := strictUpdateJSON(displayed, &plan); err != nil {
+		return updateFailure(root, UpdatePlan{}, 0, "", UpdateReplacement{Phase: "plan"}, "refusal.update-plan-invalid", err.Error(), nil)
+	}
+	return applyUpdatesReviewed(root, plan, confirmation)
+}
+
 func applyUpdatesReviewed(root string, plan UpdatePlan, confirmation string) (UpdateResult, error) {
 	result := newUpdateResult(plan)
 	if plan.SchemaVersion != 1 || plan.Operation != "docs update-plan" || len(plan.Edits) == 0 || len(plan.Edits) > 32 || !strings.HasPrefix(plan.PlanDigest, "sha256:") {

@@ -144,7 +144,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	if root.exitCode != 0 || root.stderr != "" {
 		t.Fatalf("root help: exit=%d stderr=%q", root.exitCode, root.stderr)
 	}
-	for _, name := range []string{"adopt", "assess", "doctor", "install", "manifest", "plumbing", "reconcile", "uninstall", "version"} {
+	for _, name := range []string{"adopt", "assess", "doctor", "install", "manifest", "plumbing", "reconcile", "uninstall", "update", "version"} {
 		if !strings.Contains(root.stdout, "\n  "+name) {
 			t.Errorf("root help omits root command %q: %s", name, root.stdout)
 		}
@@ -353,6 +353,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 	want := map[string]string{
 		"adopt":                                 "",
 		"assess":                                "",
+		"update":                                "",
 		"reconcile report":                      "plumbing reconcile report",
 		"version":                               "",
 		"manifest":                              "plumbing manifest",
@@ -388,6 +389,9 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		if (verb.Name == "adopt" || verb.Name == "assess") && verb.Kind != "llm" {
 			t.Errorf("root %s kind = %q, want llm so it cannot enter the deterministic skill projection", verb.Name, verb.Kind)
 		}
+		if verb.Name == "update" && verb.Kind != "plumbing" {
+			t.Errorf("offline update kind = %q, want plumbing", verb.Kind)
+		}
 		if canonical, required := want[verb.Name]; required {
 			seen[verb.Name] = true
 			if verb.AliasOf != canonical {
@@ -400,8 +404,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 27 || len(seen) != len(want) || projectable != 19 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want twenty-seven leaves and nineteen projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 28 || len(seen) != len(want) || projectable != 19 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want twenty-eight leaves and nineteen projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 
@@ -725,6 +729,10 @@ func TestDocsUpdatePlanAndApplyThroughCLI(t *testing.T) {
 		if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
 			t.Fatal(err)
 		}
+	}
+	noninteractive := run(t, nil, "update", root, "--observed", observed, "--request", request, "--json")
+	if noninteractive.exitCode != 3 || noninteractive.stdout != "" || !strings.Contains(noninteractive.stderr, `"code":"refusal.interactive-required"`) {
+		t.Fatalf("noninteractive update: %+v", noninteractive)
 	}
 	planned := run(t, nil, "plumbing", "docs", "update-plan", root, "--observed", observed, "--request", request, "--json")
 	var plan adoption.UpdatePlan

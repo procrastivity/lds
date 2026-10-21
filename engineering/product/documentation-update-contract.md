@@ -1,9 +1,11 @@
 # V1 contract: reviewed existing-file documentation updates
 
-**Status: implemented and verified in disposable offline fixtures.** The
+**Status: deterministic steps and offline human-facing root host implemented
+and verified in disposable offline fixtures.** The
 owner requested `lds plumbing docs update-plan` followed by
-`lds plumbing docs update-apply`; this contract describes that implementation,
-not authority to run it on a real target. No real target, reviewer or pilot is
+`lds plumbing docs update-apply`, and subsequently authorized `lds update`
+as an interactive host of the same steps. This contract grants no authority
+to run either route on a real target. No real target, reviewer or pilot is
 authorized. It is separate from the
 [accepted assessment workflow](documentation-maintenance-workflow.md) and
 [create-only adoption](adoption-contract.md). Adoption's four
@@ -23,9 +25,10 @@ provider calls, or implicit expansion to cited source files. A maintainer can
 always continue editing manually instead. Model transfer consent permits a
 request, not a write; acceptance of assessment advice is not edit approval.
 
-The plumbing names are `docs update-plan` and `docs update-apply` (not aliases
-for adoption apply); no porcelain or model orchestration is specified. The
-caller supplies the original **collected**
+The canonical plumbing names are `docs update-plan` and `docs update-apply`
+(not aliases for adoption apply). The root offline host below adds no model
+or shared skill flow; model-assisted update orchestration remains deferred.
+The caller supplies the original **collected**
 `docs collect` observation packet and an explicit edit request. The packet's
 empty proposals/questions and `reportPath` distinguish it from a later authored
 assessment report. A report may motivate an edit, but is not an executable
@@ -49,6 +52,29 @@ edits are allowed; each selected file and after content is at most 8 MiB, and
 each input JSON at most 32 MiB. The original packet is produced by
 `docs collect`, not an authored assessment report. See the
 [disposable how-to](../../docs/how-to/update-documentation.md).
+
+## Offline human-facing host
+
+The first root slice is `lds update <root> --observed <collected.json>
+--request <edits.json> [--json]` on Linux with a terminal. It reuses the
+original collected packet and explicit schema-1 authored request, not an
+assessment report or inferred proposal, and does not collect a new baseline.
+It builds the identical deterministic plan in memory and displays the
+**complete** plan on stderr. It refuses a veto before prompting, flushes
+queued terminal input after display, and accepts only freshly typed
+`apply sha256:<exact displayed digest>` or categorical `decline`; every other
+input or EOF refuses. There is no `--confirm`/`--yes` bypass. On affirmation,
+it invokes the same strict in-memory apply; no temporary plan/report artifact,
+provider/native execution, credential, or project command is involved.
+With `--json`, final stdout is schema-1 JSON with `operation: "update"`,
+`status`, complete `plan` and `apply` (null on veto/decline); otherwise it is
+a human status summary. Display, prompt and errors are on stderr.
+The original staleness, per-file, partial and indeterminate contracts
+below still govern actual effects and recovery. The manual separately reviewed
+plumbing route remains canonical; root is not a same-deliverable alias for
+either step. It is root-only plumbing-kind, not projected, since only qualified
+`plumbing ...` entries project. There is no new LLM/shared flow asset or
+preparatory reader for this offline host.
 
 ## Review artifact and read-only plan
 
@@ -190,7 +216,7 @@ the tree rather than assume nothing happened. No durable journal is implied.
 `unattempted` is an array of path strings. `failed.observed` is an observation
 object or null; `scratch` and `cleanupError` are empty strings when absent.
 
-## Executed offline checks
+## Previously executed deterministic plumbing checks
 
 `make check` passed with zero lint issues and all Go packages passing;
 `go test -race -count=1 ./...` passed. Linux/amd64 and Darwin/arm64 static
@@ -204,7 +230,30 @@ accepted 32 and refused 33. Regression tests also cover changed source,
 inventory/link diagnostics, selected bytes/identity/mode/ancestors, strict raw
 JSON, completed-edit overlays, partial/uncertain effects and foreign scratch
 preservation. Fault-injected failure tests are not evidence of hostile-writer
-immunity. No provider, native harness or real-project update ran.
+immunity. No provider, native harness or real-project update ran. These checks
+predate the root host.
+
+## Executed offline root-host checks
+
+The documented preparation and root command ran against the built CLI in
+disposable Linux terminals: fresh approval replaced exactly `README.md` with
+the requested bytes; categorical decline exited 3 without writes. The full
+display matched the plumbing plan, and an independent JSON/SHA-256 calculation
+matched its digest. No provider, native harness or real-project update ran.
+
+Terminal regressions cover queued approval being discarded, EOF, wrong and
+bare digests, a veto without a prompt, stale evidence and changed request
+files after display (only the displayed bytes apply). Noninteractive calls
+refuse; neither `--yes` nor `--confirm` exists. The strict raw-artifact refusal
+cases also cover the in-memory entry point. The manifest has 28 leaves,
+19 qualified projected plumbing entries and nine docs leaves.
+
+`make check` passed with zero lint issues; the full race suite passed on rerun.
+The first race run failed while snapshotting a disappearing Git
+`objects/maintenance.lock` in a reconciliation fixture, not with a race report.
+Linux/amd64 and Darwin/arm64 static builds passed; this does not add Darwin
+update support. All 80 local links and five shell blocks in the nine updated
+documents passed link and shell-syntax checks.
 
 ## Implementation separation and adversarial acceptance
 

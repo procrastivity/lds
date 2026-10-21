@@ -33,11 +33,14 @@ packet with an authored brief. Offline checks do not establish live-provider
 reliability or installed-skill parity. No assessment edits the target.
 See the [assessment how-to](docs/how-to/assess-documentation.md).
 
-The separate offline `lds plumbing docs update-plan` / `update-apply` path
-replaces only explicitly selected existing documentation files after full
-before/after plan review and fresh exact-digest confirmation. It does not
-apply assessment advice or alter create-only adoption; no real target or pilot
-is authorized. See the [update how-to](docs/how-to/update-documentation.md).
+The offline human-facing `lds update <root> --observed <collected.json>
+--request <edits.json>` displays the complete deterministic plan and requires
+fresh terminal confirmation before replacing explicitly selected existing
+documentation files. The separate `lds plumbing docs update-plan` /
+`update-apply` route remains available for manual artifact review and apply.
+Neither route implicitly accepts assessment advice or alters create-only
+adoption; no real target or pilot is authorized. See the
+[update how-to](docs/how-to/update-documentation.md).
 
 Built on the [toolsmith contract](https://github.com/procrastivity/toolsmith)
 (`toolsmith/v1` — the manifest declares it): a single static Go binary
@@ -62,9 +65,9 @@ current safety boundaries. The [assessment how-to](docs/how-to/assess-documentat
 collects evidence and proposed text outside the target without editing it.
 The [reconciliation how-to](docs/how-to/reconcile-projects.md) includes a
 disposable offline report example using an empty review brief.
-The [update how-to](docs/how-to/update-documentation.md) shows a disposable
-collect/request/plan example and a separate human apply command. None selects
-an adoption pilot or authorizes automatic edits to existing documentation.
+The [update how-to](docs/how-to/update-documentation.md) shows disposable
+collect/request inputs, a human-invoked root update and the separate manual
+plumbing plan/apply route. None selects a pilot or authorizes unattended edits.
 
 ## Develop
 
