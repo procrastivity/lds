@@ -3,7 +3,8 @@
 LDS is a CLI for a Layered Documentation System: engineering documentation
 alongside Diátaxis user documentation. It has deterministic `lds plumbing docs`
 inventory, local-link validation, four-asset rendering, reviewed planning,
-and create-only application, plus bounded `lds plumbing reconcile` evidence
+create-only application, and maintenance assessment reports with
+reviewer-authored proposals, plus bounded `lds plumbing reconcile` evidence
 scanning and explicit caller-owned journal operations. Reconciliation reads
 clean pinned Git snapshots and does not infer semantic matches or mutate
 source projects. The interactive root `lds adopt <root> --facts <facts.json>`
@@ -32,6 +33,16 @@ lds install                     # project into every detected harness
 <harness>` removes exactly what install wrote; `lds plumbing doctor` reports
 stale or drifted projections.
 
+## Use LDS
+
+Start with the [user documentation](docs/README.md) for an offline inspection
+tutorial, adoption and reconciliation how-tos, command reference, and the
+current safety boundaries. The [assessment how-to](docs/how-to/assess-documentation.md)
+collects evidence and proposed text outside the target without editing it.
+These guides describe implemented behavior; they
+do not select an adoption pilot or add automatic maintenance of existing
+documentation.
+
 ## Develop
 
 ```
@@ -56,8 +67,10 @@ records the root form's boundaries. The [S10 preparation record](engineering/pro
 sets out the reduced-scope acceptance and evidence limits; the
 [BDS-251 engineering handoff](engineering/product/bds-251-stage-4-engineering-handoff.md)
 records offline regressions and remaining limits. No real project has been
-authorized as an adoption pilot; user-facing Diátaxis documentation for LDS
-itself is still to be written.
+authorized as an adoption pilot. The
+[maintenance-workflow design](engineering/product/documentation-maintenance-workflow.md)
+records the accepted assessment/report boundary and implemented deterministic
+collection; automatic drafting and existing-file updates remain unimplemented.
 The [BDS-252 engineering handoff](engineering/product/bds-252-stage-4-engineering-handoff.md)
 documents the reconciliation plumbing, bounded runtime evidence, and limits;
 it does not authorize a real-pair pilot or source transfer.

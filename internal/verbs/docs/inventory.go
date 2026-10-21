@@ -17,7 +17,7 @@ import (
 	"github.com/procrastivity/lds/internal/surface"
 )
 
-// Command registers the read-only documentation plumbing leaves.
+// Command registers the deterministic documentation plumbing leaves.
 func Command(streams *iostreams.Streams) *cobra.Command {
 	docs := &cobra.Command{Use: "docs", Short: "inspect and adopt documentation in an explicit target"}
 	inventory := &cobra.Command{
@@ -57,5 +57,6 @@ func Command(streams *iostreams.Streams) *cobra.Command {
 	docs.AddCommand(renderCommand(streams))
 	docs.AddCommand(planCommand(streams))
 	docs.AddCommand(applyCommand(streams))
+	docs.AddCommand(assessCommand(streams))
 	return docs
 }

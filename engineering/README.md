@@ -2,9 +2,9 @@
 
 This is the design of record for people and agents building the `lds` tool.
 It follows [ADR-0001](decisions/0001-adopt-two-track-documentation.md):
-engineering decisions and plans live here; future user-facing documentation
-belongs in `docs/` and follows Diátaxis. The tool currently has a Toolsmith
-scaffold and harness-management commands plus five deterministic
+engineering decisions and plans live here; [user documentation](../docs/README.md)
+lives in `docs/` and follows Diátaxis. The tool currently has a Toolsmith
+scaffold and harness-management commands plus six deterministic
 `lds plumbing docs` leaves, as well as deterministic `lds plumbing reconcile`
 scan and explicit journal operations. Reconciliation is bounded to pinned
 evidence and a caller-owned journal. The interactive root
@@ -19,6 +19,10 @@ reconciliation facilitator remains deferred.
 Start with the [roadmap](product/roadmap.md) for proposed capabilities and
 their status. The [source-repository map](architecture/source-repositories.md)
 records what other projects contribute and how their local checkouts are found.
+The [within-project maintenance design](product/documentation-maintenance-workflow.md)
+records the accepted assessment-first scope. `lds plumbing docs assess`
+collects bounded evidence and authored proposals in an external report;
+it does not infer semantic impacts, call a model or edit target files.
 The [adoption runtime handoff](product/adoption-operations-runtime-handoff.md)
 records the implemented plumbing, executable disposable evidence, and limits.
 The [BDS-251 engineering handoff](product/bds-251-stage-4-engineering-handoff.md)

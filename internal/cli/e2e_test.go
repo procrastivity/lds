@@ -149,7 +149,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 			t.Errorf("root help omits root command %q: %s", name, root.stdout)
 		}
 	}
-	for _, leaf := range []string{"inventory", "validate", "render", "plan", "apply"} {
+	for _, leaf := range []string{"inventory", "validate", "render", "plan", "apply", "assess"} {
 		if strings.Contains(root.stdout, "\n  "+leaf+" ") {
 			t.Errorf("root help leaks plumbing docs leaf %q: %s", leaf, root.stdout)
 		}
@@ -184,7 +184,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	if docs.exitCode != 0 || docs.stderr != "" || !strings.Contains(docs.stdout, "\n  lds plumbing docs ") {
 		t.Fatalf("plumbing docs help: exit=%d stdout=%q stderr=%q", docs.exitCode, docs.stdout, docs.stderr)
 	}
-	for _, leaf := range []string{"apply", "inventory", "plan", "render", "validate"} {
+	for _, leaf := range []string{"apply", "assess", "inventory", "plan", "render", "validate"} {
 		if !strings.Contains(docs.stdout, "\n  "+leaf) {
 			t.Errorf("plumbing docs help omits %q: %s", leaf, docs.stdout)
 		}
@@ -194,7 +194,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 		"plumbing reconcile journal read", "plumbing reconcile journal record",
 		"plumbing reconcile journal decide", "plumbing reconcile journal reconsider",
 		"plumbing docs apply", "plumbing docs inventory", "plumbing docs plan",
-		"plumbing docs render", "plumbing docs validate",
+		"plumbing docs render", "plumbing docs validate", "plumbing docs assess",
 	} {
 		args := strings.Fields(path)
 		helpArgs := append(append([]string(nil), args...), "--help")
@@ -203,7 +203,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 			t.Errorf("canonical help for %q is not qualified: %+v", path, help)
 		}
 	}
-	for _, leaf := range []string{"apply", "inventory", "plan", "render", "validate"} {
+	for _, leaf := range []string{"apply", "assess", "inventory", "plan", "render", "validate"} {
 		legacy := run(t, nil, "docs", leaf, "--help")
 		if legacy.exitCode != 2 || legacy.stdout != "" {
 			t.Errorf("unaliased root docs spelling %q was accepted: %+v", leaf, legacy)
@@ -360,6 +360,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		"plumbing manifest":                     "",
 		"plumbing doctor":                       "",
 		"plumbing docs apply":                   "",
+		"plumbing docs assess":                  "",
 		"plumbing docs inventory":               "",
 		"plumbing docs plan":                    "",
 		"plumbing docs render":                  "",
@@ -391,8 +392,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 19 || len(seen) != len(want) || projectable != 13 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want nineteen leaves and thirteen projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 20 || len(seen) != len(want) || projectable != 14 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want twenty leaves and fourteen projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 
@@ -657,7 +658,7 @@ func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 	if err := json.Unmarshal([]byte(m.stdout), &declaration); err != nil {
 		t.Fatal(err)
 	}
-	matches := map[string]int{"plumbing docs inventory": 0, "plumbing docs validate": 0, "plumbing docs render": 0, "plumbing docs plan": 0, "plumbing docs apply": 0}
+	matches := map[string]int{"plumbing docs inventory": 0, "plumbing docs validate": 0, "plumbing docs render": 0, "plumbing docs plan": 0, "plumbing docs apply": 0, "plumbing docs assess": 0}
 	for _, verb := range declaration.Verbs {
 		if _, ok := matches[verb.Name]; !ok {
 			continue
@@ -675,6 +676,8 @@ func TestDocsReadOnly_ManifestAndFreshTarget(t *testing.T) {
 			wantField = `"planDigest"`
 		case "plumbing docs apply":
 			wantField = `"created"`
+		case "plumbing docs assess":
+			wantField = `"brief"`
 		}
 		if verb.Kind != "plumbing" || !json.Valid(verb.OutputSchema) || !bytes.Contains(verb.OutputSchema, []byte(wantField)) {
 			t.Fatalf("docs declaration = %+v", verb)
@@ -985,6 +988,152 @@ func TestDocsReadOnly_ExactJSONAndExits(t *testing.T) {
 	}
 }
 
+func TestDocsAssessment_ReportAndPreservation(t *testing.T) {
+	root, reports := t.TempDir(), t.TempDir()
+	source := "package example\nconst Mode = \"current\"\n"
+	guide := "# Guide\n[missing](missing.md) [web](https://example.invalid) [fragment](#unknown)\n"
+	if err := os.Mkdir(filepath.Join(root, "docs"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for name, data := range map[string]string{"command.go": source, "docs/guide.md": guide, "unselected.txt": "not read"} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(data), 0o640); err != nil {
+			t.Fatal(err)
+		}
+	}
+	brief := fmt.Sprintf(`{"schemaVersion":1,"reason":"Review mode documentation","audience":"CLI users","evidence":[{"path":"command.go","sha256":"%x"}],"proposals":[{"path":"docs/guide.md","summary":"Describe the observed mode","evidence":["command.go"],"proposedText":"Use current mode.\n\u0060\u0060\u0060sh\nexample current\n\u0060\u0060\u0060"},{"path":"docs/new.md","summary":"Possible task guide","evidence":["docs/guide.md"],"proposedText":"Review before creating this page."}],"questions":["Is the missing page still needed?"]}`, sha256.Sum256([]byte(source)))
+	briefPath, output := filepath.Join(reports, "brief.json"), filepath.Join(reports, "report.md")
+	if err := os.WriteFile(briefPath, []byte(brief), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	before := renderTargetSnapshot(t, root)
+	r := run(t, []string{"OPENCODE_API_KEY="}, "plumbing", "docs", "assess", root, "--brief", briefPath, "--output", output, "--json")
+	if r.exitCode != 0 || r.stderr != "" {
+		t.Fatalf("assessment: %+v", r)
+	}
+	var got adoption.AssessmentResult
+	if err := json.Unmarshal([]byte(r.stdout), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.SchemaVersion != 1 || got.Operation != "docs assess" || got.Status != "review-required" || got.ReportPath != output || got.TargetRoot != root || got.BriefSHA256 != fmt.Sprintf("%x", sha256.Sum256([]byte(brief))) || got.InventoryExitCode != 0 || got.ValidationExitCode != 1 {
+		t.Fatalf("assessment metadata: %+v", got)
+	}
+	if len(got.Inventory.Files) != 1 || got.Inventory.Files[0].Path != "docs/guide.md" || len(got.Validation.Findings) != 1 || got.Validation.Findings[0].Target != "missing.md" || len(got.Validation.Skipped) != 2 {
+		t.Fatalf("assessment lost findings or skipped coverage: %+v", got)
+	}
+	if len(got.Evidence) != 3 || got.Evidence[0].Path != "command.go" || got.Evidence[0].Content != source || got.Evidence[0].SHA256 != fmt.Sprintf("%x", sha256.Sum256([]byte(source))) || got.Evidence[1].Content != guide || got.Evidence[2].Path != "docs/new.md" || got.Evidence[2].Exists {
+		t.Fatalf("evidence must bind selected bytes and absent proposal target, not unselected files: %+v", got.Evidence)
+	}
+	if len(got.Brief.Proposals) != 2 || got.Brief.Proposals[0].ProposedText != "Use current mode.\n```sh\nexample current\n```" || len(got.Brief.Questions) != 1 {
+		t.Fatalf("caller advice/questions were changed: %+v", got.Brief)
+	}
+	report, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, text := range []string{"Review required", "not verified facts or applied edits", "Use current mode.", "Is the missing page still needed?", "Skipped checks are not passes", `"validationExitCode": 1`, `"exists": false`} {
+		if !bytes.Contains(report, []byte(text)) {
+			t.Errorf("report omits review evidence %q", text)
+		}
+	}
+	if info, err := os.Stat(output); err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("private report mode: %v %v", info, err)
+	}
+	if !equalRenderSnapshots(before, renderTargetSnapshot(t, root)) {
+		t.Fatal("assessment modified target files")
+	}
+
+	for _, tc := range []struct {
+		name, input, output, code string
+		exit                      int
+	}{
+		{"inside target", brief, filepath.Join(root, "report.md"), "refusal.assessment-output", 3},
+		{"occupied report", brief, output, "refusal.assessment-output", 3},
+		{"relative report", brief, "report.md", "validation.assessment-output", 1},
+		{"duplicate key", strings.Replace(brief, `"schemaVersion":1`, `"schemaVersion":1,"schemaVersion":1`, 1), "", "validation.assessment-brief", 1},
+		{"unknown key", strings.Replace(brief, `"schemaVersion":1`, `"schemaVersion":1,"force":true`, 1), "", "validation.assessment-brief", 1},
+		{"null scope", strings.Replace(brief, `"questions":["Is the missing page still needed?"]`, `"questions":null`, 1), "", "validation.assessment-brief", 1},
+		{"case changed field", strings.ReplaceAll(brief, `"path":`, `"Path":`), "", "validation.assessment-brief", 1},
+		{"escaping source", strings.ReplaceAll(brief, "command.go", "../command.go"), "", "validation.assessment-brief", 1},
+		{"directory source", strings.ReplaceAll(brief, "command.go", "docs"), "", "refusal.unsafe-target", 3},
+		{"undeclared reference", strings.Replace(brief, `"evidence":["command.go"]`, `"evidence":["unselected.txt"]`, 1), "", "validation.assessment-brief", 1},
+		{"non-document proposal", strings.Replace(brief, `"path":"docs/guide.md"`, `"path":"command.go"`, 1), "", "validation.assessment-brief", 1},
+		{"stale source", strings.Replace(brief, fmt.Sprintf("%x", sha256.Sum256([]byte(source))), strings.Repeat("0", 64), 1), "", "refusal.assessment-stale", 3},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			request := filepath.Join(t.TempDir(), "brief.json")
+			if err := os.WriteFile(request, []byte(tc.input), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			out := tc.output
+			if out == "" {
+				out = filepath.Join(t.TempDir(), "report.md")
+			}
+			r := run(t, nil, "plumbing", "docs", "assess", root, "--brief", request, "--output", out, "--json")
+			if r.exitCode != tc.exit || r.stdout != "" || parseErrorEnvelope(t, r.stderr).Error.Code != tc.code {
+				t.Fatalf("refused assessment: %+v", r)
+			}
+			if out != output && filepath.IsAbs(out) {
+				if _, err := os.Lstat(out); !os.IsNotExist(err) {
+					t.Fatalf("refusal created report: %v", err)
+				}
+			}
+			if !equalRenderSnapshots(before, renderTargetSnapshot(t, root)) {
+				t.Fatal("refusal changed target")
+			}
+		})
+	}
+	if after, err := os.ReadFile(output); err != nil || !bytes.Equal(report, after) {
+		t.Fatal("occupied report was replaced")
+	}
+	for _, outputLink := range []bool{false, true} {
+		base := t.TempDir()
+		link := filepath.Join(base, "link")
+		destination := root
+		out := filepath.Join(link, "report.md")
+		if outputLink {
+			destination, out = filepath.Join(root, "command.go"), link
+		}
+		if err := os.Symlink(destination, link); err != nil {
+			t.Fatal(err)
+		}
+		r := run(t, nil, "plumbing", "docs", "assess", root, "--brief", briefPath, "--output", out, "--json")
+		if r.exitCode != 3 || r.stdout != "" || !equalRenderSnapshots(before, renderTargetSnapshot(t, root)) {
+			t.Fatalf("followed report symlink: %+v", r)
+		}
+	}
+	link := filepath.Join(root, "source-link.go")
+	if err := os.Symlink(filepath.Join(root, "command.go"), link); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(briefPath, []byte(strings.ReplaceAll(brief, "command.go", "source-link.go")), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	r = run(t, nil, "plumbing", "docs", "assess", root, "--brief", briefPath, "--output", filepath.Join(reports, "unsafe.md"), "--json")
+	if r.exitCode != 3 || r.stdout != "" || parseErrorEnvelope(t, r.stderr).Error.Code != "refusal.unsafe-target" {
+		t.Fatalf("followed selected source symlink: %+v", r)
+	}
+	// Optional advice and extra source scope may both be empty, without turning
+	// a clean link check into a semantic completeness or applied-outcome claim.
+	empty := t.TempDir()
+	if err := os.WriteFile(filepath.Join(empty, "README.md"), []byte(" \n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(briefPath, []byte(`{"schemaVersion":1,"reason":"Periodic review","audience":"Maintainers","evidence":[],"proposals":[],"questions":[]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	r = run(t, nil, "plumbing", "docs", "assess", empty, "--brief", briefPath, "--output", filepath.Join(reports, "clean.md"), "--json")
+	if err := json.Unmarshal([]byte(r.stdout), &got); err != nil {
+		t.Fatal(err)
+	}
+	if r.exitCode != 0 || r.stderr != "" || got.Status != "review-required" || got.ValidationExitCode != 0 || len(got.Evidence) != 1 || got.Evidence[0].Content != " \n" || got.Brief.Proposals == nil || len(got.Brief.Proposals) != 0 {
+		t.Fatalf("empty review must retain bounded coverage: %+v %+v", r, got)
+	}
+	usage := run(t, nil, "plumbing", "docs", "assess", empty, "--json")
+	if usage.exitCode != 2 || usage.stdout != "" || !strings.HasPrefix(usage.stderr, "lds: ") {
+		t.Fatalf("missing required assessment flags: %+v", usage)
+	}
+}
+
 func TestDocsReadOnly_UsageMissingAndIO(t *testing.T) {
 	for _, leaf := range []string{"inventory", "validate"} {
 		t.Run(leaf, func(t *testing.T) {
@@ -1182,6 +1331,7 @@ func TestInstallLoop(t *testing.T) {
 		"lds plumbing doctor":                       false,
 		"lds plumbing manifest":                     false,
 		"lds plumbing docs apply <root>":            false,
+		"lds plumbing docs assess <root>":           false,
 		"lds plumbing docs inventory <root>":        false,
 		"lds plumbing docs plan <root>":             false,
 		"lds plumbing docs render <root>":           false,
