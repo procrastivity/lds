@@ -47,6 +47,42 @@ With an **existing** journal, add `--journal "$journal"` to compare evidence;
 status becomes `new`, `unchanged`, `changed`, or `out-of-scope` as applicable.
 No status selects authority or transfer direction.
 
+## Create an offline review report
+
+Using the disposable roots and pair from the scan above, author a minimal
+review brief outside both roots. The timestamp and reviewer are **assertions**,
+not authenticated identities or approvals. Empty selections and claims are
+valid: this report does not invent a correspondence from matching names or
+bytes. The output path must not exist yet.
+
+```sh
+review="$work/review.json"; report="$work/report.md"
+cat > "$review" <<EOF
+{"schemaVersion":1,"purpose":"Review the disposable pair's evidence",
+ "reviewer":"fixture-reviewer","at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+ "selections":[],"claims":[],"questions":[]}
+EOF
+lds reconcile report --pair "$pair" --left-root "$left" \
+  --right-root "$right" --map "$right/docs/map.md" \
+  --review "$review" --output "$report" --json
+ls -l "$report"
+```
+
+`lds plumbing reconcile report` takes the same flags and produces the same
+deterministic report. Inspect the Markdown and provenance JSON appendix as
+private review material; the file is created externally with mode 0600 and
+cannot be overwritten by a rerun. To rerun, name a different **new** external
+output. With a pre-existing journal, add `--journal "$journal"`; neither form
+initializes, locks, or writes it. For opt-in full UTF-8 content, add entries
+such as `{"side":"left","path":"docs/topic.md"}` to `selections` (a
+declared scoped file or map). Unselected raw files are still checked against
+the per-file size bound. The offline report calls no model and does not
+authenticate claims, select authority, or prove an applied transfer. It
+revalidates inputs before publication, but a later change requires a fresh
+report and review. See the [command reference](../reference/commands.md) for
+limits and the [safety notes](../explanation/safety-and-scope.md) for trust
+boundaries.
+
 For deliberate review history, name a caller-owned journal path **outside
 both worktrees and their Git common directories**. `journal read` and scan
 never initialize it. The first explicit `record` may create it. Write a

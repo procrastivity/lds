@@ -23,19 +23,40 @@ historical `lds docs ...` spellings):
 | `lds plumbing doctor --json` | Check harness projection state (root `doctor` is an alias). |
 | `lds install [harness]`, `lds uninstall <harness>` | Project into detected/named harnesses; remove named stamped projection. |
 | `lds plumbing reconcile scan --pair <absolute-file> --left-root <absolute-dir> --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] [--journal <absolute-existing-file>]` | Scan pinned clean roots; journal comparison optional. |
+| `lds reconcile report --pair <absolute-pair.json> --left-root <absolute-dir> --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] [--journal <absolute-existing-journal.json>] --review <absolute-review.json> --output <absolute-new-report.md> [--json]` | Linux offline deterministic review-required Markdown report with provenance JSON appendix; private new external file (0600), no overwrite, model, project command or source/journal write. |
+| `lds plumbing reconcile report` (same flags) | Identical deterministic report operation; only qualified plumbing form is generated-skill-table eligible, not proof of native execution or parity. |
 | `lds plumbing reconcile journal read --pair <absolute-file> --journal <absolute-file>` | Read existing journal without writing. |
 | `lds plumbing reconcile journal record --pair <absolute-file> --journal <absolute-file> --scan <absolute-saved-file> --request <absolute-file>` | Record reviewed correspondence and evidence. |
 | `lds plumbing reconcile journal decide --pair <absolute-file> --journal <absolute-file> --scan <absolute-saved-file> --request <absolute-file>` | Record an explicit initial outcome. |
 | `lds plumbing reconcile journal reconsider --pair <absolute-file> --journal <absolute-file> --scan <absolute-saved-file> --request <absolute-file>` | Explicitly supersede a decision; none edit sources. |
 
-`lds manifest` is also an alias. Reconciliation successes emit JSON even
-without `--json`. Exit 0 is success; 1 is validation/evidence finding,
+The report brief requires `schemaVersion: 1`, nonempty `purpose` and
+`reviewer`, an asserted RFC3339 `at` string, and `selections`, `claims`, and
+`questions` arrays (empty is valid). Each selection is
+`{"side":"left"|"right","path":"<scoped file or map>"}` and opts in
+full UTF-8 content. Authored claims require `candidateId`, `status`
+(`reviewed` or `proposed`), v1 `correspondence`, `rationale`, v1
+`provenance` array, v1 `assessment`, `conflicts` array and `questions` array;
+these are assertions, not verified matches. See the
+[disposable example](../how-to/reconcile-projects.md).
+Report scope is at most 64 declared scoped files plus 16 maps. Every existing
+scoped/map raw file is limited to 64 KiB, including unselected files; selected
+UTF-8 content totals at most 512 KiB, and pair/review/optional journal total
+at most 2 MiB. Paths for pair, review, optional existing journal and new
+output must be absolute and outside both roots and their Git common
+directories; the output path must have no symlink components. Roots must be
+clean and match full pins. Original inputs are revalidated before publication.
+
+`lds manifest` is also an alias. Scan and journal successes emit JSON even
+without `--json`; report prints a human summary by default and JSON with
+`--json`. Exit 0 is success; 1 is validation/evidence finding,
 2 usage, 3 refusal/staleness, 4 unexpected internal/I/O failure. Some docs
 diagnostics emit a JSON result to stdout **and** an error to stderr: inspect
 exit code and both streams. Cobra usage errors are human diagnostics. Root
-`init`, `update`, `review`, and `reconcile` remain candidates. The manifest
-has 23 leaves, 16 qualified plumbing-kind projection entries and seven `docs`
-leaves; a projection count is not evidence of native execution or parity. The root
+`init`, `update`, and `review` remain candidates; root `reconcile` has only the
+offline `report` slice, not an assisted facilitator. Earlier manifest counts
+pre-date this report addition; projection eligibility is not evidence of native
+execution or parity. The root
 LLM-kind command is not a deterministic projected member. See the
 [assessment how-to](../how-to/assess-documentation.md) for the separate
 provider-free and consent-gated routes.

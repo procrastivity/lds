@@ -144,7 +144,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	if root.exitCode != 0 || root.stderr != "" {
 		t.Fatalf("root help: exit=%d stderr=%q", root.exitCode, root.stderr)
 	}
-	for _, name := range []string{"adopt", "assess", "doctor", "install", "manifest", "plumbing", "uninstall", "version"} {
+	for _, name := range []string{"adopt", "assess", "doctor", "install", "manifest", "plumbing", "reconcile", "uninstall", "version"} {
 		if !strings.Contains(root.stdout, "\n  "+name) {
 			t.Errorf("root help omits root command %q: %s", name, root.stdout)
 		}
@@ -352,6 +352,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 	want := map[string]string{
 		"adopt":                                 "",
 		"assess":                                "",
+		"reconcile report":                      "plumbing reconcile report",
 		"version":                               "",
 		"manifest":                              "plumbing manifest",
 		"install":                               "",
@@ -369,6 +370,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		"plumbing docs render":                  "",
 		"plumbing docs validate":                "",
 		"plumbing reconcile scan":               "",
+		"plumbing reconcile report":             "",
 		"plumbing reconcile journal read":       "",
 		"plumbing reconcile journal record":     "",
 		"plumbing reconcile journal decide":     "",
@@ -395,8 +397,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 23 || len(seen) != len(want) || projectable != 16 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want twenty-three leaves and sixteen projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 25 || len(seen) != len(want) || projectable != 17 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want twenty-five leaves and seventeen projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 
@@ -1407,6 +1409,7 @@ func TestInstallLoop(t *testing.T) {
 		"lds plumbing docs render <root>":           false,
 		"lds plumbing docs validate <root>":         false,
 		"lds plumbing reconcile scan":               false,
+		"lds plumbing reconcile report":             false,
 		"lds plumbing reconcile journal read":       false,
 		"lds plumbing reconcile journal record":     false,
 		"lds plumbing reconcile journal decide":     false,

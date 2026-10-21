@@ -6,15 +6,18 @@ engineering decisions and plans live here; [user documentation](../docs/README.m
 lives in `docs/` and follows Diátaxis. The tool currently has a Toolsmith
 scaffold and harness-management commands plus seven deterministic
 `lds plumbing docs` leaves, as well as deterministic `lds plumbing reconcile`
-scan and explicit journal operations. Reconciliation is bounded to pinned
+scan, explicit journal operations, and an offline report primitive. Root
+`lds reconcile report` produces a private new external review packet through
+the identical deterministic plumbing operation; only the qualified plumbing
+form is generated-skill-table eligible. Reconciliation is bounded to pinned
 evidence and a caller-owned journal. The interactive root
 `lds adopt <root> --facts <facts.json>` form uses the live shared flow and
 those deterministic docs operations. Generated Claude Code `/lds` adoption
 guidance fetches that flow live through `lds plumbing adopt --json`; the reader
 is preparatory and the guidance is not behavioral enforcement. S10 accepts
 executor CLI evidence and independent offline review, not native adoption or
-CLI/skill parity. No pilot or first-release claim follows; implementation of
-a human-facing reconciliation facilitator remains deferred.
+CLI/skill parity. No pilot or first-release claim follows; optional assistance,
+a shared human/skill flow, and journal decision UX remain deferred.
 
 Start with the [roadmap](product/roadmap.md) for proposed capabilities and
 their status. The [source-repository map](architecture/source-repositories.md)
@@ -30,10 +33,11 @@ plumbing flow reader does not execute it. Model-authored proposals remain
 unverified advice, not target edits or native skill/CLI parity evidence.
 The proposed [existing-file update contract](product/documentation-update-contract.md)
 and [human-facing reconciliation workflow](product/reconciliation-workflow.md)
-are the next design workstreams. Updates require a separate exact-byte review
-and write policy; the proposed reconciliation first slice is report-only.
-Neither design implements a command, authorizes target/journal writes, or
-requires a pilot or another owner-driven test wave. The roadmap also records
+record further design work. Updates require a separate exact-byte review
+and write policy; the reconciliation first slice implements only a Linux
+offline report, not the proposed assisted facilitator. Neither design
+authorizes target/journal writes, a pilot, or another owner-driven test wave.
+The roadmap also records
 the source-checked, still-unimplemented Toolsmith BDS-234 dependency.
 The [adoption runtime handoff](product/adoption-operations-runtime-handoff.md)
 records the implemented plumbing, executable disposable evidence, and limits.

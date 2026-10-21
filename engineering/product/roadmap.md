@@ -44,12 +44,18 @@ documentation operations. No real pilot is established.
 BDS-252 adds `lds plumbing reconcile scan` and the explicit
 `lds plumbing reconcile journal read|record|decide|reconsider` operations for
 strict, deterministic evidence inspection and caller-owned decision history.
-The human-facing assessment workflow is implemented. The manifest has 23
-leaves, including 16 qualified plumbing-kind projection entries and seven
+The first offline reconciliation report slice adds `lds reconcile report` and
+identical `lds plumbing reconcile report`: Linux-only, bounded pinned evidence
+plus a reviewer-authored brief in a new private external Markdown report with
+provenance JSON. It never writes sources or the journal. The root form is
+deterministic; only the qualified plumbing form enters the generated skill
+table. Neither is a native execution or parity finding.
+The human-facing assessment workflow is implemented. The manifest now has 25
+leaves, including 17 qualified plumbing-kind projection entries and seven
 `docs` leaves; these counts do not establish native execution or parity.
-Reconciliation commands do not infer semantic correspondence, choose real-pair
-authority, edit source repositories,
-or provide a human-facing reconciliation workflow. See the
+Reconciliation commands do not
+infer semantic correspondence, choose real-pair authority, edit source
+repositories, or provide an assisted/shared human-skill workflow. See the
 [Stage 4 engineering handoff](bds-252-stage-4-engineering-handoff.md) for the
 audited surface and boundaries.
 
@@ -90,7 +96,7 @@ LDS-managed existing-file edits would require a separate write contract and
 approval. Root `review` and `update` remain candidate workflows.
 Pilot selection and first-release inclusion remain separate decisions.
 
-## Next designs: reviewed updates and report-only reconciliation
+## Next designs: reviewed updates and assisted reconciliation
 
 The owner requested these two design workstreams after the assessment workflow
 was delivered. They proceed without selecting a pilot or reopening S10:
@@ -104,15 +110,16 @@ was delivered. They proceed without selecting a pilot or reopening S10:
   not authorized by this design work. Accepted adoption remains create-only.
 - **Human-facing reconciliation:** local Matter
   `lds-human-reconciliation-workflow` tracks the proposed
-  [workflow contract](reconciliation-workflow.md). The recommended first slice
-  produces a private external review report from explicit pinned pair/map and
-  optional existing-journal evidence. It does not write either source or the
-  journal; journal decision UX and real-pair authority remain separate.
+  [workflow contract](reconciliation-workflow.md). Its first offline slice now
+  produces a private external review report from explicit pinned pair/map,
+  reviewer brief, and optional existing-journal evidence. It does not write
+  either source or the journal. Optional model assistance, a shared CLI/skill
+  flow, journal decision UX, and real-pair authority remain deferred.
 
-These are proposed contracts, not implemented commands or accepted permission
-to edit projects. Implementation can be scoped from the reviewed contracts;
-any live provider access, real target writes, pilot or release needs its own
-authorization. Existing assessment and reconciliation plumbing remain usable.
+The update contract and the remainder of the reconciliation workflow are
+proposals, not accepted permission to edit projects. Any live provider access,
+real target writes, pilot or release needs its own authorization. Existing
+assessment and reconciliation plumbing remain usable.
 
 ## Planning constraints and open decisions
 
@@ -178,10 +185,11 @@ implemented deterministic plumbing and must be settled before any real use:
    not semantic matching, a real-pair decision, or a facilitator. Xcind's
    [cross-project procedure](https://github.com/scinddev/xcind/blob/main/engineering/maintenance/cross-project-sync.md)
    and ledgers remain reference evidence, not a schema copied into LDS.
-5. Design the human-facing reconciliation report workflow separately from
-   journal writes and any authorized pilot, as proposed above. Disposable
-   source-derived and synthetic fixtures do not validate a live adoption,
-   port, or parity claim.
+5. **First offline report slice implemented:** create a bounded report
+   separately from journal writes and any authorized pilot. Assistance,
+   shared flow and decision UX remain design work. Disposable source-derived
+   and synthetic fixtures do not validate a live adoption, port, or parity
+   claim.
 
 ## Candidate verbs
 
@@ -198,12 +206,13 @@ would bootstrap documentation *inside another project*.
 | Porcelain (candidate; not specified or implemented) | `lds update` | Future human-facing update orchestration. The [proposed first slice](documentation-update-contract.md) specifies deterministic `docs update-plan` / `docs update-apply` plumbing only, with exact-byte review and separate approval. |
 | Porcelain | `lds review` | Audit coverage, links, and cross-track consistency. |
 | Porcelain (implemented, outside first-release claim) | `lds adopt <root> --facts <facts.json>` | Interactively review a create-only four-output documentation plan and apply only after fresh exact-digest human consent. |
-| Porcelain (proposed design, not implemented) | `lds reconcile` | Produce an external reconciliation review report; no source or journal edits in the proposed [first slice](reconciliation-workflow.md). |
+| Porcelain (implemented offline slice) | `lds reconcile report --pair <absolute-pair.json> --left-root <absolute-dir> --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] [--journal <absolute-existing-journal.json>] --review <absolute-review.json> --output <absolute-new-report.md> [--json]` | Linux private external report from clean pinned evidence and reviewer assertions; no model, source/journal writes, or project commands. See the [how-to](../../docs/how-to/reconcile-projects.md). |
 | Plumbing (implemented, bounded) | `lds plumbing docs inventory`, `validate`, `render`, `plan`, `apply` | Report scoped files/links, check supported local targets, render four assets, preview and create missing approved files without an LLM. |
 | Plumbing (implemented, bounded) | `lds plumbing docs assess` | Collect documentation and explicitly hashed source evidence, link findings and authored proposals/questions in one new external report; no provider, semantic inference or target edits. See the [design](documentation-maintenance-workflow.md). |
 | Plumbing (implemented, bounded) | `lds plumbing docs collect`; `lds plumbing docs assess --observed <collected.json>` | Offline full baseline packet with automatic source hashes; optional observed binding for a strict authored brief and external report. |
 | Plumbing flow reader (implemented) | `lds plumbing assess [--json]` | Read live `flows/assess.md` content/source/hash; preparatory, unavailable for execution. |
 | Plumbing (implemented, bounded) | `lds plumbing reconcile scan`; `lds plumbing reconcile journal read`, `record`, `decide`, `reconsider` | Inspect explicitly scoped pinned artifacts/maps and persist caller-reviewed correspondence and outcomes; never infer semantic matches or write a source. See the [engineering handoff](bds-252-stage-4-engineering-handoff.md). |
+| Plumbing (implemented, bounded) | `lds plumbing reconcile report` (same flags as root report) | Identical deterministic report operation and only report form eligible for generated skill table; no native/parity claim. |
 
 Agent-specific skills worth evaluating: adopting a partial tree, drafting
 and reviewing an ADR, documentation impact review after code changes,

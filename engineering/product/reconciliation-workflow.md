@@ -1,10 +1,11 @@
-# Human-facing cross-project reconciliation — proposed report-first contract
+# Human-facing cross-project reconciliation — report-first contract
 
-**Status:** Proposal for a future workflow, not an implemented command or an
+**Status:** The Linux-only offline report slice is implemented. Assistance,
+shared flow and journal decision UX below remain proposals. This is not
 authorization for a real pair, pilot, provider call, native integration, CLI/skill
-parity, release, source edit, or journal write. This is separate from the
+parity, release, source edit or journal write. This is separate from the
 [within-project existing-file maintenance workflow](documentation-maintenance-workflow.md).
-The owner must approve implementation separately.
+The owner authorized offline implementation separately from these later slices.
 
 The accepted [ADR-0003](../decisions/0003-bound-cross-project-reconciliation.md),
 frozen [v1 operation contract](../specs/cross-project-reconciliation-v1.md),
@@ -26,25 +27,38 @@ disclosure and fresh consent. No source or journal writes occur, including
 initialization, locks, or request staging in either root. A report is not a
 journal event, approval, port plan, applied proof, or runtime-parity finding.
 
-Recommended **future, unavailable-today** shape (names are provisional):
+Implemented offline shape (also available as `lds plumbing reconcile report`):
 
 ```text
 lds reconcile report --pair <absolute-pair.json> --left-root <absolute-dir> \
   --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] \
   [--journal <absolute-existing-journal.json>] \
   --review <absolute-review.json> --output <absolute-new-private-report.md> \
-  [--assist]
+  [--json]
 ```
 
-The proposed `lds reconcile report` is **not** in today's command manifest.
+`--assist` is not implemented; this slice makes no provider call.
 Today's `lds plumbing reconcile scan` and `journal read` are read-only;
 `journal record`, `decide`, and `reconsider` alone write the explicitly named
-external journal. A future deterministic collection/report primitive should
-own the enforceable boundaries below; a flow or skill cannot enforce them by
-prompt alone. The root porcelain should orchestrate it, not reimplement scan
-identity or journal replay. No implicit cwd, remote, journal, pair, map, or
+external journal. `reconcile.Report` owns bounded collection, strict review,
+recheck and publication. The root spelling aliases the same deterministic
+plumbing command; only the qualified plumbing entry projects into the skill
+table. No shared reconciliation skill flow or native/parity claim is added.
+A flow or skill cannot enforce boundaries by prompt alone. Report uses existing
+scan identity and journal replay. No implicit cwd, remote, journal, pair, map, or
 output defaults; no fetch, checkout, project command, source transfer, or
 auto-generated source patch.
+
+The implemented review brief has required `schemaVersion: 1`, `purpose`,
+asserted `reviewer` and RFC3339 `at`, and non-null `selections`, `claims`,
+`questions` arrays. Selections are `{side, path}` with side `left` or `right`.
+Claims contain `candidateId`, `status` (`reviewed`/`proposed`), v1
+`correspondence`, `rationale`, nonempty v1 `provenance`, v1 `assessment`, and
+non-null `conflicts`/`questions` arrays. Each citation must match a captured
+current candidate evidence row exactly; synthetic or historical citations
+cannot assert a new current relationship. Saved journal claims retain their
+own historical provenance unchanged. An empty brief is valid apart from the
+required purpose, reviewer and timestamp. See the [runnable example](../../docs/how-to/reconcile-projects.md#create-an-offline-review-report).
 
 ## Inputs, budget, and trust
 
@@ -75,10 +89,11 @@ auto-generated source patch.
   event and observation provenance, not silently replaced by brief assertions.
   Conflicting brief and journal assertions remain side by side for review.
 - Set an explicit read/disclosure budget before collection: recommended maximum
-  64 declared scoped files plus maps, 64 KiB content per file, 512 KiB total
+  64 declared scoped files plus at most 16 maps, 64 KiB raw bytes per file
+  (including unselected files), 512 KiB total selected
   UTF-8 content considered for review, and a separately declared 2 MiB combined
-  ceiling for pair/review/journal inputs. These are initial limits to tune with
-  fixtures, not v1 scan limits. Preflight known sizes and enforce while reading;
+  ceiling for pair/review/journal inputs. These are report limits, not changes
+  to v1 scan limits. Preflight known sizes and enforce while reading;
   refuse oversize/binary content needed for interpretation rather than
   truncating and claiming full review. Deterministic scan still hashes each
   declared raw artifact; content inclusion is an additional opt-in list by
@@ -158,9 +173,9 @@ perpetual approval. Keep exact evidence-status meanings from v1, including
 preservation of a decided candidate's older decision digest after a later
 `record` observes changed evidence.
 
-## Assistance, results and refusal
+## Results, refusal and future assistance
 
-Offline report construction needs no provider. For optional `--assist`, show
+Offline report construction needs no provider. For a future `--assist`, show
 the exact bounded outbound packet—question, scoped evidence content, cited
 claims and flow text, with hashes and byte count—plus destination/provider
 and retention caveat, **before** any request. Obtain fresh affirmative consent
@@ -183,27 +198,29 @@ scope or citation; missing/unsafe roots, map or journal; size or content
 budget overrun; stale pin/bytes/revision; unsafe/occupied output; consent
 decline or invalid model output in assisted mode; and I/O errors must have
 distinct stable reasons. No partial report should be mistaken for success:
-propose exclusive sibling-temp creation and final no-overwrite publication
-as a new report-writer requirement, not a guarantee of today's assessment writer;
-on late I/O failure identify/clean an incomplete temp where safe and report
-indeterminate publication if necessary, never claim rollback without checking.
+the Linux report writer uses exclusive sibling staging, sync/close, then
+no-overwrite `linkat` publication and scratch removal/directory sync. This is
+not a guarantee of the separate assessment writer. On late I/O failure the
+report may already be visible; inspect the named report and any identified
+scratch rather than assuming nothing happened. Cleanup removes only verified
+owned scratch. Do not claim rollback or retry automatically.
 No journal or source mutation is allowed on either success or refusal.
 
 ## Future shared flow and separate recording UX
 
-When implementation is authorized, use **one live shared reconciliation flow**
+If assistance is authorized, use **one live shared reconciliation flow**
 for CLI and generated skill, resolved from the installed/overridden/embedded
 flow in the same precedence and with a source hash. Both routes should call
-the same deterministic scan, journal-read and proposed bounded report
+the same deterministic scan, journal-read and bounded report
 collector, rather than duplicate match/authority rules in prompts. A skill's
 host may have different consent UI and data processing; it must disclose its
 own actual outbound packet and enforce the same host-side boundaries. Flow
 hashes and offline contract tests can check guidance consistency, not native
-execution or CLI/skill behavioral parity. Deterministic plumbing needed before
-shipping includes bounded content capture, explicit review-schema validation,
-baseline capture/recheck, journal projection joining, private exclusive
-report creation, typed result/refusal and a no-provider offline path. Do not
-change v1 scan/journal JSON to implement this report.
+execution or CLI/skill behavioral parity. The offline primitive already supplies
+bounded capture, strict review validation, baseline recheck, journal joining,
+private publication and typed result/refusal without a provider. Assistance
+must retain these boundaries and add its own disclosure and response checks.
+The v1 scan/journal JSON remains unchanged.
 
 A later **journal recording/decision UX** is separate: fresh human review of
 exact correspondence, authority, permitted direction, observation and

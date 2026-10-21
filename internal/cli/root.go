@@ -58,6 +58,7 @@ func NewRootCommand(streams *iostreams.Streams, build buildinfo.Info) *cobra.Com
 	root.AddCommand(versionverb.Command(streams, build))
 	root.AddCommand(adoptflowverb.Command(streams))
 	root.AddCommand(assessverb.Command(streams))
+	root.AddCommand(reconcileverb.RootCommand(streams))
 	plumbing := &cobra.Command{Use: "plumbing", Short: "deterministic commands for skills and scripts"}
 	plumbing.AddCommand(adoptverb.Command(streams))
 	plumbing.AddCommand(assessverb.DocumentCommand(streams))

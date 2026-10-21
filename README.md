@@ -5,9 +5,14 @@ alongside Diátaxis user documentation. It has deterministic `lds plumbing docs`
 inventory, local-link validation, four-asset rendering, reviewed planning,
 create-only application, and maintenance assessment reports with
 reviewer-authored proposals, plus bounded `lds plumbing reconcile` evidence
-scanning and explicit caller-owned journal operations. Reconciliation reads
-clean pinned Git snapshots and does not infer semantic matches or mutate
-source projects. The interactive root `lds adopt <root> --facts <facts.json>`
+scanning, explicit caller-owned journal operations, and an offline
+`lds reconcile report` review packet. Reconciliation reads clean pinned Git
+snapshots and does not infer semantic matches or mutate source projects. The
+report is a private new external file, not a journal decision or applied proof;
+the identical deterministic `lds plumbing reconcile report` is the only
+reconciliation report surface eligible for generated skill projection. No
+assisted reconciliation flow or native skill/parity result is claimed. The
+interactive root `lds adopt <root> --facts <facts.json>`
 form uses those deterministic docs operations with an advisory OpenCode Go
 request and a fresh exact-plan human gate. Generated Claude Code `/lds`
 adoption guidance fetches `lds plumbing adopt --json` live and follows the
@@ -15,8 +20,8 @@ shared `assets/flows/adopt.md` procedure; the reader remains preparatory and
 unavailable for execution, and the guidance does not enforce behavior. S10
 was accepted for executor CLI cases and independent offline review, not native
 skill execution or CLI/skill parity. Neither form authorizes a real pilot or
-establishes first-release inclusion. A human-facing reconciliation facilitator
-remains deferred.
+establishes first-release inclusion. Optional reconciliation assistance and a
+shared human/skill flow remain deferred.
 
 The human maintenance workflow `lds assess <root>` produces
 model-assisted, review-required proposals in a new report **outside** the
@@ -48,6 +53,8 @@ Start with the [user documentation](docs/README.md) for an offline inspection
 tutorial, adoption and reconciliation how-tos, command reference, and the
 current safety boundaries. The [assessment how-to](docs/how-to/assess-documentation.md)
 collects evidence and proposed text outside the target without editing it.
+The [reconciliation how-to](docs/how-to/reconcile-projects.md) includes a
+disposable offline report example using an empty review brief.
 These guides describe implemented behavior. None selects an adoption pilot or
 adds automatic edits to existing documentation.
 
@@ -85,5 +92,8 @@ scope.
 The [BDS-252 engineering handoff](engineering/product/bds-252-stage-4-engineering-handoff.md)
 documents the reconciliation plumbing, bounded runtime evidence, and limits;
 it does not authorize a real-pair pilot or source transfer.
+The [proposed reconciliation workflow](engineering/product/reconciliation-workflow.md)
+records future assistance and decision UX; the implemented offline report is
+only its first slice, not the full facilitator.
 The GitHub CI workflow runs; the generated release workflow has not been
 exercised yet.

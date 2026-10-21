@@ -70,3 +70,22 @@ journal. It never infers correspondence, confidence, authority, or direction;
 never edits source files or transfers changes. Journal writes stay at the
 caller-named location outside both roots/Git directories. A decision or
 `appliedProof` is caller-supplied, not an authenticated external fact.
+
+The Linux-only offline `lds reconcile report` and identical
+`lds plumbing reconcile report` add a bounded, private Markdown review packet
+with a provenance JSON appendix, not a journal event or authorization. Pair,
+review, optional existing journal, and new output must be external to **both**
+roots and their Git common directories. No input or output path component for
+the report may be a symlink; publication creates a new mode-0600 file without
+overwrite. It does not initialize or lock a journal, write source or journal,
+or run project commands. Original inputs are revalidated before publication,
+not frozen forever or made into an atomic filesystem snapshot. Use trusted,
+quiescent ancestors and keep the report private: it may contain selected full
+UTF-8 bytes and unverified reviewer claims. The `reviewer` and `at` fields are
+assertions, not authentication. Raw map labels, matching hashes, candidate
+buckets, journal `appliedProof`, and report claims are not semantic matching,
+authority, or verified transfer. Even unselected scoped/map files face a
+64-KiB raw-file ceiling; report collection does not silently expand scope or
+truncate selected content. There is no assistance, model disclosure, shared
+flow, journal-decision UX, or native-skill/parity claim for this slice. A real
+pair or pilot requires separate authorization.
