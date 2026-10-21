@@ -20,6 +20,15 @@ executor CLI evidence and independent offline review, not native adoption or
 CLI/skill parity. No pilot or first-release claim follows; optional assistance,
 a shared human/skill flow, and journal decision UX remain deferred.
 
+The separate Linux-only offline `lds review <root> [--json]` is a root-only
+plumbing-kind composition of existing documentation inventory and local-link
+validation. It writes no report and does not infer coverage or semantics; it
+adds no plumbing leaf, projection or shared LLM flow. See the
+[disposable review how-to](../docs/how-to/review-documentation.md) and
+[safety boundaries](../docs/explanation/safety-and-scope.md). The measured
+manifest is 29 total leaves, 19 qualified projected entries and nine docs
+leaves; historical counts in older handoffs remain historical.
+
 Start with the [roadmap](product/roadmap.md) for proposed capabilities and
 their status. The [source-repository map](architecture/source-repositories.md)
 records what other projects contribute and how their local checkouts are found.

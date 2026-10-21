@@ -7,6 +7,20 @@ it does not check fragments, fetch external URLs, validate content semantics,
 or parse every Markdown/HTML link form. Unsupported checks are skips, not
 passes. A missing-link finding does not itself veto adoption.
 
+The Linux-only `lds review <root> [--json]` composes that same inventory and
+local-link validation as a root-only, offline, read-only first pass. It follows
+no symlinks, needs no terminal, credential or authored JSON, and prints only
+file metadata (sizes/hashes), links, findings, combined skips and limitations
+to stdout—not full source text or a report artifact. Exit 1 means a supported
+local file target is missing; exit 0 means no such finding, **not** that docs
+are complete, correct or current. Absent optional tracks are allowed, and
+empty coverage or skipped checks are not passes. It does not validate layout,
+completeness, semantics, cross-track consistency, code alignment or runtime
+behavior, fetch URLs, call a provider, run project commands, edit sources or
+write files. A caller redirecting stdout owns that write. Reads are not an
+atomic snapshot: use trusted, quiescent inputs. See the
+[disposable review how-to](../how-to/review-documentation.md).
+
 Assessment creates a new external report, not any adoption output or target
 edit. The existing authored-brief report and JSON contain default documentation
 bytes and additional UTF-8 source files permitted by the brief's paths/hashes;

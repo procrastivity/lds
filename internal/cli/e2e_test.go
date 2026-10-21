@@ -144,7 +144,7 @@ func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	if root.exitCode != 0 || root.stderr != "" {
 		t.Fatalf("root help: exit=%d stderr=%q", root.exitCode, root.stderr)
 	}
-	for _, name := range []string{"adopt", "assess", "doctor", "install", "manifest", "plumbing", "reconcile", "uninstall", "update", "version"} {
+	for _, name := range []string{"adopt", "assess", "doctor", "install", "manifest", "plumbing", "reconcile", "review", "uninstall", "update", "version"} {
 		if !strings.Contains(root.stdout, "\n  "+name) {
 			t.Errorf("root help omits root command %q: %s", name, root.stdout)
 		}
@@ -354,6 +354,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		"adopt":                                 "",
 		"assess":                                "",
 		"update":                                "",
+		"review":                                "",
 		"reconcile report":                      "plumbing reconcile report",
 		"version":                               "",
 		"manifest":                              "plumbing manifest",
@@ -389,8 +390,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		if (verb.Name == "adopt" || verb.Name == "assess") && verb.Kind != "llm" {
 			t.Errorf("root %s kind = %q, want llm so it cannot enter the deterministic skill projection", verb.Name, verb.Kind)
 		}
-		if verb.Name == "update" && verb.Kind != "plumbing" {
-			t.Errorf("offline update kind = %q, want plumbing", verb.Kind)
+		if (verb.Name == "update" || verb.Name == "review") && verb.Kind != "plumbing" {
+			t.Errorf("offline %s kind = %q, want plumbing", verb.Name, verb.Kind)
 		}
 		if canonical, required := want[verb.Name]; required {
 			seen[verb.Name] = true
@@ -404,8 +405,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 28 || len(seen) != len(want) || projectable != 19 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want twenty-eight leaves and nineteen projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 29 || len(seen) != len(want) || projectable != 19 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want twenty-nine leaves and nineteen projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 

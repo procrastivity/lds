@@ -32,12 +32,27 @@ func Validate(root string) (Validation, error) {
 	return validateWithOverlay(root, nil)
 }
 
+// Review inventories once and checks the local links from that same inventory.
+// Neither the inventory nor the subsequent target checks form an atomic snapshot.
+func Review(root string) (Inventory, Validation, error) {
+	inventory, err := Inspect(root)
+	if err != nil {
+		return inventory, Validation{Findings: []Finding{}, Skipped: []Skip{}}, err
+	}
+	validation, err := validateInventory(root, inventory)
+	return inventory, validation, err
+}
+
 func validateWithOverlay(root string, overlay map[string]string) (Validation, error) {
-	result := Validation{Findings: []Finding{}, Skipped: []Skip{}}
 	inventory, err := inspectWithOverlay(root, overlay)
 	if err != nil {
-		return result, err
+		return Validation{Findings: []Finding{}, Skipped: []Skip{}}, err
 	}
+	return validateInventory(root, inventory)
+}
+
+func validateInventory(root string, inventory Inventory) (Validation, error) {
+	result := Validation{Findings: []Finding{}, Skipped: []Skip{}}
 	result.Skipped = append(result.Skipped, inventory.Skipped...)
 	dir, err := openRoot(root)
 	if err != nil {

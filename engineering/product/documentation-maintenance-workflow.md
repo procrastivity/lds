@@ -33,9 +33,34 @@ introducing an updater before its write policy is settled. It also lets
 documentation-impact and Diátaxis review share one workflow instead of
 creating a command for every review question. Root `assess` now provides that
 human-facing workflow, using `lds plumbing docs collect` and the observed-bound
-`lds plumbing docs assess` report operation. Root `review` remains a candidate;
-the offline `lds update` host is implemented under the separate
+`lds plumbing docs assess` report operation. A first offline root `review`
+slice now composes existing inventory and local-link validation; broader
+semantic review remains a candidate. It has no report, authored brief, provider,
+source-content packet or write authority. See the
+[review how-to](../../docs/how-to/review-documentation.md). The root command
+is plumbing-kind but root-only, neither projected nor an alias; it adds no
+plumbing leaf or shared LLM flow. Its findings/exit 1 concern only missing
+supported local file targets, and exit 0 cannot establish documentation
+currency. Optional absent tracks are not findings and skips are not passes.
+The reads are not atomic; trusted quiescent inputs are appropriate.
+Local WIP Matter `lds-offline-review` tracks this slice. The offline
+`lds update` host is implemented under the separate
 [update contract](documentation-update-contract.md).
+
+### Executed offline review checks
+
+With provider credentials unset, `make check` passed with zero lint issues
+and all packages passing, and `go test -race -count=1 ./...` passed. Static
+Linux/amd64 and Darwin/arm64 builds passed; review still refuses non-Linux
+execution. The documented real-CLI example produced exit 1 with three files,
+one missing target and two skips, then exit 0 with four files, zero findings
+and the same two skips after repair. Independent hashes matched; human and
+JSON results agreed; path/type/mode/byte snapshots stayed unchanged across
+review calls. Regressions cover empty coverage, missing and symlink roots,
+scope exclusions, query/fragment/external/unsafe skips and deterministic output.
+All 98 local prose links and three shell blocks in the nine changed pages
+passed link and syntax checks. No real provider, native harness, owner
+checkpoint or real-project update was used.
 
 ## Initial deterministic operation
 

@@ -52,9 +52,9 @@ deterministic; only the qualified plumbing form enters the generated skill
 table. Neither is a native execution or parity finding.
 The human-facing assessment workflow, bounded existing-file update plumbing
 and offline human-facing root `lds update` are implemented. The manifest
-has 28 leaves, including 19 qualified
-plumbing-kind projection entries and nine `docs` leaves; these counts do not
-establish native execution or parity.
+has 29 leaves with the first offline root `lds review` slice, including 19
+qualified plumbing-kind projection entries and nine `docs` leaves; these
+counts do not establish native execution or parity.
 Reconciliation commands do not
 infer semantic correspondence, choose real-pair authority, edit source
 repositories, or provide an assisted/shared human-skill workflow. See the
@@ -102,7 +102,14 @@ complete plan display on stderr, fresh terminal-only digest approval and the
 same strict in-memory apply. It takes the original collected packet and
 explicit edits, without a provider, new baseline or temporary artifact.
 This is not approval for any real target. Model-assisted update orchestration
-and root `review` remain deferred; root `init` remains a candidate.
+and broader semantic review remain deferred; root `init` remains a candidate.
+Local WIP Matter `lds-offline-review` tracks the authorized first Linux-only
+`lds review <root> [--json]` slice. It composes existing inventory and
+local-link validation on stdout without authored inputs, a terminal, provider,
+report artifact or target write. Exit 0 only means no supported missing local
+file target; it does not certify coverage, semantics, cross-track consistency,
+code alignment or runtime behavior. The [disposable how-to](../../docs/how-to/review-documentation.md)
+shows its bounded use. No pilot, owner checkpoint wave or live test follows.
 Pilot selection and first-release inclusion remain separate decisions.
 
 ## Separate update implementation and assisted reconciliation design
@@ -216,7 +223,7 @@ would bootstrap documentation *inside another project*.
 | Porcelain | `lds init` | Set up the selected documentation tracks and templates. |
 | Porcelain (implemented, outside first-release claim) | `lds assess <root> --reason <text> --audience <text> --output <absolute-new-report.md> [--source <relative-file> ...] [--json]` | Collect scoped documentation and named source bytes, ask fresh transfer consent, and request reviewable model-authored maintenance proposals; no target edits. |
 | Porcelain (implemented offline slice) | `lds update <root> --observed <collected.json> --request <edits.json> [--json]` | Linux terminal host of the complete deterministic plan and fresh exact-digest human gate; reuses original packet and authored edits, then strict in-memory apply. No model or temporary plan/report; assisted orchestration deferred. Not projected despite plumbing kind because root-only. See the [update how-to](../../docs/how-to/update-documentation.md). |
-| Porcelain | `lds review` | Audit coverage, links, and cross-track consistency. |
+| Porcelain (implemented first offline slice) | `lds review <root> [--json]` | Linux read-only scoped inventory and local-file link findings, skips and limitations on stdout. Root-only plumbing-kind composition, not projected or an alias; no report, completeness or semantic verdict. Broader review remains deferred. |
 | Porcelain (implemented, outside first-release claim) | `lds adopt <root> --facts <facts.json>` | Interactively review a create-only four-output documentation plan and apply only after fresh exact-digest human consent. |
 | Porcelain (implemented offline slice) | `lds reconcile report --pair <absolute-pair.json> --left-root <absolute-dir> --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] [--journal <absolute-existing-journal.json>] --review <absolute-review.json> --output <absolute-new-report.md> [--json]` | Linux private external report from clean pinned evidence and reviewer assertions; no model, source/journal writes, or project commands. See the [how-to](../../docs/how-to/reconcile-projects.md). |
 | Plumbing (implemented, bounded) | `lds plumbing docs inventory`, `validate`, `render`, `plan`, `apply` | Report scoped files/links, check supported local targets, render four assets, preview and create missing approved files without an LLM. |

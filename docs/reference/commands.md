@@ -9,6 +9,7 @@ historical `lds docs ...` spellings):
 | `lds version --json` | Report compiled version, commit and build date. |
 | `lds plumbing docs inventory <root> --json` | Scoped root README and `engineering/`, `docs/` Markdown inventory, links, skips. |
 | `lds plumbing docs validate <root> --json` | Supported local file-target existence; findings exit 1. |
+| `lds review <root> [--json]` | Linux-only offline read-only root command composing canonical inventory and validate; scoped files, local-link findings, combined skips and limitations on stdout, no report artifact. See the [disposable how-to](../how-to/review-documentation.md). |
 | `lds plumbing docs render <root> --facts <file> --json` | Validate facts and render four candidate files without writes. |
 | `lds plumbing docs plan <root> --facts <file> --json` | Full read-only create/identical/collision/refusal plan and digest. |
 | `lds plumbing docs apply <root> --facts <file> --plan <reviewed.json> --confirm <digest> --json` | Linux create-only application after separate review and exact confirmation. |
@@ -75,17 +76,33 @@ only qualified `plumbing ...` members are eligible. It is not a same-deliverable
 alias for either canonical deterministic step. There is no update flow asset
 or preparatory reader for this offline host.
 
+`lds review` also is root-only plumbing-kind, not projected or an alias, and
+adds no plumbing leaf or shared LLM flow. It requires no terminal, credential,
+authored JSON or `--output`; stdout contains human output or schema-1 JSON
+(`operation: "review"`, absolute `targetRoot`, `status` of `findings` or
+`no-findings`, `inventory`, `validation`, nonempty string-array `limitations`).
+Human output lists scoped regular Markdown files with sizes and hashes,
+local-link findings, skips and limitations. Validation includes inventory
+skips. Only metadata and links, not full source text, are reported. Exit 1
+means a supported local file target is missing, 0 means none was found; 2 is
+usage, 3 unsafe target or unsupported platform, and 4 unexpected I/O. A
+missing root exits 1 without a review result. Empty or absent optional
+documentation tracks are not automatically findings, and empty coverage or
+skipped checks are not passes.
+Neither status establishes complete, correct or current documentation. Shell
+redirection, if used, is the caller's write responsibility.
+
 `lds manifest` is also an alias. Scan and journal successes emit JSON even
 without `--json`; report prints a human summary by default and JSON with
 `--json`. Exit 0 is success; 1 is validation/evidence finding,
 2 usage, 3 refusal/staleness, 4 unexpected internal/I/O failure. Some docs
 diagnostics emit a JSON result to stdout **and** an error to stderr: inspect
 exit code and both streams. Cobra usage errors are human diagnostics. Root
-`init` and `review` remain candidates; model-assisted update orchestration is
-deferred. Root `reconcile` has only the offline `report` slice, not an assisted
-facilitator. The manifest has 28 application leaves, 19 qualified
-projected plumbing-kind entries and nine docs leaves; projection eligibility
-is not evidence of native execution or parity. The root
+`init` remains a candidate; broader review and model-assisted update
+orchestration are deferred. Root `reconcile` has only the offline `report`
+slice, not an assisted facilitator. The manifest has 29 application leaves,
+19 qualified projected plumbing-kind entries and nine docs leaves;
+projection eligibility is not evidence of native execution or parity. The root
 LLM-kind command is not a deterministic projected member. See the
 [assessment how-to](../how-to/assess-documentation.md) for the separate
 provider-free and consent-gated routes.

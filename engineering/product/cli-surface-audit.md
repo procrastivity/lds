@@ -4,7 +4,7 @@
 implemented. The original rows record the pre-Step-4 root leaves; Stage 4
 Step 8 added the separately classified root LLM form shown below.
 Step 6 also added the preparation-only `lds plumbing adopt` reader.
-The later offline root `lds update` slice is classified below separately;
+The later offline root `lds update` and `lds review` slices are classified separately;
 historical Step 4/Step 8 counts and projection observations are not current
 manifest measurements.
 
@@ -33,6 +33,7 @@ requires both a canonical `lds plumbing` path and kind `plumbing`.
 | `lds docs validate <root>` | Future adoption skill/script checking supported local links · `plumbing` | Canonical `lds plumbing docs validate`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified. |
 | `lds adopt <root> --facts <facts.json>` | Human/operator running the bounded CLI-side LLM adoption form · `llm` | Retain as root porcelain; it is separate from the read-only `lds plumbing adopt` reader. | No: root-only and kind `llm`; both gates exclude it. | No projected skill or shipped consumer calls it; no compatibility alias. |
 | `lds update <root> --observed <collected.json> --request <edits.json> [--json]` | Human/operator reviewing an offline plan and making a fresh terminal decision · `plumbing` | Root porcelain host of the existing canonical `docs update-plan` and `docs update-apply` steps, not a same-deliverable alias for either. | No: root-only despite plumbing kind; only qualified `plumbing ...` members project. | No compatibility alias. |
+| `lds review <root> [--json]` | Human/operator reading offline documentation inventory, local-link findings, skips and limitations · `plumbing` | Root porcelain composition of canonical `docs inventory` and `docs validate`, not an alias for either. | No: root-only despite plumbing kind. | No compatibility alias. |
 
 The `manifest` and `doctor` aliases use the same constructors as their
 canonical members. The manifest records `alias-of` only on these two root
@@ -87,7 +88,15 @@ flushes queued input, and requires freshly typed
 flag. It then uses strict in-memory apply and, with `--json`, returns schema-1
 `operation: "update"`, `status`, `plan` and nullable `apply` on stdout. No provider,
 temporary plan/report or native skill execution is involved. The current
-manifest is 28 leaves, 19 projected qualified plumbing-kind entries,
+manifest, including offline root review, is 29 leaves, 19 projected qualified plumbing-kind entries,
 and nine docs leaves; the historical observations above do not verify the
 new root command's terminal behavior. See the
 [update contract](documentation-update-contract.md).
+
+The offline root review host adds no LLM flow or new plumbing leaf. It reports
+one captured scoped inventory and its local-target checks, with explicit skips
+and limitations, to stdout. Exit 0 means no supported missing local targets,
+not complete, correct or current documentation; no semantic, cross-track or
+code-alignment verdict is claimed. It needs no terminal, credentials or authored
+JSON inputs and creates no report or target files. See the
+[review how-to](../../docs/how-to/review-documentation.md).

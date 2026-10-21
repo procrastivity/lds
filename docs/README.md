@@ -27,6 +27,9 @@ tutorial or deterministic plumbing.
 
 - [Inspect a disposable project](tutorials/inspect-a-project.md) — a read-only,
   offline first run.
+- [Review documentation offline](how-to/review-documentation.md) — one root
+  command for scoped inventory and local-link findings, without a report or
+  semantic verdict.
 - [Adopt documentation in a project](how-to/adopt-a-project.md) — prepare facts,
   inspect the complete plan, and make a separate human decision.
 - [Assess documentation](how-to/assess-documentation.md) — an offline

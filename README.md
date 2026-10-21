@@ -42,6 +42,13 @@ Neither route implicitly accepts assessment advice or alters create-only
 adoption; no real target or pilot is authorized. See the
 [update how-to](docs/how-to/update-documentation.md).
 
+`lds review <root> [--json]` is a Linux-only offline, read-only first pass over
+scoped documentation: file sizes/hashes, supported local-link findings, skips
+and explicit limitations on stdout. It needs no terminal, credential or
+authored JSON input and writes no report. Exit 0 means no supported missing
+local file target, **not** complete or current documentation. See the
+[review how-to](docs/how-to/review-documentation.md).
+
 Built on the [toolsmith contract](https://github.com/procrastivity/toolsmith)
 (`toolsmith/v1` — the manifest declares it): a single static Go binary
 that projects itself into agent harnesses as generated, stamped skills.
@@ -68,6 +75,8 @@ disposable offline report example using an empty review brief.
 The [update how-to](docs/how-to/update-documentation.md) shows disposable
 collect/request inputs, a human-invoked root update and the separate manual
 plumbing plan/apply route. None selects a pilot or authorizes unattended edits.
+The [review how-to](docs/how-to/review-documentation.md) demonstrates a broken
+local link and explains why repairing it is not semantic validation.
 
 ## Develop
 
