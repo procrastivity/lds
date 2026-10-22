@@ -86,7 +86,29 @@ type reportContent struct {
 	Text   string `json:"text"`
 }
 
-type reportPacket struct {
+// ReportAssistance is an attributed transfer receipt, not proof of provider identity or consent.
+type ReportAssistance struct {
+	Provider     string `json:"provider"`
+	Model        string `json:"model"`
+	FlowSource   string `json:"flowSource"`
+	FlowSHA256   string `json:"flowSha256"`
+	SystemSHA256 string `json:"systemSha256"`
+	UserSHA256   string `json:"userSha256"`
+	SystemBytes  int    `json:"systemBytes"`
+	UserBytes    int    `json:"userBytes"`
+	ConsentAt    string `json:"consentAt"`
+}
+
+// ReportDraft contains unverified provider advice, separate from human review.
+type ReportDraft struct {
+	SchemaVersion int           `json:"schemaVersion"`
+	Claims        []ReviewClaim `json:"claims"`
+	Questions     []string      `json:"questions"`
+}
+
+// ReportEvidence is the captured, bounded baseline for one report. Treat it as
+// immutable after collection; RecheckReport compares it with a fresh capture.
+type ReportEvidence struct {
 	SchemaVersion        int                 `json:"schemaVersion"`
 	Collector            string              `json:"collector"`
 	Inputs               []reportObservation `json:"inputs"`
@@ -97,24 +119,18 @@ type reportPacket struct {
 	Journal              *JournalResponse    `json:"journal,omitempty"`
 	JournalSHA256        string              `json:"journalProjectionSha256,omitempty"`
 	RootIdentities       []string            `json:"rootIdentities"`
+	OutputPath           string              `json:"outputPath"`
 	OutputParentIdentity string              `json:"outputParentIdentity"`
 	Excluded             []string            `json:"excluded"`
+	Assistance           *ReportAssistance   `json:"assistance,omitempty"`
+	Advice               *ReportDraft        `json:"advice,omitempty"`
 }
 
 // Report constructs and rechecks a bounded offline review packet, then
 // publishes one private external Markdown file without replacing any path.
 // No source or journal write operation is called, even on refusal.
 func Report(input ReportInput) (result ReportResult, resultErr error) {
-	defer func() {
-		var structured *ldserr.Error
-		if resultErr != nil && !errors.As(resultErr, &structured) {
-			code := "internal.reconcile-report-io"
-			if errors.Is(resultErr, os.ErrNotExist) || errors.Is(resultErr, syscall.ELOOP) || errors.Is(resultErr, syscall.ENOTDIR) {
-				code = "validation.reconcile-report-path"
-			}
-			resultErr = reportError(code, resultErr.Error())
-		}
-	}()
+	defer func() { resultErr = reportFailure(resultErr) }()
 	packet, err := collectReport(input)
 	if err != nil {
 		return ReportResult{}, err
@@ -137,10 +153,32 @@ func Report(input ReportInput) (result ReportResult, resultErr error) {
 	}, nil
 }
 
-func collectReport(input ReportInput) (reportPacket, error) {
-	packet := reportPacket{
+// CollectReport reads the explicit inputs without publishing or writing to a source or journal.
+func CollectReport(input ReportInput) (ReportEvidence, error) {
+	packet, err := collectReport(input)
+	return packet, reportFailure(err)
+}
+
+// RecheckReport refuses a changed baseline, including changed output availability.
+func RecheckReport(input ReportInput, observed ReportEvidence) error {
+	if observed.Assistance != nil || observed.Advice != nil {
+		return reportError("refusal.reconcile-report-stale", "expected an unassisted collected baseline")
+	}
+	current, err := CollectReport(input)
+	if err != nil {
+		return err
+	}
+	if !reflect.DeepEqual(observed, current) {
+		return reportError("refusal.reconcile-report-stale", "report inputs changed; collect and review a new baseline")
+	}
+	return nil
+}
+
+func collectReport(input ReportInput) (ReportEvidence, error) {
+	packet := ReportEvidence{
 		SchemaVersion: 1, Collector: "lds/reconcile-report/v1",
-		Inputs: []reportObservation{}, Content: []reportContent{},
+		OutputPath: input.OutputPath,
+		Inputs:     []reportObservation{}, Content: []reportContent{},
 		Excluded: []string{"Unselected file content; all files outside declared scope/maps.", "Semantic correspondence, authority, transfer and parity verification.", "Provider assistance and source/journal writes."},
 	}
 	remaining := reportInputLimit
@@ -398,10 +436,14 @@ func validateReview(brief ReviewBrief, scan Response) error {
 	return nil
 }
 
-func renderReport(packet reportPacket, output string) []byte {
+func renderReport(packet ReportEvidence, output string) []byte {
 	var text strings.Builder
 	fmt.Fprintf(&text, "# Reconciliation review — review required\n\nCreated: %s\n\nReport: %s\n\n", time.Now().UTC().Format(time.RFC3339), reportCell(output))
-	text.WriteString("Offline; no provider assistance, source edits or journal writes. Reviewer identity/time and all correspondence, authority and outcomes are attributed assertions, not authenticated facts. Byte equality is not semantic correspondence or transfer proof. Missing review and unresolved authority remain open.\n\n")
+	if packet.Assistance == nil {
+		text.WriteString("Offline; no provider assistance, source edits or journal writes. Reviewer identity/time and all correspondence, authority and outcomes are attributed assertions, not authenticated facts. Byte equality is not semantic correspondence or transfer proof. Missing review and unresolved authority remain open.\n\n")
+	} else {
+		text.WriteString("Assisted; provider advice is unverified and cannot approve correspondence, authority, transfer or parity. The transfer receipt is attributed, not authenticated consent or provider identity. No source edits or journal writes. Human review and saved history remain separate; byte equality is not semantic correspondence or transfer proof.\n\n")
+	}
 	fmt.Fprintf(&text, "Pair: %s\n\nLeft: %s at %s\n\nRight: %s at %s\n\n", reportCell(packet.Scan.PairID), reportCell(packet.Scan.Snapshots.Left.ProjectID), packet.Scan.Snapshots.Left.Revision, reportCell(packet.Scan.Snapshots.Right.ProjectID), packet.Scan.Snapshots.Right.Revision)
 	text.WriteString("## Scope and current observations\n\n| Candidate | Comparison | Current digest | Journal observed digest | Last decision (sequence / digest / outcome) |\n| --- | --- | --- | --- | --- |\n")
 	for _, c := range packet.Scan.Candidates {
@@ -444,6 +486,25 @@ func renderReport(packet reportPacket, output string) []byte {
 	for _, question := range packet.Review.Questions {
 		fmt.Fprintf(&text, "- Open question: %s\n", reportCell(question))
 	}
+	if packet.Advice != nil {
+		text.WriteString("\n## Assisted advice — unverified proposals, not human assertions\n\n")
+		fmt.Fprintf(&text, "Attributed transfer: %s / %s; flow %s (%s), system %s (%d bytes), user %s (%d bytes); consent asserted at %s. Full receipt and advice are in the appendix.\n\n", reportCell(packet.Assistance.Provider), reportCell(packet.Assistance.Model), reportCell(packet.Assistance.FlowSource), packet.Assistance.FlowSHA256, packet.Assistance.SystemSHA256, packet.Assistance.SystemBytes, packet.Assistance.UserSHA256, packet.Assistance.UserBytes, reportCell(packet.Assistance.ConsentAt))
+		if len(packet.Advice.Claims) == 0 {
+			text.WriteString("No model claims supplied.\n\n")
+		}
+		for _, claim := range packet.Advice.Claims {
+			fmt.Fprintf(&text, "### %s — proposed model advice (needs review)\n\nCandidate: %s\n\nRelationship: %s; left [%s], right [%s].\n\nRationale: %s\n\nTrust: %s; confidence: %s (attributed, not verified).\n\n", reportCell(claim.Correspondence.Key), reportCell(claim.CandidateID), claim.Correspondence.Relation, reportCell(strings.Join(claim.Correspondence.LeftMembers, ", ")), reportCell(strings.Join(claim.Correspondence.RightMembers, ", ")), reportCell(claim.Rationale), claim.Assessment.Trust, claim.Assessment.Confidence.Level)
+			for _, conflict := range claim.Conflicts {
+				fmt.Fprintf(&text, "- Conflict: %s\n", reportCell(conflict))
+			}
+			for _, question := range claim.Questions {
+				fmt.Fprintf(&text, "- Question: %s\n", reportCell(question))
+			}
+		}
+		for _, question := range packet.Advice.Questions {
+			fmt.Fprintf(&text, "- Model question: %s\n", reportCell(question))
+		}
+	}
 	text.WriteString("\n## Saved journal claims\n\n")
 	if packet.Journal == nil {
 		text.WriteString("No journal supplied; no comparison or decision is inferred.\n")
@@ -476,3 +537,15 @@ func reportCell(value string) string {
 }
 
 func reportError(code, message string) error { return ldserr.New(code, message) }
+
+func reportFailure(err error) error {
+	var structured *ldserr.Error
+	if err == nil || errors.As(err, &structured) {
+		return err
+	}
+	code := "internal.reconcile-report-io"
+	if errors.Is(err, os.ErrNotExist) || errors.Is(err, syscall.ELOOP) || errors.Is(err, syscall.ENOTDIR) {
+		code = "validation.reconcile-report-path"
+	}
+	return reportError(code, err.Error())
+}

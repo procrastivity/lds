@@ -5,8 +5,9 @@ provider-free collection/report operation and human-facing model-assisted
 assessment are implemented as described below. Model proposals are unverified
 advice; assessment itself still cannot edit files. A separate bounded
 [existing-file update contract](documentation-update-contract.md) now governs
-implemented reviewed replacements, without real-target or
-pilot authorization. The accepted create-only adoption contract is unchanged.
+implemented reviewed replacements and explicit assisted drafting, without
+real-target or pilot authorization. The accepted create-only adoption contract
+is unchanged.
 
 The owner requested user documentation and maintenance-workflow design as
 the next independent work after the completed adoption and reconciliation
@@ -243,6 +244,23 @@ a new baseline; partial effects require inspection and a new review, not an
 automatic retry. The design states its trusted-quiescent-ancestor and
 concurrency limits rather than claiming hostile-writer CAS, cross-file
 atomicity or rollback.
+
+The unchanged offline `lds update --observed ... --request ...` host accepts
+authored edits without a provider. Explicit `lds update --assist --reason ...
+--audience ... --document ...` instead selects 1–32 unique existing scoped
+Markdown files, automatically collects the original bounded baseline and
+requests unverified full replacements and questions only after disclosure of
+the complete outbound payload and fresh `send` consent. Empty edits end
+review-required without applying. Nonempty drafts use the original-baseline
+deterministic plan and complete exact-byte preview, then a **separate** fresh
+`apply sha256:<digest>`/`decline` gate. Baseline and live flow checks before
+and after transfer and before apply refuse drift; send is never write consent.
+The same Linux replacement and partial/indeterminate recovery limits apply.
+`lds plumbing update [--json]` reads the live `flows/update.md` preparatory
+flow, not an execution. Generated Claude Code guidance fetches it live and
+must disclose its harness processing and obtain independent consent without
+automating the root terminal or deriving approval from a model. This adds no
+assisted reconciliation, native parity, real provider or target/pilot claim.
 
 This is **not real-target write authority**. The accepted
 assessment/report path still writes no target file; its advice acceptance and

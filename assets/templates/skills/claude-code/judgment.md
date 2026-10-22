@@ -1,6 +1,7 @@
 Use this generated Claude Code skill to inspect LDS or, when explicitly
 asked, prepare a create-only documentation adoption or a report-only
-maintenance assessment for one named target.
+maintenance assessment, or separately review existing-file updates for one
+named target.
 The steps below are guidance, not a security boundary: this installation
 cannot authenticate the owner, verify their claims, enforce approval, or
 prove that commands are being used safely. No real target or pilot is
@@ -38,6 +39,38 @@ flow as the sole source of assessment sequencing, not a cached copy here.
   apply, a model-supplied command or this skill to edit the target. Root
   `lds assess` is a separate terminal/provider form, not a subprocess to drive
   with relayed input. No native execution or CLI/skill parity is claimed.
+
+## Existing-file update route
+
+When separately authorized to draft existing-file replacements, first run
+`lds plumbing update --json`. Require schema version 1, operation `update`,
+`preparatory` status, `unavailable-for-execution` availability and nonempty
+live content. Follow that returned shared flow, not a cached sequence here.
+Disclose this harness's processing and obtain appropriate permission before
+reading target content. Preserve the original collected packet, explicit
+selected document scope and evidence-linked unverified draft outside the
+target. Only the deterministic update planner may produce the reviewed plan;
+only separate fresh human approval of the complete exact plan/digest permits
+the update apply plumbing. Sending content, model output, assessment advice
+and prior approval never authorize replacement. Do not drive or relay input
+to root `lds update --assist`. No native execution or parity is established.
+
+## Reconciliation report route
+
+When explicitly asked to review a named project pair, first run
+`lds plumbing reconcile flow --json`. Require schema version 1, operation
+`reconcile`, `preparatory` status, `unavailable-for-execution` availability and
+nonempty live content. Follow that flow as the sole source of sequencing.
+Disclose this harness's actual content processing and obtain appropriate
+permission before reading. Preserve the original deterministic collect packet
+privately outside both roots/Git directories; never silently refresh a stale
+baseline. Model advice is proposed, not reviewed correspondence, authority,
+direction, applied proof or approval. Do not mislabel this harness/model as
+OpenCode Go or fabricate a transfer receipt. Stop if the actual provider and
+consent mechanism cannot satisfy the live procedure; offline reporting remains
+available. Reports never edit sources or initialize, lock or write a journal.
+Keep later human journal decisions separate. Do not automate or relay input to
+root `lds reconcile report --assist`. No native execution or parity is claimed.
 
 ## Adoption guardrails while following the live flow
 

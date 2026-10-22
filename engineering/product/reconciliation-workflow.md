@@ -1,8 +1,9 @@
-# Human-facing cross-project reconciliation — offline slices and future assistance
+# Human-facing cross-project reconciliation — offline and assisted report slices
 
-**Status:** The Linux-only offline report and root-only guided journal
-record/decide/reconsider slices are implemented. Assistance and a shared
-human/skill flow remain proposals. This is not authorization for a real pair,
+**Status:** The Linux-only offline and explicit consent-gated assisted report,
+deterministic collect/extended report, live preparatory flow reader and root-only
+guided journal record/decide/reconsider slices are implemented. This is not
+authorization for a real pair,
 pilot, provider call, native integration, CLI/skill parity, release, source edit
 or real-pair journal authority. This is separate from the
 [within-project existing-file maintenance workflow](documentation-maintenance-workflow.md).
@@ -12,8 +13,8 @@ The accepted [ADR-0003](../decisions/0003-bound-cross-project-reconciliation.md)
 frozen [v1 operation contract](../specs/cross-project-reconciliation-v1.md),
 and [BDS-252 engineering handoff](bds-252-stage-4-engineering-handoff.md)
 remain authoritative for the implemented deterministic surface. The
-[current how-to](../../docs/how-to/reconcile-projects.md) describes the offline
-surface, not a future assisted facilitator. The Stage 4 fixtures are bounded
+[current how-to](../../docs/how-to/reconcile-projects.md) describes both report
+modes and external-artifact plumbing, not a full facilitator. The Stage 4 fixtures are bounded
 evidence, not a real-pair authority choice or a completed reconciliation.
 
 ## Offline report and non-goals
@@ -21,9 +22,9 @@ evidence, not a real-pair authority choice or a completed reconciliation.
 The **report-only first slice** delivers one private, caller-owned external
 Markdown report combining the current scan comparison, any explicitly reviewed
 correspondence, contradictory claims, unresolved authority and questions.
-It should be useful offline, with no model: a reviewer can supply annotations
+It is useful offline, with no model: a reviewer can supply annotations
 and receive a traceable review packet without recording a decision. Optional
-model assistance may draft *advice* only after a separate, scoped content
+model assistance drafts *advice* only after a separate, scoped content
 disclosure and fresh consent. This report causes no source or journal writes,
 including initialization, locks, or request staging in either root. A report is
 not a journal event, approval, port plan, applied proof, or runtime-parity finding.
@@ -38,13 +39,24 @@ lds reconcile report --pair <absolute-pair.json> --left-root <absolute-dir> \
   [--json]
 ```
 
-`--assist` is not implemented; this slice makes no provider call.
+Without `--assist`, this slice makes no provider call. The same required flags
+with explicit `--assist` use a Linux terminal and `OPENCODE_API_KEY`, display
+the complete system/user payload and provider destination, flush queued input
+and require fresh exact `send`. The root report registration is LLM-kind, not
+an alias or projected member. One fixed OpenCode Go / `deepseek-v4-flash`
+request has no tools, redirects, retries or fallback; only proposed advice
+may be added to the private report. `lds plumbing reconcile collect` emits a
+bounded original evidence JSON without publishing; extended deterministic
+`plumbing reconcile report --observed --draft --receipt` requires all three
+external artifacts and binds them to that original baseline. The live
+`lds plumbing reconcile flow --json` reader is preparatory/unavailable for
+execution. Generated guidance fetches it live, discloses its own harness
+processing and obtains its own consent; it must not automate the root terminal.
 Today's `lds plumbing reconcile scan` and `journal read` are read-only;
 `journal record`, `decide`, and `reconsider` alone write the explicitly named
 external journal. `reconcile.Report` owns bounded collection, strict review,
-recheck and publication. The root spelling aliases the same deterministic
-plumbing command; only the qualified plumbing entry projects into the skill
-table. No shared reconciliation skill flow or native/parity claim is added.
+recheck and publication. Qualified plumbing entries project into the skill
+table; neither native skill execution nor CLI/skill parity is established.
 A flow or skill cannot enforce boundaries by prompt alone. Report uses existing
 scan identity and journal replay. No implicit cwd, remote, journal, pair, map, or
 output defaults; no fetch, checkout, project command, source transfer, or
@@ -132,9 +144,9 @@ Git roots must match the pair's full pins. No authored scan or request JSON is
 needed: the host freshly scans and presents candidate evidence and prior
 decisions, then constructs the same strict v1 requests for the existing
 record/decide/reconsider plumbing. The manual saved-scan/request-file route
-remains available, unchanged. There is no additional shared flow or generated
-projection: the three new leaves are root-only plumbing-kind. The manifest
-now has 32 leaves, 19 qualified projected plumbing entries and nine docs
+remains available, unchanged. The three journal leaves are root-only
+plumbing-kind and not projected; they do not run the report flow. The manifest
+now has 35 leaves, 22 qualified projected plumbing entries and nine docs
 leaves.
 
 The operator explicitly supplies plain-text correspondence with stable
@@ -215,9 +227,9 @@ perpetual approval. Keep exact evidence-status meanings from v1, including
 preservation of a decided candidate's older decision digest after a later
 `record` observes changed evidence.
 
-## Results, refusal and future assistance
+## Results, refusal and assistance
 
-Offline report construction needs no provider. For a future `--assist`, show
+Offline report construction needs no provider. Implemented `--assist` shows
 the exact bounded outbound packet—question, scoped evidence content, cited
 claims and flow text, with hashes and byte count—plus destination/provider
 and retention caveat, **before** any request. Obtain fresh affirmative consent
@@ -248,32 +260,42 @@ scratch rather than assuming nothing happened. Cleanup removes only verified
 owned scratch. Do not claim rollback or retry automatically.
 No journal or source mutation is allowed on either success or refusal.
 
-## Future shared assistance flow
+## Shared preparatory assistance flow
 
-If assistance is authorized, use **one live shared reconciliation flow**
+Assistance uses **one live shared reconciliation flow**
 for CLI and generated skill, resolved from the installed/overridden/embedded
-flow in the same precedence and with a source hash. Both routes should call
+flow in the same precedence and with a source hash. Both routes call
 the same deterministic scan, journal-read and bounded report
 collector, rather than duplicate match/authority rules in prompts. A skill's
 host may have different consent UI and data processing; it must disclose its
 own actual outbound packet and enforce the same host-side boundaries. Flow
 hashes and offline contract tests can check guidance consistency, not native
-execution or CLI/skill behavioral parity. The offline primitive already supplies
+execution or CLI/skill behavioral parity. The offline primitive supplies
 bounded capture, strict review validation, baseline recheck, journal joining,
 private publication and typed result/refusal without a provider. Assistance
-must retain these boundaries and add its own disclosure and response checks.
+retains these boundaries and adds disclosure and response checks: strict
+schema-1 `claims`/`questions`, only proposed needs-review claims citing
+explicitly selected current captured file/map evidence, and empty claims valid.
+The total prompt budget is 512 KiB; response is limited to 64 KiB. Model input
+includes selected full text, sanitized scan metadata, seed claims/questions
+and live flow, not host-added absolute paths, credentials or raw journal
+contents. Selected text/claims are not redacted. Flow and input drift refuse
+before send, after response and before private publication. Seed reviewer
+claims and journal history remain separately attributed. The report marks
+assistance true and includes an attributed, not authenticated, provider/model,
+flow source/hash, payload hash/byte-count and consent-time receipt.
 The v1 scan/journal JSON remains unchanged.
 
-The implemented guided journal route remains separate from future assistance:
+The implemented guided journal route remains separate from report assistance:
 it consumes the actual v1 `record`/`decide`/`reconsider` operations with fresh
 scan identity, expected evidence digest/revision and unique request ID. A new
 observation may preserve a prior decision; changing a decided relationship or
 outcome needs explicit reconsideration and trigger. Applied requires external
 proof reference and separate verification/authority; a report cannot mint
-proof or grant a source edit. Future skill guidance must not promote report
+proof or grant a source edit. Skill guidance must not promote report
 proposals to journal decisions without that independent review.
 
-## Testable scenarios before implementation acceptance
+## Report boundary scenarios
 
 | Scenario | Expected report/refusal |
 | --- | --- |
@@ -292,11 +314,10 @@ proposals to journal decisions without that independent review.
 Before a **real-pair** review the authorized owner must choose the pair,
 scope/pins/map(s), data classification and permitted disclosure, responsible
 pair/topic authority declarers, and later what independent external transfer
-verification would suffice for an applied claim. Before shipping assistance,
-the owner must approve provider/data-handling policy and whether report-only
-offline mode ships independently of it. These choices are not supplied by
-Scind/Xcind examples or by an existing journal. Reversible command spelling,
-budget numbers, report layout and internal collector split are recommendations
-for implementation review, not blockers to accepting the report-first design.
-No frozen contract, source project or live journal needs editing to express
-this proposal.
+verification would suffice for an applied claim. Any real provider use needs
+separate authorization and data-handling approval; an implemented consent
+gate is not that approval. These choices are not supplied by Scind/Xcind
+examples or by an existing journal. The bounded command spellings, budgets
+and collector split here describe the implemented report slice, not a
+real-pair integration result. No frozen v1 contract, source project or live
+journal was changed for this slice.

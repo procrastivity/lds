@@ -1,15 +1,61 @@
 # Update an existing documentation file
 
-`lds update` is an offline, human-facing Linux workflow for explicitly
-requested full-file replacements. It displays the complete deterministic plan
-and requires fresh exact-digest terminal confirmation. The separate
+The existing `lds update --observed ... --request ...` route is an offline,
+human-facing Linux workflow for explicitly requested full-file replacements.
+It displays the complete deterministic plan and requires fresh exact-digest
+terminal confirmation. Explicit `--assist` is a separate, consent-gated
+drafting mode described below. The separate
 `lds plumbing docs update-plan` / `update-apply` route lets you persist and
-review a plan before a distinct apply command. Neither route uses a provider,
-agent skill, or assessment report as write authority. They are separate from
-create-only adoption. Use them only on a target and paths you are authorized
-to change; no real project is selected by this guide.
+review a plan before a distinct apply command. The offline and manual routes
+use no provider. Neither a provider response, an agent skill nor an assessment
+report is write authority. All routes are separate from create-only adoption.
+Use them only on a target and paths you are authorized to change; no real
+project is selected by this guide.
 
-## Prepare disposable inputs
+## Request assisted drafts for explicit existing files
+
+In a trusted Linux terminal, the assisted command shape is:
+
+```text
+lds update <root> --assist --reason <text> --audience <text> \
+  --document <relative-existing-markdown> [--document ...] \
+  [--source <relative-file> ...] [--json]
+```
+
+For example, on the disposable `project` created below, you could select
+`--document README.md`; the reason and audience explain the requested review.
+Select 1–32 unique **existing** targets: root `README.md` or Markdown below
+`docs/` or `engineering/`. Only these documents can be edited, never other
+inventoried documents or cited sources. `--source` explicitly adds bounded
+regular UTF-8 evidence files, not edit targets. Inspect the selection and
+contents for secrets before proceeding. The command collects its own original
+bounded observation; do not supply `--observed`/`--request` in this mode.
+
+Before any model request, inspect the **complete** displayed outbound system
+and user payload, including the live flow, reason, audience, inventory,
+findings, skips, selected paths, hashes and full scoped contents. Only a
+freshly typed exact `send` after that disclosure permits one fixed OpenCode Go
+`deepseek-v4-flash` tool-free request; decline instead if anything is out of
+scope. The mode needs `OPENCODE_API_KEY` for transfer, unlike the offline route.
+No automatic redirect, retry or fallback is made. The model's full replacement
+drafts and questions are **unverified**. An empty edit set is valid and ends
+`review-required` without applying anything.
+
+For nonempty drafts, LDS builds a strict deterministic plan against the
+**original**, not a silently refreshed, baseline. Review the full exact-byte
+preview, including all before/after content and diagnostics. A send is not
+write approval. Only a separate freshly typed
+`apply sha256:<exact displayed digest>` authorizes an eligible plan; `decline`
+refuses. There is no unattended confirmation shortcut. Baseline and live flow
+are rechecked before/after transfer and before apply; drift refuses instead
+of silently recollecting or retrying. Inspect the final exit status, stderr,
+JSON if requested, and actual files. Partial or indeterminate replacement
+requires tree/scratch inspection, new collection and a new review—never an
+automatic rerun. The same Linux metadata, no-follow, per-file replacement and
+concurrency restrictions below apply. No live provider, real target, native
+skill execution or CLI/skill parity is established by disposable/mock checks.
+
+## Prepare disposable inputs for the offline route
 
 With a current `lds` binary on `PATH`, run the following in a trusted shell.
 The two new private directories are separate, and the review directory is
@@ -40,7 +86,7 @@ referencing collected evidence. Unknown, duplicate, case-aliased or null
 fields refuse. Select only existing root `README.md` or `.md` files below
 `docs/` or `engineering/`; no creation, move or deletion is requested.
 
-## Invoke the human-facing update
+## Invoke the offline human-facing update
 
 Run this yourself in a Linux terminal with an unchanged disposable fixture:
 

@@ -7,15 +7,18 @@ create-only application, and maintenance assessment reports with
 reviewer-authored proposals, plus separately reviewed existing-file update
 planning/application and bounded `lds plumbing reconcile` evidence
 scanning, explicit caller-owned journal operations, and an offline
-`lds reconcile report` review packet. Linux root-only interactive
+`lds reconcile report` review packet with optional consent-gated assistance.
+Linux root-only interactive
 `lds reconcile journal record|decide|reconsider` hosts guide explicit journal
 entries directly from clean pinned roots, without authored scan or request
 JSON. Reconciliation reads clean pinned Git snapshots and does not infer
 semantic matches or mutate source projects. The report is a private new
 external file, not a journal decision or applied proof;
-the identical deterministic `lds plumbing reconcile report` is the only
-reconciliation report surface eligible for generated skill projection. No
-assisted reconciliation flow or native skill/parity result is claimed. The
+the deterministic `lds plumbing reconcile report` is eligible for generated
+skill projection. `lds plumbing reconcile collect` captures an original bounded
+baseline, and `lds plumbing reconcile flow --json` reads the live preparatory
+flow. Assisted reports retain reviewer assertions separately from unverified
+model proposals; no native skill/parity result is claimed. The
 interactive root `lds adopt <root> --facts <facts.json>`
 form uses those deterministic docs operations with an advisory OpenCode Go
 request and a fresh exact-plan human gate. Generated Claude Code `/lds`
@@ -24,8 +27,7 @@ shared `assets/flows/adopt.md` procedure; the reader remains preparatory and
 unavailable for execution, and the guidance does not enforce behavior. S10
 was accepted for executor CLI cases and independent offline review, not native
 skill execution or CLI/skill parity. Neither form authorizes a real pilot or
-establishes first-release inclusion. Optional reconciliation assistance and a
-shared human/skill flow remain deferred.
+establishes first-release inclusion.
 
 The human maintenance workflow `lds assess <root>` produces
 model-assisted, review-required proposals in a new report **outside** the
@@ -36,13 +38,17 @@ packet with an authored brief. Offline checks do not establish live-provider
 reliability or installed-skill parity. No assessment edits the target.
 See the [assessment how-to](docs/how-to/assess-documentation.md).
 
-The offline human-facing `lds update <root> --observed <collected.json>
---request <edits.json>` displays the complete deterministic plan and requires
-fresh terminal confirmation before replacing explicitly selected existing
-documentation files. The separate `lds plumbing docs update-plan` /
-`update-apply` route remains available for manual artifact review and apply.
-Neither route implicitly accepts assessment advice or alters create-only
-adoption; no real target or pilot is authorized. See the
+The offline `lds update <root> --observed <collected.json>
+--request <edits.json>` remains provider-free and unchanged. Explicit
+`lds update <root> --assist --reason <text> --audience <text>
+--document <relative-existing-markdown> [--document ...] [--source <relative-file> ...]`
+instead collects bounded evidence, discloses the complete model payload for
+fresh `send` consent, and returns unverified full-file drafts and questions.
+No edits is a valid review-required result. Nonempty drafts receive a complete
+deterministic plan and require a *separate* freshly typed exact-digest apply
+decision. The separate `lds plumbing docs update-plan` / `update-apply` route
+remains available. None implicitly accepts assessment advice or alters
+create-only adoption; no real target or pilot is authorized. See the
 [update how-to](docs/how-to/update-documentation.md).
 
 `lds review <root> [--json]` is a Linux-only offline, read-only first pass over
@@ -75,10 +81,12 @@ current safety boundaries. The [assessment how-to](docs/how-to/assess-documentat
 collects evidence and proposed text outside the target without editing it.
 The [reconciliation how-to](docs/how-to/reconcile-projects.md) includes a
 disposable offline report example using an empty review brief and the guided
-journal route. Recording a claim does not verify it or execute a transfer.
-The [update how-to](docs/how-to/update-documentation.md) shows disposable
-collect/request inputs, a human-invoked root update and the separate manual
-plumbing plan/apply route. None selects a pilot or authorizes unattended edits.
+journal route, plus bounded assisted and external-artifact examples without a
+provider call. Recording a claim does not verify it or execute a transfer.
+The [update how-to](docs/how-to/update-documentation.md) distinguishes the
+provider-free collect/request route, consent-gated assisted drafting and the
+separate manual plumbing plan/apply route. None selects a pilot or authorizes
+unattended edits.
 The [review how-to](docs/how-to/review-documentation.md) demonstrates a broken
 local link and explains why repairing it is not semantic validation.
 
@@ -112,13 +120,16 @@ records the accepted assessment/report boundary and implemented deterministic
 authored-brief report. Its human-facing assessment workflow adds scoped
 collection and model-authored proposals. The separate
 [existing-file update contract](engineering/product/documentation-update-contract.md)
-defines reviewed replacement; assessment itself still cannot edit files.
+defines reviewed replacement and the assisted update boundary; assessment
+itself still cannot edit files. Generated Claude Code guidance reads the live
+preparatory `lds plumbing update --json` flow rather than owning another
+sequence. This does not establish native execution or CLI/skill parity.
 
 The [BDS-252 engineering handoff](engineering/product/bds-252-stage-4-engineering-handoff.md)
 documents the reconciliation plumbing, bounded runtime evidence, and limits;
 it does not authorize a real-pair pilot or source transfer.
 The [reconciliation workflow](engineering/product/reconciliation-workflow.md)
-records the implemented offline report and guided journal slice alongside
-future assistance; neither is the full facilitator.
+records the implemented offline and assisted report and guided journal slices;
+none is a full facilitator or real-pair authority decision.
 The GitHub CI workflow runs; the generated release workflow has not been
 exercised yet.

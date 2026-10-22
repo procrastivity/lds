@@ -78,11 +78,12 @@ exclusive/no-follow creates, but a late failure may leave some files created.
 It does not roll back or provide a transaction. Inspect state and make a new
 plan and decision before any rerun.
 
-Separately, `lds update` and the canonical `docs update-plan` /
+Separately, offline `lds update` and the canonical `docs update-plan` /
 `docs update-apply` steps handle only explicitly selected **existing** root
 `README.md` or Markdown below `docs/` and `engineering/`. They do not infer
 ownership from generated-looking content, create missing files, move, delete,
-run project commands, use a provider, or apply assessment advice. The original
+run project commands, or apply assessment advice. The offline form does not
+use a provider. The original
 `docs collect` packet—not an authored report—binds the complete observation.
 The planner emits exact before/after content and evidence, metadata and
 diagnostics to stdout only. The manual route must persist that artifact
@@ -94,8 +95,33 @@ prompting, flushes queued terminal input after display, and accepts only a
 freshly typed `apply sha256:<exact displayed digest>` or `decline`; all other
 input or EOF refuses. No `--confirm`/`--yes` bypass or credential is needed.
 Personally review the whole plan and freshly confirm its digest; a digest
-copied by script is not authorization. Root update is not projected into a
-skill and does not add model-assisted update orchestration.
+copied by script is not authorization. The default offline interface remains
+unchanged, even though the root registration is now LLM-kind because explicit
+`--assist` can call a model. Root update is not projected into a skill.
+
+Assisted update requires explicit selection of 1–32 unique existing scoped
+Markdown targets and a reason/audience; cited or inventoried files are not
+implicitly selected for edits. It automatically collects bounded original
+evidence (including explicitly selected source files), then displays the
+**complete outbound system and user payload** for fresh exact `send` consent.
+The OpenCode Go `deepseek-v4-flash` request is tool-free and fixed, with no
+redirects, retries or fallback. No payload content is independently verified
+as true or redacted; do not select secret material. Drafted full replacements
+and questions are unverified, not evidence or approval. Zero edits validly end
+`review-required` without apply. For nonempty drafts, a strict original-baseline
+deterministic update plan and complete exact-byte preview precede a **separate**
+freshly typed `apply sha256:<digest>` or `decline`. Transfer consent never
+authorizes writes. Rechecks of the baseline and live flow before/after transfer
+and before apply refuse drift rather than silently adopting a new observation.
+The Linux write and recovery limits below apply unchanged.
+
+The new `lds plumbing update [--json]` is only a preparatory live
+`flows/update.md` reader, unavailable for execution. Generated Claude Code
+guidance fetches it live rather than maintaining its own sequence. The skill
+harness must disclose its own processing and get its own consent; it cannot
+automate the root terminal or infer approval from model output. Guidance is
+not enforcement. Mock/disposable checks do not establish a real provider,
+target/pilot, native skill execution or CLI/skill parity.
 
 Linux update apply refuses symlinks, multi-linked or nonregular selected
 files, special mode bits, selected xattrs/extended ACLs, default ACLs on
@@ -142,7 +168,7 @@ remains supported. The hosts are root-only plumbing-kind, not generated skill
 entries and not a shared reconciliation flow; no real pair, owner authority,
 pilot, provider or native parity is established.
 
-The Linux-only offline `lds reconcile report` and identical
+The Linux-only offline `lds reconcile report` and deterministic
 `lds plumbing reconcile report` add a bounded, private Markdown review packet
 with a provenance JSON appendix, not a journal event or authorization. Pair,
 review, optional existing journal, and new output must be external to **both**
@@ -157,7 +183,36 @@ assertions, not authentication. Raw map labels, matching hashes, candidate
 buckets, journal `appliedProof`, and report claims are not semantic matching,
 authority, or verified transfer. Even unselected scoped/map files face a
 64-KiB raw-file ceiling; report collection does not silently expand scope or
-truncate selected content. There is no assistance, model disclosure, shared
-flow, or native-skill/parity claim for this slice. The separate guided journal
+truncate selected content. The unchanged offline report has no provider or
+terminal requirement. `lds plumbing reconcile collect` instead emits the
+original bounded evidence JSON on stdout without report publication; saving
+it externally is the caller's private-write responsibility. The
+extended plumbing report requires `--observed`, `--draft` and `--receipt`
+together, validates against that exact baseline and never silently refreshes
+it. These private artifacts are caller-owned and should be protected.
+
+Explicit `lds reconcile report --assist` requires a Linux terminal and
+`OPENCODE_API_KEY`. Before any transfer it displays the complete system/user
+content and OpenCode Go destination, flushes queued input and requires a
+fresh exact `send`; `decline` sends nothing. One fixed tool-free
+`deepseek-v4-flash` request has no redirects, retries or fallback. Only
+explicitly selected full scoped/map text, sanitized scan metadata, seed
+claims/questions and live flow leave the host; no host-added absolute paths,
+credentials or raw journal contents are included. Selected text and claims
+are **not redacted**: review for secrets and prompt-injection text before
+consenting. The total prompt is bounded to 512 KiB and response to 64 KiB.
+Flow and original inputs are rechecked before send, after response and before
+private publication; drift refuses, but these checks are not an atomic
+snapshot or a guarantee about provider retention. The report records
+assistance and an attributed provider/flow/disclosure receipt, **not** an
+authenticated consent or trustworthy model. Strict schema-1 draft claims
+may only propose needs-review assessments citing explicitly selected current
+captured evidence; empty claims are valid. Reviewer seed assertions, model
+advice and journal history remain distinct. None determines semantic match,
+authority, direction or applied proof. The live
+`lds plumbing reconcile flow --json` reader is preparatory; a generated
+skill must disclose its own harness processing and obtain its own consent,
+not automate the root terminal. Neither projection nor disposable tests prove
+native skill/parity or a real provider call. The separate guided journal
 hosts do not turn the report into a decision or a full facilitator. A real
 pair or pilot requires separate authorization.

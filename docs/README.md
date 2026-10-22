@@ -35,12 +35,14 @@ tutorial or deterministic plumbing.
 - [Assess documentation](how-to/assess-documentation.md) — an offline
   authored-brief report, collect/observed binding, and a consent-gated
   model workflow; all reports stay outside the project and never apply edits.
-- [Update existing documentation](how-to/update-documentation.md) — collect,
-  author exact edits, then invoke the offline Linux root workflow for complete
-  plan display and fresh terminal confirmation, or use the separate manual
-  plumbing plan/apply route. No real target is authorized by this guide.
+- [Update existing documentation](how-to/update-documentation.md) — use the
+  unchanged offline collect/request route, or explicitly select existing files
+  for consent-gated assisted drafting followed by a separate exact-plan review
+  and human apply decision. The manual plumbing plan/apply route remains
+  available. No real target is authorized by this guide.
 - [Reconcile two projects](how-to/reconcile-projects.md) — scan clean pinned
-  snapshots and keep an explicit review journal.
+  snapshots, produce an offline or consent-gated assisted review report, and
+  keep an explicit review journal separately.
 - [Command reference](reference/commands.md) and [fact bundle reference](reference/facts.md).
 - [Safety and scope](explanation/safety-and-scope.md) — what the checks and
   write boundaries do *not* guarantee.
@@ -63,3 +65,17 @@ The assessment projection likewise uses the live
 `flows/assess.md` through `lds plumbing assess --json`; that reader only
 returns a preparatory flow, and installing guidance does not prove native
 assessment execution or CLI/skill parity.
+
+Assisted update guidance fetches the live `flows/update.md` through
+`lds plumbing update --json` rather than copying its sequence. That reader is
+preparatory, not an update execution. The skill harness must disclose its own
+processing and obtain appropriate transfer and write consent; it must not
+automate the root terminal or treat model output as approval. Installation
+does not establish native execution or CLI/skill parity.
+
+Reconciliation guidance fetches the live preparatory
+`lds plumbing reconcile flow --json` reader. Deterministic `collect` and
+baseline-bound `report --observed --draft --receipt` are plumbing steps, not
+permission for a skill to automate the root terminal. A skill must disclose
+its own harness processing and obtain its own consent. Projection does not
+establish native execution, provider reliability or CLI/skill parity.

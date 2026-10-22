@@ -212,63 +212,73 @@ func TestAdoptDocument_OverrideIsLiveAfterInstallAndMalformedOverrideRefuses(t *
 	}
 }
 
-func TestAssessmentDocument_LiveOverrideAndInstalledGuidance(t *testing.T) {
-	root, skills, xdg := t.TempDir(), t.TempDir(), t.TempDir()
-	env := []string{"LDS_CLAUDE_SKILLS_DIR=" + skills, "XDG_CONFIG_HOME=" + xdg}
-	installed := runInDir(t, root, env, "install", "claude-code")
-	if installed.exitCode != 0 || installed.stderr != "" {
-		t.Fatalf("install: %+v", installed)
-	}
-	skillDir := filepath.Join(skills, "lds")
-	before := renderTargetSnapshot(t, skillDir)
-	skill, err := os.ReadFile(filepath.Join(skillDir, "SKILL.md"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(skill), "lds plumbing assess --json") || !strings.Contains(string(skill), "--observed") || strings.Contains(string(skill), "| `lds assess <root>") {
-		t.Fatalf("generated guidance lost the live reader/observed route or projected the root workflow: %s", skill)
-	}
-	embedded, err := rootassets.FS.ReadFile("flows/assess.md")
-	if err != nil {
-		t.Fatal(err)
-	}
-	text := runInDir(t, root, env, "plumbing", "assess")
-	if text.exitCode != 0 || text.stderr != "" || text.stdout != string(embedded) {
-		t.Fatalf("embedded flow: %+v", text)
-	}
-	override := []byte("# Locally reviewed assessment flow\n\nReport only, no edits.\n")
-	path := filepath.Join(xdg, "lds", "flows", "assess.md")
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(path, override, 0o600); err != nil {
-		t.Fatal(err)
-	}
-	read := runInDir(t, root, env, "plumbing", "assess", "--json")
-	var payload struct {
-		Operation, Status, Availability, Content string
-		Asset                                    struct{ Source, SHA256 string }
-	}
-	if err := json.Unmarshal([]byte(read.stdout), &payload); err != nil {
-		t.Fatalf("live flow: %+v; %v", read, err)
-	}
-	sum := sha256.Sum256(override)
-	if read.exitCode != 0 || read.stderr != "" || payload.Operation != "assess" || payload.Status != "preparatory" || payload.Availability != "unavailable-for-execution" || payload.Asset.Source != "override" || payload.Asset.SHA256 != hex.EncodeToString(sum[:]) || payload.Content != string(override) {
-		t.Fatalf("post-install flow is not live: %+v", payload)
-	}
-	doctor := runInDir(t, root, env, "doctor", "--json")
-	if doctor.exitCode != 0 || !strings.Contains(doctor.stdout, `"state":"current"`) || !equalRenderSnapshots(before, renderTargetSnapshot(t, skillDir)) {
-		t.Fatalf("live override changed the installed tree: %+v", doctor)
-	}
-	if err := os.WriteFile(path, []byte{0xff}, 0o600); err != nil {
-		t.Fatal(err)
-	}
-	bad := runInDir(t, root, env, "plumbing", "assess", "--json")
-	if bad.exitCode != 1 || bad.stdout != "" || parseErrorEnvelope(t, bad.stderr).Error.Code != "validation.assess-document-invalid" {
-		t.Fatalf("malformed live flow accepted: %+v", bad)
-	}
-	if entries, err := os.ReadDir(root); err != nil || len(entries) != 0 {
-		t.Fatalf("reader/installation changed project: %v %v", entries, err)
+func TestMaintenanceFlow_LiveOverrideAndInstalledGuidance(t *testing.T) {
+	for _, operation := range []string{"assess", "update", "reconcile"} {
+		t.Run(operation, func(t *testing.T) {
+			args := []string{"plumbing", operation}
+			reader := "lds plumbing " + operation + " --json"
+			if operation == "reconcile" {
+				args = append(args, "flow")
+				reader = "lds plumbing reconcile flow --json"
+			}
+			root, skills, xdg := t.TempDir(), t.TempDir(), t.TempDir()
+			env := []string{"LDS_CLAUDE_SKILLS_DIR=" + skills, "XDG_CONFIG_HOME=" + xdg}
+			installed := runInDir(t, root, env, "install", "claude-code")
+			if installed.exitCode != 0 || installed.stderr != "" {
+				t.Fatalf("install: %+v", installed)
+			}
+			skillDir := filepath.Join(skills, "lds")
+			before := renderTargetSnapshot(t, skillDir)
+			skill, err := os.ReadFile(filepath.Join(skillDir, "SKILL.md"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(skill), reader) || !strings.Contains(string(skill), "--observed") || strings.Contains(string(skill), "| `lds "+operation+" <root>") || strings.Contains(string(skill), "| `lds reconcile report") {
+				t.Fatalf("generated guidance lost the live reader/observed route or projected the root workflow: %s", skill)
+			}
+			embedded, err := rootassets.FS.ReadFile("flows/" + operation + ".md")
+			if err != nil {
+				t.Fatal(err)
+			}
+			text := runInDir(t, root, env, args...)
+			if text.exitCode != 0 || text.stderr != "" || text.stdout != string(embedded) {
+				t.Fatalf("embedded flow: %+v", text)
+			}
+			override := []byte("# Locally reviewed assessment flow\n\nReport only, no edits.\n")
+			path := filepath.Join(xdg, "lds", "flows", operation+".md")
+			if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, override, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			read := runInDir(t, root, env, append(args, "--json")...)
+			var payload struct {
+				Operation, Status, Availability, Content string
+				Asset                                    struct{ Source, SHA256 string }
+			}
+			if err := json.Unmarshal([]byte(read.stdout), &payload); err != nil {
+				t.Fatalf("live flow: %+v; %v", read, err)
+			}
+			sum := sha256.Sum256(override)
+			if read.exitCode != 0 || read.stderr != "" || payload.Operation != operation || payload.Status != "preparatory" || payload.Availability != "unavailable-for-execution" || payload.Asset.Source != "override" || payload.Asset.SHA256 != hex.EncodeToString(sum[:]) || payload.Content != string(override) {
+				t.Fatalf("post-install flow is not live: %+v", payload)
+			}
+			doctor := runInDir(t, root, env, "doctor", "--json")
+			if doctor.exitCode != 0 || !strings.Contains(doctor.stdout, `"state":"current"`) || !equalRenderSnapshots(before, renderTargetSnapshot(t, skillDir)) {
+				t.Fatalf("live override changed the installed tree: %+v", doctor)
+			}
+			if err := os.WriteFile(path, []byte{0xff}, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			bad := runInDir(t, root, env, append(args, "--json")...)
+			if bad.exitCode != 1 || bad.stdout != "" || parseErrorEnvelope(t, bad.stderr).Error.Code != "validation."+operation+"-document-invalid" {
+				t.Fatalf("malformed live flow accepted: %+v", bad)
+			}
+			if entries, err := os.ReadDir(root); err != nil || len(entries) != 0 {
+				t.Fatalf("reader/installation changed project: %v %v", entries, err)
+			}
+		})
 	}
 }
 

@@ -63,5 +63,7 @@ func Command(streams *iostreams.Streams) *cobra.Command {
 	group.AddCommand(scan)
 	group.AddCommand(JournalCommand(streams))
 	group.AddCommand(ReportCommand(streams))
+	group.AddCommand(collectCommand(streams))
+	group.AddCommand(flowCommand(streams))
 	return group
 }

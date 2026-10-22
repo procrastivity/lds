@@ -248,14 +248,14 @@ func writeReportBytes(t *testing.T, name string, data []byte) {
 	}
 }
 
-func reportAppendix(t *testing.T, data []byte) reportPacket {
+func reportAppendix(t *testing.T, data []byte) ReportEvidence {
 	t.Helper()
 	_, appendix, ok := strings.Cut(string(data), "## Provenance and selected content\n\n")
 	if !ok {
 		t.Fatal("report missing provenance appendix")
 	}
 	lines := strings.Split(strings.TrimSpace(appendix), "\n")
-	var packet reportPacket
+	var packet ReportEvidence
 	if len(lines) < 3 {
 		t.Fatal("report missing JSON")
 	}

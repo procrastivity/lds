@@ -7,10 +7,12 @@ lives in `docs/` and follows Diátaxis. The tool has a Toolsmith scaffold and
 harness-management commands plus nine deterministic `lds plumbing docs`
 leaves, including separate existing-file update planning/application,
 as well as deterministic `lds plumbing reconcile`
-scan, explicit journal operations, and an offline report primitive. Root
-`lds reconcile report` produces a private new external review packet through
-the identical deterministic plumbing operation; only the qualified plumbing
-form is generated-skill-table eligible. Reconciliation is bounded to pinned
+scan, explicit journal operations, bounded original report collection, a
+deterministic report primitive and a preparatory live flow reader. Root
+`lds reconcile report` is LLM-kind because explicit `--assist` adds
+consent-gated advice; its default offline behavior remains provider-free.
+Only qualified plumbing forms are generated-skill-table eligible.
+Reconciliation is bounded to pinned
 evidence and a caller-owned journal. Linux root-only guided
 `lds reconcile journal record|decide|reconsider` hosts now collect explicit
 reviewer assertions from a terminal, show full digest-bound previews and
@@ -22,8 +24,7 @@ those deterministic docs operations. Generated Claude Code `/lds` adoption
 guidance fetches that flow live through `lds plumbing adopt --json`; the reader
 is preparatory and the guidance is not behavioral enforcement. S10 accepts
 executor CLI evidence and independent offline review, not native adoption or
-CLI/skill parity. No pilot or first-release claim follows; optional assistance
-and a shared human/skill reconciliation flow remain deferred.
+CLI/skill parity. No pilot or first-release claim follows.
 
 The separate Linux-only offline `lds review <root> [--json]` is a root-only
 plumbing-kind composition of existing documentation inventory and local-link
@@ -31,7 +32,7 @@ validation. It writes no report and does not infer coverage or semantics; it
 adds no plumbing leaf, projection or shared LLM flow. See the
 [disposable review how-to](../docs/how-to/review-documentation.md) and
 [safety boundaries](../docs/explanation/safety-and-scope.md). The measured
-manifest is 32 total leaves, 19 qualified projected entries and nine docs
+manifest is 35 total leaves, 22 qualified projected entries and nine docs
 leaves; historical counts in older handoffs remain historical.
 
 Start with the [roadmap](product/roadmap.md) for proposed capabilities and
@@ -48,13 +49,20 @@ plumbing flow reader does not execute it. Model-authored proposals remain
 unverified advice, not target edits or native skill/CLI parity evidence.
 The [existing-file update contract](product/documentation-update-contract.md)
 describes implemented `docs update-plan` / `docs update-apply` plumbing and
-the offline human-facing `lds update` host, with exact-byte review, fresh
-digest confirmation and bounded per-file replacement; the
+both the unchanged offline and explicit assisted `lds update` modes, with
+exact-byte review, fresh digest confirmation and bounded per-file replacement.
+The root registration is LLM-kind because assistance can request a model, but
+offline mode remains provider-free. The live preparatory `lds plumbing update`
+reader supplies `flows/update.md` to generated Claude Code guidance, not an
+executable update or native parity result; the
 [update how-to](../docs/how-to/update-documentation.md) uses a disposable
 target. The [human-facing reconciliation workflow](product/reconciliation-workflow.md)
-describes the offline report and guided journal slices, with further assistance
-still proposed. The three journal hosts are plumbing-kind but root-only and
-not projected; they introduce no new shared flow. No real-target update,
+describes the offline/assisted report and guided journal slices. The assisted
+root host discloses selected full text and the complete payload before fresh
+send consent; draft claims remain unverified and separate from seed and journal.
+`lds plumbing reconcile collect` and extended baseline-bound `report` supply
+deterministic steps; `flow --json` reads the live preparatory shared flow. The
+three journal hosts remain plumbing-kind but root-only and not projected. No real-target update,
 source transfer, real-pair journal authority, pilot or native skill/parity
 result is authorized or established by these documents. The roadmap also
 records the source-checked, still-unimplemented Toolsmith BDS-234 dependency.

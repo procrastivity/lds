@@ -355,7 +355,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		"assess":                                "",
 		"update":                                "",
 		"review":                                "",
-		"reconcile report":                      "plumbing reconcile report",
+		"reconcile report":                      "",
 		"reconcile journal record":              "",
 		"reconcile journal decide":              "",
 		"reconcile journal reconsider":          "",
@@ -366,6 +366,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		"doctor":                                "plumbing doctor",
 		"plumbing adopt":                        "",
 		"plumbing assess":                       "",
+		"plumbing update":                       "",
 		"plumbing manifest":                     "",
 		"plumbing doctor":                       "",
 		"plumbing docs apply":                   "",
@@ -378,6 +379,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		"plumbing docs update-plan":             "",
 		"plumbing docs update-apply":            "",
 		"plumbing reconcile scan":               "",
+		"plumbing reconcile collect":            "",
+		"plumbing reconcile flow":               "",
 		"plumbing reconcile report":             "",
 		"plumbing reconcile journal read":       "",
 		"plumbing reconcile journal record":     "",
@@ -390,10 +393,10 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		if strings.HasPrefix(verb.Name, "docs ") {
 			t.Errorf("manifest retained an unqualified docs leaf %q", verb.Name)
 		}
-		if (verb.Name == "adopt" || verb.Name == "assess") && verb.Kind != "llm" {
+		if (verb.Name == "adopt" || verb.Name == "assess" || verb.Name == "update" || verb.Name == "reconcile report") && verb.Kind != "llm" {
 			t.Errorf("root %s kind = %q, want llm so it cannot enter the deterministic skill projection", verb.Name, verb.Kind)
 		}
-		if (verb.Name == "update" || verb.Name == "review" || strings.HasPrefix(verb.Name, "reconcile journal ")) && verb.Kind != "plumbing" {
+		if (verb.Name == "review" || strings.HasPrefix(verb.Name, "reconcile journal ")) && verb.Kind != "plumbing" {
 			t.Errorf("offline %s kind = %q, want plumbing", verb.Name, verb.Kind)
 		}
 		if canonical, required := want[verb.Name]; required {
@@ -408,8 +411,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 32 || len(seen) != len(want) || projectable != 19 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want thirty-two leaves and nineteen projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 35 || len(seen) != len(want) || projectable != 22 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want thirty-five leaves and twenty-two projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 
@@ -1460,6 +1463,7 @@ func TestInstallLoop(t *testing.T) {
 	wantRows := map[string]bool{
 		"lds plumbing adopt":                        false,
 		"lds plumbing assess":                       false,
+		"lds plumbing update":                       false,
 		"lds plumbing doctor":                       false,
 		"lds plumbing manifest":                     false,
 		"lds plumbing docs apply <root>":            false,
@@ -1472,6 +1476,8 @@ func TestInstallLoop(t *testing.T) {
 		"lds plumbing docs update-plan <root>":      false,
 		"lds plumbing docs update-apply <root>":     false,
 		"lds plumbing reconcile scan":               false,
+		"lds plumbing reconcile collect":            false,
+		"lds plumbing reconcile flow":               false,
 		"lds plumbing reconcile report":             false,
 		"lds plumbing reconcile journal read":       false,
 		"lds plumbing reconcile journal record":     false,

@@ -1,7 +1,7 @@
 # V1 contract: reviewed existing-file documentation updates
 
-**Status: deterministic steps and offline human-facing root host implemented
-and verified in disposable offline fixtures.** The
+**Status: deterministic steps and offline human-facing root host implemented;
+explicit assisted root mode and live preparatory flow reader added.** The
 owner requested `lds plumbing docs update-plan` followed by
 `lds plumbing docs update-apply`, and subsequently authorized `lds update`
 as an interactive host of the same steps. This contract grants no authority
@@ -21,16 +21,18 @@ root `README.md` and `.md` files below `docs/` or `engineering/`, in the
 explicit target root. Selection is per file, never inferred from inventory,
 assessment proposals, a template signature, or an adoption plan. No creates,
 missing parents, moves, renames, deletions, broad crawl, project commands,
-provider calls, or implicit expansion to cited source files. A maintainer can
-always continue editing manually instead. Model transfer consent permits a
+provider calls in the deterministic/offline route, or implicit expansion to
+cited source files. A maintainer can always continue editing manually instead.
+Model transfer consent permits a
 request, not a write; acceptance of assessment advice is not edit approval.
 
 The canonical plumbing names are `docs update-plan` and `docs update-apply`
-(not aliases for adoption apply). The root offline host below adds no model
-or shared skill flow; model-assisted update orchestration remains deferred.
-The caller supplies the original **collected**
-`docs collect` observation packet and an explicit edit request. The packet's
-empty proposals/questions and `reportPath` distinguish it from a later authored
+(not aliases for adoption apply). The unchanged root offline host below adds
+no model call. Explicit assisted orchestration uses a separate mode and the
+same strict planning/application boundary.
+For the deterministic/offline route, the caller supplies the original
+**collected** `docs collect` observation packet and an explicit edit request.
+The packet's empty proposals/questions and `reportPath` distinguish it from a later authored
 assessment report. A report may motivate an edit, but is not an executable
 plan. The request names a nonempty set of unique selected paths, the exact
 proposed after bytes, a nonempty per-file rationale and cited paths within the
@@ -72,9 +74,56 @@ a human status summary. Display, prompt and errors are on stderr.
 The original staleness, per-file, partial and indeterminate contracts
 below still govern actual effects and recovery. The manual separately reviewed
 plumbing route remains canonical; root is not a same-deliverable alias for
-either step. It is root-only plumbing-kind, not projected, since only qualified
-`plumbing ...` entries project. There is no new LLM/shared flow asset or
-preparatory reader for this offline host.
+either step. The whole root registration is now `llm` kind because the explicit
+assisted mode can invoke a model; the default form stays offline and
+provider-free. Root commands are not projected. The assisted mode adds a
+live shared flow and a separate preparatory plumbing reader.
+
+## Explicit assisted update mode
+
+```text
+lds update <root> --assist --reason <text> --audience <text> --document <relative-existing-markdown> [--document ...] [--source <relative-file> ...] [--json]
+lds plumbing update [--json]
+```
+
+The Linux terminal host requires 1–32 unique, explicitly selected **existing**
+Markdown targets within the same root README/`docs/`/`engineering/` scope.
+Additional `--source` paths provide bounded evidence only; neither citations,
+the default inventory nor a model suggestion can expand edit selection. This
+mode automatically collects a bounded **original** `docs collect` observation;
+it does not take `--observed` or `--request`. Source and document content may
+be sensitive. The complete proposed outbound **system and user payload**,
+including flow, reason/audience, inventory, diagnostics, relative paths,
+hashes and full content, is disclosed before a freshly typed exact `send`.
+That consent authorizes only one fixed OpenCode Go / `deepseek-v4-flash`
+tool-free request, without redirects, retries or fallback. It is not apply
+approval. Before and after transfer the original baseline and live flow are
+rechecked; changed evidence refuses without silently recollecting or asking
+the model again.
+
+The response supplies full replacement drafts and unresolved questions,
+all **unverified**. A valid empty edit set ends `review-required` without a
+plan application or target write. Nonempty drafts must select only named
+targets and pass the strict original-baseline `docs update-plan` contract,
+including full before/after bytes, citations, metadata, findings and digest.
+The host displays the complete exact-byte plan for independent human review,
+then flushes queued input and accepts only a separately, freshly typed
+`apply sha256:<exact displayed digest>` or `decline`. It rechecks the original
+baseline and live flow before apply; `send`, a model answer or assessment
+acceptance cannot authorize writes. Existing Linux staging, no-follow,
+metadata, quiescence, partial/indeterminate actual-effects and new-plan
+recovery rules below remain unchanged. No real provider or target/pilot test
+is claimed or required: verification is mocked and disposable.
+
+`lds plumbing update [--json]` reads live `flows/update.md` via the asset
+resolution chain and returns its content/source/hash as `preparatory` and
+`unavailable-for-execution`; it does not collect, request, plan or apply.
+Generated Claude Code guidance fetches the flow live rather than copying its
+sequence. Its harness must disclose its own processing and obtain its own
+transfer/write consent, never automate the root terminal or infer approval
+from model output. Guidance does not enforce compliance and no native
+execution or CLI/skill parity is established. The manifest for this slice has
+33 leaves, 20 projected qualified plumbing entries and nine docs leaves.
 
 ## Review artifact and read-only plan
 

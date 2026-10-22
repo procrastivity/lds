@@ -83,6 +83,78 @@ report and review. See the [command reference](../reference/commands.md) for
 limits and the [safety notes](../explanation/safety-and-scope.md) for trust
 boundaries.
 
+## Prepare a bounded assisted review
+
+The original report command above remains offline and provider-free. Make a
+**new** review brief with explicit selections; its purpose, reviewer, time,
+claims and questions are your assertions. This disposable pair selects only
+the right scoped file and tracked map for possible disclosure:
+
+```sh
+assisted_review="$work/assisted-review.json"
+cat > "$assisted_review" <<EOF
+{"schemaVersion":1,"purpose":"Ask for review questions about this fixture",
+ "reviewer":"fixture-reviewer","at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+ "selections":[{"side":"right","path":"docs/topic.md"},
+               {"side":"right","path":"docs/map.md"}],
+ "claims":[],"questions":[]}
+EOF
+lds plumbing reconcile flow --json
+lds plumbing reconcile collect --pair "$pair" --left-root "$left" \
+  --right-root "$right" --map "$right/docs/map.md" \
+  --review "$assisted_review" --output "$work/from-draft.md" \
+  > "$work/observed.json"
+```
+
+`collect` emits bounded original evidence JSON to stdout without publishing
+the named report or contacting a provider. The disposable `mktemp -d` work
+directory is private; for another location, use a trusted private directory
+and restrictive `umask` before redirecting sensitive output. The captured
+baseline binds the **future** report output path too. Keep it and the brief
+private and unchanged. The flow reader merely returns live preparatory
+guidance. The root assisted command shape for an **authorized** pair is:
+
+```sh
+# Do not run without approving the selected bytes for disclosure.
+# A Linux terminal and OPENCODE_API_KEY are required for this explicit mode.
+lds reconcile report --assist --pair "$pair" --left-root "$left" \
+  --right-root "$right" --map "$right/docs/map.md" \
+  --review "$assisted_review" --output "$work/assisted-report.md" --json
+```
+
+The host shows complete system and user content and the OpenCode Go
+destination, flushes queued input, then accepts a freshly typed exact `send`
+or `decline`. Only `send` transfers selected full UTF-8 scoped/map contents,
+sanitized scan metadata, seed claims/questions and live flow. Selected text
+is not redacted; inspect it for secrets and embedded instructions first. The
+single tool-free `deepseek-v4-flash` response is unverified proposed
+claims/questions; an empty claim list is valid advice. The private report
+attributes provider, flow and disclosure receipt but keeps model advice
+separate from reviewer claims and journal decisions. Drift refuses rather
+than silently recollecting. No report call edits a root or journal.
+
+For a separate harness or manual drafting workflow, supply **all three**
+external original-baseline artifacts together to deterministic plumbing.
+The draft must be strict schema-1 `claims` and `questions`, and the receipt
+must attribute provider/model, flow source/hash, payload hashes/byte counts
+and consent time. These are caller-supplied, not authenticated; retain the
+exact collected JSON rather than recollecting after drafting:
+
+```sh
+# Illustrative: draft.json and receipt.json must already be valid private files.
+# The output must match the path captured by collect and must still be new.
+lds plumbing reconcile report --pair "$pair" --left-root "$left" \
+  --right-root "$right" --map "$right/docs/map.md" \
+  --review "$assisted_review" --output "$work/from-draft.md" \
+  --observed "$work/observed.json" --draft "$work/draft.json" \
+  --receipt "$work/receipt.json" --json
+```
+
+That route makes no provider call and validates the draft against exact
+captured selected current evidence. It cannot authenticate consent, claims or
+receipt. Do not present a handcrafted receipt as proof of a real transfer.
+See the [reference](../reference/commands.md) for bounds.
+
 For deliberate review history, name a caller-owned journal path **outside
 both worktrees and their Git common directories**. `journal read` and scan
 never initialize it. The first confirmed `record` may create it.

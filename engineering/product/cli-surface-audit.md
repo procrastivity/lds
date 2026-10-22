@@ -4,8 +4,9 @@
 implemented. The original rows record the pre-Step-4 root leaves; Stage 4
 Step 8 added the separately classified root LLM form shown below.
 Step 6 also added the preparation-only `lds plumbing adopt` reader.
-The later offline root `lds update` and `lds review` slices are classified separately;
-historical Step 4/Step 8 counts and projection observations are not current
+The later root `lds update` (including its assisted mode) and offline
+`lds review` slices are classified separately. Historical Step 4/Step 8
+counts and projection observations are not current
 manifest measurements.
 
 This records the audience decision for every runnable application leaf in the
@@ -32,8 +33,10 @@ requires both a canonical `lds plumbing` path and kind `plumbing`.
 | `lds docs render <root>` | Future adoption skill/script rendering candidate documentation · `plumbing` | Canonical `lds plumbing docs render`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified. |
 | `lds docs validate <root>` | Future adoption skill/script checking supported local links · `plumbing` | Canonical `lds plumbing docs validate`; no root alias. | Yes, through the canonical member. | No current shipped consumer identified. |
 | `lds adopt <root> --facts <facts.json>` | Human/operator running the bounded CLI-side LLM adoption form · `llm` | Retain as root porcelain; it is separate from the read-only `lds plumbing adopt` reader. | No: root-only and kind `llm`; both gates exclude it. | No projected skill or shipped consumer calls it; no compatibility alias. |
-| `lds update <root> --observed <collected.json> --request <edits.json> [--json]` | Human/operator reviewing an offline plan and making a fresh terminal decision · `plumbing` | Root porcelain host of the existing canonical `docs update-plan` and `docs update-apply` steps, not a same-deliverable alias for either. | No: root-only despite plumbing kind; only qualified `plumbing ...` members project. | No compatibility alias. |
+| `lds update <root> --observed <collected.json> --request <edits.json> [--json]` or explicit `--assist --reason <text> --audience <text> --document <relative-existing-markdown> ...` | Human/operator reviewing an offline plan or consent-gating an assisted draft and making a separate fresh terminal apply decision · `llm` for the whole root registration | Root porcelain host of the existing canonical `docs update-plan` and `docs update-apply` steps, not a same-deliverable alias for either. Default offline behavior stays provider-free; only `--assist` invokes the model. | No: root-only and LLM-kind; only qualified `plumbing ...` members project. | No compatibility alias. |
 | `lds review <root> [--json]` | Human/operator reading offline documentation inventory, local-link findings, skips and limitations · `plumbing` | Root porcelain composition of canonical `docs inventory` and `docs validate`, not an alias for either. | No: root-only despite plumbing kind. | No compatibility alias. |
+| `lds reconcile report` (offline default or explicit `--assist`) | Human/operator requesting a bounded private review packet and, only with assistance, consenting to model advice · `llm` for the whole registration | Root host, not an alias for deterministic `plumbing reconcile report`; offline remains provider-free. | No: root-only and LLM-kind. | No compatibility alias. |
+| `lds reconcile journal record\|decide\|reconsider` | Human/operator recording explicit journal assertions after a terminal preview · `plumbing` | Root-only guided host of canonical journal operations, not an alias. | No: root-only. | No compatibility alias. |
 
 The `manifest` and `doctor` aliases use the same constructors as their
 canonical members. The manifest records `alias-of` only on these two root
@@ -80,18 +83,29 @@ reader remains read-only. The installed skill still projects only deterministic
 plumbing and does not execute the paired adoption flow. No skill parity,
 real pilot, or first-release inclusion is claimed.
 
-The offline root update host adds no LLM/shared flow asset or preparatory
-reader. It takes the original `docs collect` packet and explicit schema-1 edits,
-displays the complete deterministic plan on stderr, vetoes before a prompt,
+The original offline root update mode takes the original `docs collect`
+packet and explicit schema-1 edits. It displays the complete deterministic
+plan on stderr, vetoes before a prompt,
 flushes queued input, and requires freshly typed
 `apply sha256:<exact displayed digest>` or `decline` without a confirmation
 flag. It then uses strict in-memory apply and, with `--json`, returns schema-1
-`operation: "update"`, `status`, `plan` and nullable `apply` on stdout. No provider,
-temporary plan/report or native skill execution is involved. The current
-manifest, including offline root review and guided journal operations, is
-32 leaves, 19 projected qualified plumbing-kind entries,
-and nine docs leaves; the historical observations above do not verify the
-new root command's terminal behavior. See the
+`operation: "update"`, `status`, `plan` and nullable `apply` on stdout. No provider
+or temporary plan/report is involved. Explicit `--assist` instead collects a
+bounded original baseline for 1–32 unique existing scoped Markdown targets,
+discloses the complete system+user payload for fresh `send`, makes one fixed
+tool-free OpenCode Go / `deepseek-v4-flash` request for unverified full drafts
+and questions, and accepts empty edits as review-required without apply.
+Nonempty drafts undergo original-baseline strict planning and complete
+exact-byte preview, then a separate fresh `apply sha256:<digest>` or decline.
+Baseline and live flow are rechecked before/after transfer and before apply;
+send cannot authorize a write. The live `lds plumbing update [--json]` reader
+returns `flows/update.md` content/source/hash as preparatory and unavailable
+for execution. Generated Claude Code guidance fetches it live, discloses
+harness processing and obtains its own consent rather than automating the
+root terminal or deriving approval from the model. The prior manifest was
+33 leaves, 20 projected qualified plumbing-kind entries, and nine docs leaves;
+historical counts above remain historical. Mock/disposable checks do not
+establish a real provider/target/pilot or native execution/parity. See the
 [update contract](documentation-update-contract.md).
 
 The offline root review host adds no LLM flow or new plumbing leaf. It reports
@@ -111,3 +125,20 @@ They share the existing journal transition/replay and persistence rules with
 the manual file-based plumbing. Only the explicit external journal may be
 written; no project edit, provider call, authenticated authority or verified
 transfer follows. See the [guided journal how-to](../../docs/how-to/reconcile-projects.md#guide-a-journal-entry-in-the-terminal).
+
+The current manifest has **35 application leaves, 22 qualified projected
+plumbing-kind entries and nine docs leaves**. New qualified members are
+`plumbing reconcile collect` (original bounded evidence JSON, no publication)
+and `plumbing reconcile flow` (live preparatory/unavailable-for-execution flow
+reader). The existing `plumbing reconcile report` retains the offline flags
+and adds all-or-none `--observed --draft --receipt` for deterministic
+original-baseline-bound validation. Root report is now LLM-kind because
+explicit `--assist` displays the complete outbound system/user payload and
+destination, requires fresh exact `send`, and makes one fixed tool-free
+OpenCode Go request for unverified proposed claims/questions. Its default
+offline behavior is unchanged. Root report is neither an alias nor projected;
+root journal hosts remain deterministic root-only. Generated guidance fetches
+the live reconciliation flow, discloses harness processing and obtains its
+own consent without automating root terminal input. Projection is not native
+execution or parity; no real provider/pair/pilot is established. See the
+[reconciliation workflow](reconciliation-workflow.md).

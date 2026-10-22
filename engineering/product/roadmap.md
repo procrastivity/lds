@@ -45,27 +45,34 @@ BDS-252 adds `lds plumbing reconcile scan` and the explicit
 `lds plumbing reconcile journal read|record|decide|reconsider` operations for
 strict, deterministic evidence inspection and caller-owned decision history.
 The first offline reconciliation report slice adds `lds reconcile report` and
-identical `lds plumbing reconcile report`: Linux-only, bounded pinned evidence
+deterministic `lds plumbing reconcile report`: Linux-only, bounded pinned evidence
 plus a reviewer-authored brief in a new private external Markdown report with
-provenance JSON. It never writes sources or the journal. The root form is
-deterministic; only the qualified plumbing form enters the generated skill
-table. Neither is a native execution or parity finding.
+provenance JSON. It never writes sources or the journal. The root default
+remains offline; explicit `--assist` adds a consent-gated OpenCode Go request
+for unverified proposals, so root report is LLM-kind and not projected.
+`lds plumbing reconcile collect` captures the bounded original baseline,
+extended plumbing `report --observed --draft --receipt` validates against it,
+and `lds plumbing reconcile flow --json` reads the live preparatory flow.
+Only qualified plumbing leaves enter the generated skill table. None is a
+native execution or parity finding.
 The Linux-only root `lds reconcile journal record|decide|reconsider` adds a
 guided offline terminal route to the existing journal plumbing. It freshly
 scans pinned evidence, collects explicit human claims and authority/outcome,
 displays the complete digest-bound request/evidence/journal preview and gates
 each write on a fresh exact confirmation. No authored scan/request files are
 needed; the manual plumbing route remains available. These root-only
-plumbing-kind leaves are not projected and add no shared flow. They do not
+plumbing-kind leaves are not projected and do not execute the report flow. They do not
 verify applied proof or authorize source transfer, a real pair or a pilot.
-The human-facing assessment workflow, bounded existing-file update plumbing
-and offline human-facing root `lds update` are implemented. The manifest
-has 32 leaves with the first offline root `lds review` slice, including 19
-qualified plumbing-kind projection entries and nine `docs` leaves; these
-counts do not establish native execution or parity.
+The human-facing assessment workflow, bounded existing-file update plumbing,
+unchanged offline root `lds update`, and explicit assisted update mode are
+implemented. The live `lds plumbing update` reader supplies a preparatory
+shared flow to generated Claude Code guidance. The manifest has 35 leaves,
+including 22 qualified plumbing-kind projection entries and nine `docs`
+leaves; these counts do not establish native execution or parity.
 Reconciliation commands do not
-infer semantic correspondence, choose real-pair authority, edit source
-repositories, or provide an assisted/shared human-skill workflow. See the
+infer semantic correspondence, choose real-pair authority or edit source
+repositories. Assisted reports and shared preparatory guidance are not a
+full facilitator or native skill/parity result. See the
 [Stage 4 engineering handoff](bds-252-stage-4-engineering-handoff.md) for the
 audited surface and boundaries.
 
@@ -109,8 +116,23 @@ review and a fresh digest gate. Local WIP Matter
 complete plan display on stderr, fresh terminal-only digest approval and the
 same strict in-memory apply. It takes the original collected packet and
 explicit edits, without a provider, new baseline or temporary artifact.
-This is not approval for any real target. Model-assisted update orchestration
-and broader semantic review remain deferred; root `init` remains a candidate.
+This is not approval for any real target. Explicit `lds update --assist`
+selects 1–32 unique existing scoped Markdown targets, collects the original
+bounded baseline, discloses the complete system+user payload for fresh `send`,
+and asks one fixed tool-free OpenCode Go / `deepseek-v4-flash` request for
+unverified full replacements and questions. Empty edits end review-required
+without apply. Nonempty drafts receive strict original-baseline planning and
+full exact-byte preview, then separate fresh `apply sha256:<digest>` or
+`decline`. Baseline and live flow rechecks surround transfer and precede apply;
+send is not write authority. The Linux replacement and partial/indeterminate
+limits remain. The root registration is now LLM-kind even though its default
+offline route remains provider-free and behaviorally unchanged. The new live
+`lds plumbing update [--json]` flow reader is preparatory only; generated
+guidance fetches it live and must disclose harness processing and obtain its
+own consent without terminal automation or model-derived approval. No real
+provider, target/pilot, native execution or parity is claimed by mock and
+disposable verification. Broader semantic review remains deferred; root
+`init` remains a candidate.
 Local WIP Matter `lds-offline-review` tracks the authorized first Linux-only
 `lds review <root> [--json]` slice. It composes existing inventory and
 local-link validation on stdout without authored inputs, a terminal, provider,
@@ -140,12 +162,12 @@ was delivered. They proceed without selecting a pilot or reopening S10:
   brief and optional journal evidence, without writing source or journal.
   The separate guided journal slice can write only a confirmed caller-owned
   external journal; local Matter `lds-guided-reconciliation-journal` tracks
-  its implementation and disposable verification. Optional model assistance,
-  a shared CLI/skill flow and real-pair authority remain deferred.
+  its implementation and disposable verification. Assisted report advice and
+  the preparatory shared CLI/skill flow are implemented; real-pair authority
+  remains deferred.
 
-The implemented update plumbing and offline root host do not grant
-permission to edit a real project. Further reconciliation assistance is
-proposed. Any live provider access, real target write, pilot or
+The implemented update plumbing and root modes do not grant
+permission to edit a real project. Any live provider access, real target write, pilot or
 release needs its own authorization. Existing
 assessment and reconciliation plumbing remain usable.
 
@@ -187,16 +209,17 @@ implemented deterministic plumbing and must be settled before any real use:
 1. Specify the initial two-track project layout and select/adapt templates
    from the reference repositories. Ship defaults as embedded assets with
    the existing installed/user override chain. Repository-local overrides
-   depend on [Toolsmith BDS-234](https://linear.app/beausimensen/issue/BDS-234/support-repository-local-overrides-for-generated-tools-assets-and);
-   do not claim they work in LDS yet. Read-only follow-up on 2026-10-21 found
-   the issue still Backlog, with no comments or linked implementation, no open
-   Toolsmith PRs, and no PR matching BDS-234. Remote Toolsmith main
-   [`20e9e44`](https://github.com/procrastivity/toolsmith/commit/20e9e44b2a70e37216b28a58142b5e3e17cf2259)
-   still specifies only user-XDG → installed → embedded in
-   [C5](https://github.com/procrastivity/toolsmith/blob/20e9e44b2a70e37216b28a58142b5e3e17cf2259/CONTRACT.md#L242-L257)
-   and the [generated resolver](https://github.com/procrastivity/toolsmith/blob/20e9e44b2a70e37216b28a58142b5e3e17cf2259/assets/_skeleton/internal/asset/asset.go#L67-L143).
-   The feature is not implemented on that main; existing generated LDS source
-   would also need an explicit port/rebuild after upstream support lands.
+   are now available upstream through
+   [Toolsmith BDS-234](https://linear.app/beausimensen/issue/BDS-234/support-repository-local-overrides-for-generated-tools-assets-and),
+   merged in [`92fcfcf`](https://github.com/procrastivity/toolsmith/commit/92fcfcf85418d95afed6e8952a74a6421ac99f15)
+   ([PR #6](https://github.com/procrastivity/toolsmith/pull/6)). On 2026-10-22,
+   the orb's Toolsmith checkout and installed binary were updated/rebuilt
+   from that main, with resolver, CLI and generated-tool tests passing.
+   Optional C5.5 uses explicit `--project-root` selection and
+   project → user-XDG → installed → embedded precedence for eligible runtime
+   assets; administrative identity remains unchanged. **LDS has not ported
+   this support yet**: updating the generator does not rewrite its existing
+   generated resolver. An explicit LDS integration/rebuild remains work.
 2. Implement deterministic operations for inventorying files and links,
    validating the chosen layout, and rendering/scaffolding templates.
    Provide machine-readable results and tests before agent-driven flows.
@@ -214,10 +237,11 @@ implemented deterministic plumbing and must be settled before any real use:
    not semantic matching, a real-pair decision, or a facilitator. Xcind's
    [cross-project procedure](https://github.com/scinddev/xcind/blob/main/engineering/maintenance/cross-project-sync.md)
    and ledgers remain reference evidence, not a schema copied into LDS.
-5. **Offline report and guided journal slices implemented:** create a bounded
+5. **Offline/assisted report and guided journal slices implemented:** create a bounded
    report separately from journal writes and any authorized pilot; guide
    explicitly reviewed record/decide/reconsider journal entries with terminal
-   preview and confirmation. Assistance and a shared flow remain design work.
+   preview and confirmation. Assistance uses one bounded disclosed request
+   and a live preparatory flow; no model claim becomes authority.
    Disposable source-derived and synthetic fixtures do not validate a live
    adoption, port, or parity claim.
 
@@ -233,18 +257,22 @@ would bootstrap documentation *inside another project*.
 | --- | --- | --- |
 | Porcelain | `lds init` | Set up the selected documentation tracks and templates. |
 | Porcelain (implemented, outside first-release claim) | `lds assess <root> --reason <text> --audience <text> --output <absolute-new-report.md> [--source <relative-file> ...] [--json]` | Collect scoped documentation and named source bytes, ask fresh transfer consent, and request reviewable model-authored maintenance proposals; no target edits. |
-| Porcelain (implemented offline slice) | `lds update <root> --observed <collected.json> --request <edits.json> [--json]` | Linux terminal host of the complete deterministic plan and fresh exact-digest human gate; reuses original packet and authored edits, then strict in-memory apply. No model or temporary plan/report; assisted orchestration deferred. Not projected despite plumbing kind because root-only. See the [update how-to](../../docs/how-to/update-documentation.md). |
+| Porcelain (implemented offline mode) | `lds update <root> --observed <collected.json> --request <edits.json> [--json]` | Unchanged Linux terminal host of the complete deterministic plan and fresh exact-digest human gate; reuses original packet and authored edits, then strict in-memory apply. No provider or temporary plan/report. Whole root registration is LLM-kind due to the explicit assisted mode, but this mode stays offline; root is not projected. See the [update how-to](../../docs/how-to/update-documentation.md). |
+| Porcelain (implemented assisted mode) | `lds update <root> --assist --reason <text> --audience <text> --document <relative-existing-markdown> [--document ...] [--source <relative-file> ...] [--json]` | Explicit bounded original collection, full outbound disclosure and fresh send consent, one tool-free request for unverified full drafts/questions, strict original-baseline exact-byte plan and independent fresh apply gate. No inferred edit selection or real-target authority. |
 | Porcelain (implemented first offline slice) | `lds review <root> [--json]` | Linux read-only scoped inventory and local-file link findings, skips and limitations on stdout. Root-only plumbing-kind composition, not projected or an alias; no report, completeness or semantic verdict. Broader review remains deferred. |
 | Porcelain (implemented, outside first-release claim) | `lds adopt <root> --facts <facts.json>` | Interactively review a create-only four-output documentation plan and apply only after fresh exact-digest human consent. |
 | Porcelain (implemented offline slice) | `lds reconcile report --pair <absolute-pair.json> --left-root <absolute-dir> --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] [--journal <absolute-existing-journal.json>] --review <absolute-review.json> --output <absolute-new-report.md> [--json]` | Linux private external report from clean pinned evidence and reviewer assertions; no model, source/journal writes, or project commands. See the [how-to](../../docs/how-to/reconcile-projects.md). |
+| Porcelain (implemented assisted mode) | `lds reconcile report --assist` (same required flags) | Full payload/destination disclosure and fresh send consent, one tool-free OpenCode Go request, strict unverified proposed claims/questions and attributed receipt in private report; original baseline retained, no source/journal writes. Root registration LLM-kind, not projected. |
 | Porcelain (implemented guided offline slice) | `lds reconcile journal record\|decide\|reconsider --pair <absolute-pair.json> --left-root <absolute-dir> --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] --journal <absolute-external-journal.json> [--json]` | Linux terminal evidence review, explicit reviewer claims, complete digest-bound preview and fresh operation-specific confirmation; only the named journal may be written. Root-only plumbing-kind, not projected. See the [how-to](../../docs/how-to/reconcile-projects.md#guide-a-journal-entry-in-the-terminal). |
 | Plumbing (implemented, bounded) | `lds plumbing docs inventory`, `validate`, `render`, `plan`, `apply` | Report scoped files/links, check supported local targets, render four assets, preview and create missing approved files without an LLM. |
 | Plumbing (implemented, bounded) | `lds plumbing docs assess` | Collect documentation and explicitly hashed source evidence, link findings and authored proposals/questions in one new external report; no provider, semantic inference or target edits. See the [design](documentation-maintenance-workflow.md). |
 | Plumbing (implemented, bounded) | `lds plumbing docs collect`; `lds plumbing docs assess --observed <collected.json>` | Offline full baseline packet with automatic source hashes; optional observed binding for a strict authored brief and external report. |
 | Plumbing (implemented, bounded) | `lds plumbing docs update-plan <root> --observed <collected.json> --request <edits.json> --json`; `lds plumbing docs update-apply <root> --plan <reviewed.json> --confirm <sha256:digest> --json` | Existing selected Markdown only; full digest-bound review, fresh approval and per-file Linux replacement. No real target or pilot authorized. See the [how-to](../../docs/how-to/update-documentation.md). |
 | Plumbing flow reader (implemented) | `lds plumbing assess [--json]` | Read live `flows/assess.md` content/source/hash; preparatory, unavailable for execution. |
+| Plumbing flow reader (implemented) | `lds plumbing update [--json]` | Read live `flows/update.md` content/source/hash; preparatory, unavailable for execution. Generated guidance fetches it live. |
 | Plumbing (implemented, bounded) | `lds plumbing reconcile scan`; `lds plumbing reconcile journal read`, `record`, `decide`, `reconsider` | Inspect explicitly scoped pinned artifacts/maps and persist caller-reviewed correspondence and outcomes; never infer semantic matches or write a source. See the [engineering handoff](bds-252-stage-4-engineering-handoff.md). |
-| Plumbing (implemented, bounded) | `lds plumbing reconcile report` (same flags as root report) | Identical deterministic report operation and only report form eligible for generated skill table; no native/parity claim. |
+| Plumbing (implemented, bounded) | `lds plumbing reconcile collect` (same base flags); `lds plumbing reconcile report` (same offline flags, optionally all of `--observed --draft --receipt`) | Collect bounded original evidence without publishing; report validates externally drafted advice against that baseline and publishes privately. Both eligible for skill table; no provider or native/parity claim. |
+| Plumbing flow reader (implemented) | `lds plumbing reconcile flow --json` | Read live preparatory reconciliation flow; unavailable for execution. Generated guidance must disclose harness processing and obtain its own consent, not automate root terminal. |
 
 Agent-specific skills worth evaluating: adopting a partial tree, drafting
 and reviewing an ADR, documentation impact review after code changes,
