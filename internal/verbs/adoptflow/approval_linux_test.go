@@ -32,7 +32,7 @@ func TestCommandApprovalInputStartsFreshPTYEpoch(t *testing.T) {
 			t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 			t.Setenv(apiKeyEnv, "test-only-key")
 			root, factsPath, expectedDir := workflowFixture(t)
-			expectedPlan, err := adoption.Plan(root, factsPath)
+			expectedPlan, err := adoption.Plan(root, factsPath, "")
 			if err != nil || expectedPlan.PlanDigest == nil {
 				t.Fatalf("precompute expected plan digest: digest=%v err=%v", expectedPlan.PlanDigest, err)
 			}

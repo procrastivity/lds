@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/procrastivity/lds/internal/adoption"
+	"github.com/procrastivity/lds/internal/cliflags"
 	"github.com/procrastivity/lds/internal/iostreams"
 	"github.com/procrastivity/lds/internal/ldserr"
 )
@@ -61,7 +62,7 @@ func TestWorkflowRequiresInteractiveProviderTransferConsent(t *testing.T) {
 func TestWorkflowModelCannotAuthorizeAndApplyUsesExactReviewedPlan(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	root, factsPath, expectedDir := workflowFixture(t)
-	expectedPlan, err := adoption.Plan(root, factsPath)
+	expectedPlan, err := adoption.Plan(root, factsPath, "")
 	if err != nil || expectedPlan.PlanDigest == nil {
 		t.Fatalf("prepare exact reviewed plan: digest=%v err=%v", expectedPlan.PlanDigest, err)
 	}
@@ -117,7 +118,7 @@ func TestWorkflowModelCannotAuthorizeAndApplyUsesExactReviewedPlan(t *testing.T)
 	// A provider can repeat the digest and claim approval, but it cannot put
 	// that text into the host's input stream or authorize a write.
 	refusedRoot, refusedFacts, _ := workflowFixture(t)
-	refusedPlan, err := adoption.Plan(refusedRoot, refusedFacts)
+	refusedPlan, err := adoption.Plan(refusedRoot, refusedFacts, "")
 	if err != nil || refusedPlan.PlanDigest == nil {
 		t.Fatalf("prepare adversarial model plan: %v", err)
 	}
@@ -139,7 +140,7 @@ func TestWorkflowModelCannotAuthorizeAndApplyUsesExactReviewedPlan(t *testing.T)
 func TestWorkflowRevalidatesRawPlanAfterReview(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	root, factsPath, _ := workflowFixture(t)
-	plan, err := adoption.Plan(root, factsPath)
+	plan, err := adoption.Plan(root, factsPath, "")
 	if err != nil || plan.PlanDigest == nil {
 		t.Fatalf("prepare plan: %v", err)
 	}
@@ -188,7 +189,7 @@ func TestWorkflowRequiresFreshReviewWhenLiveFlowChanges(t *testing.T) {
 	if err := os.WriteFile(flowPath, []byte("# Flow version A\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	plan, err := adoption.Plan(root, factsPath)
+	plan, err := adoption.Plan(root, factsPath, "")
 	if err != nil || plan.PlanDigest == nil {
 		t.Fatalf("prepare plan: %v", err)
 	}
@@ -206,6 +207,59 @@ func TestWorkflowRequiresFreshReviewWhenLiveFlowChanges(t *testing.T) {
 	}
 	if entries, readErr := os.ReadDir(root); readErr != nil || len(entries) != 0 {
 		t.Fatalf("changed flow applied a plan: entries=%v err=%v", entries, readErr)
+	}
+}
+
+func TestWorkflowUsesExplicitProjectFlowAndRefusesSourceSwitch(t *testing.T) {
+	xdg, projectRoot := t.TempDir(), t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", xdg)
+	root, factsPath, _ := workflowFixture(t)
+	const flow = "# Selected project adoption flow\n"
+	projectFlow := filepath.Join(projectRoot, ".lds", "assets", "flows", "adopt.md")
+	xdgFlow := filepath.Join(xdg, "lds", "flows", "adopt.md")
+	for _, path := range []string{projectFlow, xdgFlow} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(flow), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ctx := cliflags.WithFlags(context.Background(), cliflags.Flags{ProjectRoot: projectRoot})
+	var stdout, stderr bytes.Buffer
+	streams := &iostreams.Streams{Out: &stdout, Err: &stderr}
+	provider := func(_ context.Context, _, selected string, _ []byte, _ providerEvidence) (string, error) {
+		if selected != flow {
+			t.Errorf("provider received unexpected flow %q", selected)
+		}
+		return "Review the plan.", nil
+	}
+	err := runWorkflowWithApprovalInput(ctx, root, factsPath, "test-only-key", strings.NewReader("send\n"), streams, true, true, provider, testApprovalInput("no\n"))
+	if code := workflowErrorCode(t, err); code != "refusal.confirmation-declined" {
+		t.Fatalf("selected project flow code=%q", code)
+	}
+	var result workflowResult
+	if err := json.Unmarshal(bytes.TrimSpace(stdout.Bytes()), &result); err != nil || result.FlowAsset.Source != "project" {
+		t.Fatalf("selected flow provenance: %+v, %v", result.FlowAsset, err)
+	}
+	plan, err := adoption.Plan(root, factsPath, projectRoot)
+	if err != nil || plan.PlanDigest == nil {
+		t.Fatalf("prepare selected plan: %v", err)
+	}
+	stdout.Reset()
+	stderr.Reset()
+	provider = func(_ context.Context, _, selected string, _ []byte, _ providerEvidence) (string, error) {
+		if selected != flow {
+			t.Errorf("provider received unexpected flow %q", selected)
+		}
+		return "Review the plan.", os.Remove(projectFlow)
+	}
+	err = runWorkflowWithApprovalInput(ctx, root, factsPath, "test-only-key", strings.NewReader("send\n"), streams, true, true, provider, testApprovalInput("apply "+*plan.PlanDigest+"\n"))
+	if code := workflowErrorCode(t, err); code != "refusal.flow-changed" {
+		t.Fatalf("same-byte project-to-XDG flow switch code=%q", code)
+	}
+	if entries, readErr := os.ReadDir(root); readErr != nil || len(entries) != 0 {
+		t.Fatalf("flow switch wrote target: entries=%v err=%v", entries, readErr)
 	}
 }
 

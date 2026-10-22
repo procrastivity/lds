@@ -100,8 +100,13 @@ func runWorkflowWithApprovalInput(ctx context.Context, root, factsPath, key stri
 	}
 	reader := bufio.NewReader(input)
 
-	document, err := adoptverb.ResolveDocument()
+	projectRoot := cliflags.FromContext(ctx).ProjectRoot
+	document, err := adoptverb.ResolveDocument(projectRoot)
 	if err != nil {
+		var structured *ldserr.Error
+		if errors.As(err, &structured) && structured.Code == "refusal.project-asset" {
+			return structured
+		}
 		if errors.Is(err, adoptverb.ErrInvalidDocument) {
 			return ldserr.New("validation.adopt-document-invalid", err.Error())
 		}
@@ -119,7 +124,10 @@ func runWorkflowWithApprovalInput(ctx context.Context, root, factsPath, key stri
 	if err != nil {
 		return targetReadError("validate", err)
 	}
-	if _, err := adoption.Render(root, factsPath); err != nil {
+	if _, err := adoption.Render(root, factsPath, projectRoot); err != nil {
+		if errors.Is(err, adoption.ErrProjectAsset) {
+			return ldserr.New("refusal.project-asset", err.Error())
+		}
 		if errors.Is(err, adoption.ErrInvalidRenderInput) {
 			return ldserr.New("validation.render-invalid", err.Error())
 		}
@@ -131,10 +139,13 @@ func runWorkflowWithApprovalInput(ctx context.Context, root, factsPath, key stri
 		}
 		return ldserr.New("internal.render-failed", err.Error())
 	}
-	plan, planErr := adoption.Plan(root, factsPath)
+	plan, planErr := adoption.Plan(root, factsPath, projectRoot)
 	if planErr != nil {
 		var refusal *adoption.PlanRefusal
 		if !errors.As(planErr, &refusal) {
+			if errors.Is(planErr, adoption.ErrProjectAsset) {
+				return ldserr.New("refusal.project-asset", planErr.Error())
+			}
 			if errors.Is(planErr, adoption.ErrInvalidRenderInput) {
 				return ldserr.New("validation.render-invalid", planErr.Error())
 			}
@@ -164,8 +175,8 @@ func runWorkflowWithApprovalInput(ctx context.Context, root, factsPath, key stri
 	if plan.FactsDigest != "sha256:"+hex.EncodeToString(factsDigest[:]) {
 		return ldserr.New("refusal.plan-stale", "owner-supplied facts changed during review; start a fresh adoption review")
 	}
-	currentDocument, err := adoptverb.ResolveDocument()
-	if err != nil || currentDocument.Source != document.Source || !bytes.Equal(currentDocument.Bytes(), document.Bytes()) {
+	currentDocument, err := adoptverb.ResolveDocument(projectRoot)
+	if err != nil || currentDocument.Source != document.Source || currentDocument.Path != document.Path || !bytes.Equal(currentDocument.Bytes(), document.Bytes()) {
 		return ldserr.New("refusal.flow-changed", "the live adoption flow changed during review; start a fresh adoption review")
 	}
 	if plan.Veto || plan.PlanDigest == nil {
@@ -211,12 +222,12 @@ func runWorkflowWithApprovalInput(ctx context.Context, root, factsPath, key stri
 		}
 		return ldserr.New("refusal.confirmation-declined", "fresh exact-digest confirmation was not received; no target write was made")
 	}
-	currentDocument, err = adoptverb.ResolveDocument()
-	if err != nil || currentDocument.Source != document.Source || !bytes.Equal(currentDocument.Bytes(), document.Bytes()) {
+	currentDocument, err = adoptverb.ResolveDocument(projectRoot)
+	if err != nil || currentDocument.Source != document.Source || currentDocument.Path != document.Path || !bytes.Equal(currentDocument.Bytes(), document.Bytes()) {
 		return ldserr.New("refusal.flow-changed", "the live adoption flow changed after review; no target write was made; start a fresh adoption review")
 	}
 
-	applyResult, applyErr := adoption.ApplyReviewed(root, factsPath, planBytes, *plan.PlanDigest)
+	applyResult, applyErr := adoption.ApplyReviewed(root, factsPath, planBytes, *plan.PlanDigest, projectRoot)
 	result := makeWorkflowResult(root, document, inventory, validation, plan, advisory, &applyResult)
 	result.Status = applyResult.Status
 	if err := emitResult(streams.Out, result, jsonOut); err != nil {

@@ -20,7 +20,7 @@ func TestRender_GreenfieldMatchesIndependentOutputs(t *testing.T) {
 	root := t.TempDir()
 	factsPath := filepath.Join(renderFixtureDir, "facts.json")
 	before := snapshotRenderTarget(t, root)
-	outputs, err := Render(root, factsPath)
+	outputs, err := Render(root, factsPath, "")
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestRender_RejectsIncompleteOrUnsafeFacts(t *testing.T) {
 				data = []byte(strings.Replace(string(data), "DisplayName", "displayname", 1))
 			}
 			factsPath := writeRenderFacts(t, data)
-			if outputs, err := Render(t.TempDir(), factsPath); !errors.Is(err, ErrInvalidRenderInput) || outputs != nil {
+			if outputs, err := Render(t.TempDir(), factsPath, ""); !errors.Is(err, ErrInvalidRenderInput) || outputs != nil {
 				t.Fatalf("Render = (%v, %v), want nil outputs and ErrInvalidRenderInput", outputs, err)
 			}
 		})
@@ -106,7 +106,7 @@ func TestRender_EscapesMarkdownAndFencesInvocation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	outputs, err := Render(t.TempDir(), writeRenderFacts(t, mutated))
+	outputs, err := Render(t.TempDir(), writeRenderFacts(t, mutated), "")
 	if err != nil {
 		t.Fatalf("Render: %v", err)
 	}
@@ -148,7 +148,7 @@ func TestRender_RejectsBadTemplateOverrides(t *testing.T) {
 		t.Run(override.name, func(t *testing.T) {
 			useIsolatedAssetDirectories(t)
 			writeAssetOverride(t, os.Getenv("XDG_CONFIG_HOME"), "templates/adoption/docs/README.md", override.body)
-			if outputs, err := Render(root, factsPath); !errors.Is(err, ErrInvalidRenderInput) || outputs != nil {
+			if outputs, err := Render(root, factsPath, ""); !errors.Is(err, ErrInvalidRenderInput) || outputs != nil {
 				t.Fatalf("Render = (%v, %v), want no partial outputs and ErrInvalidRenderInput", outputs, err)
 			}
 		})
@@ -163,7 +163,7 @@ func TestRender_RejectsInvocationInHeadingOverride(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			useIsolatedAssetDirectories(t)
 			writeAssetOverride(t, os.Getenv("XDG_CONFIG_HOME"), "templates/adoption/docs/reference/usage.md", tc.body)
-			outputs, err := Render(t.TempDir(), filepath.Join(renderFixtureDir, "facts.json"))
+			outputs, err := Render(t.TempDir(), filepath.Join(renderFixtureDir, "facts.json"), "")
 			if !errors.Is(err, ErrInvalidRenderInput) || outputs != nil {
 				t.Fatalf("Render = (%v, %v), want invalid invocation context", outputs, err)
 			}
@@ -188,7 +188,7 @@ func TestRender_RejectsUnreadableOverrideInsteadOfFallingBack(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			outputs, err := Render(t.TempDir(), filepath.Join(renderFixtureDir, "facts.json"))
+			outputs, err := Render(t.TempDir(), filepath.Join(renderFixtureDir, "facts.json"), "")
 			if !errors.Is(err, ErrInvalidRenderInput) || outputs != nil {
 				t.Fatalf("Render = (%v, %v), want refusal of broken override", outputs, err)
 			}

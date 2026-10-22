@@ -109,7 +109,7 @@ type planRefusalCause struct {
 // Plan renders and classifies the four approved outputs without writing to
 // root. It returns a PlanRefusal only when the result is complete enough to
 // review; a missing target or an unexpected read failure is an ordinary error.
-func Plan(root, factsPath string) (PlanResult, error) {
+func Plan(root, factsPath, projectRoot string) (PlanResult, error) {
 	result := PlanResult{PlanProjection: PlanProjection{
 		SchemaVersion: 1, Operation: "docs plan", TargetRoot: root,
 		Outputs: []PlanOutput{}, NecessaryParentDirectories: []string{},
@@ -130,7 +130,7 @@ func Plan(root, factsPath string) (PlanResult, error) {
 		return result, &PlanRefusal{Code: planIncompleteFacts, Message: factsErr.Error()}
 	}
 
-	rendered, renderErr := renderBundleOutputs(facts)
+	rendered, renderErr := renderBundleOutputs(facts, projectRoot)
 	if renderErr != nil {
 		return PlanResult{}, renderErr
 	}

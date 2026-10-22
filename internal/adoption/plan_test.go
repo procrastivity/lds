@@ -53,7 +53,7 @@ func TestPlan_PreservationFixtureCases(t *testing.T) {
 				t.Fatalf("shared greenfield operation evidence is not complete: facts=%+v err=%v", facts, err)
 			}
 			before := snapshotPlanTarget(t, root)
-			plan, err := Plan(root, factsPath)
+			plan, err := Plan(root, factsPath, "")
 			if tc.VetoAllCreates {
 				var refusal *PlanRefusal
 				if !errors.As(err, &refusal) {
@@ -141,7 +141,7 @@ func TestPlan_IncompleteFactsRefusesEveryOutputWithoutDigest(t *testing.T) {
 	if err := os.WriteFile(factsPath, data, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	plan, err := Plan(t.TempDir(), factsPath)
+	plan, err := Plan(t.TempDir(), factsPath, "")
 	var refusal *PlanRefusal
 	if !errors.As(err, &refusal) || refusal.Code != planIncompleteFacts {
 		t.Fatalf("Plan error = %v, want incomplete-facts refusal", err)
@@ -161,7 +161,7 @@ func TestPlan_LinkDiagnosticsAreVirtualAndDoNotVeto(t *testing.T) {
 	fixture := readPreservationFixture(t)
 	root := createPreservationTarget(t, fixture, nil)
 	facts := filepath.Join(planFixtureDir, "greenfield", "facts.json")
-	baseline, err := Plan(root, facts)
+	baseline, err := Plan(root, facts, "")
 	if err != nil {
 		t.Fatalf("baseline Plan: %v", err)
 	}
@@ -172,7 +172,7 @@ func TestPlan_LinkDiagnosticsAreVirtualAndDoNotVeto(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "docs", "legacy-links.md"), []byte(markdown), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	after, err := Plan(root, facts)
+	after, err := Plan(root, facts, "")
 	if err != nil {
 		t.Fatalf("Plan with diagnostics: %v", err)
 	}
@@ -230,7 +230,7 @@ func TestPlanDigestCommitsToEveryDisplayedField(t *testing.T) {
 	useIsolatedAssetDirectories(t)
 	fixture := readPreservationFixture(t)
 	root := createPreservationTarget(t, fixture, nil)
-	base, err := Plan(root, filepath.Join(planFixtureDir, "greenfield", "facts.json"))
+	base, err := Plan(root, filepath.Join(planFixtureDir, "greenfield", "facts.json"), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -431,7 +431,7 @@ func TestPlan_VirtualOverlayDoesNotWrite(t *testing.T) {
 	fixture := readPreservationFixture(t)
 	root := createPreservationTarget(t, fixture, nil)
 	before := snapshotPlanTarget(t, root)
-	plan, err := Plan(root, filepath.Join(planFixtureDir, "greenfield", "facts.json"))
+	plan, err := Plan(root, filepath.Join(planFixtureDir, "greenfield", "facts.json"), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -474,7 +474,7 @@ func TestPlan_FactsDigestHashesExactInputBytes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	plan, err := Plan(root, factsPath)
+	plan, err := Plan(root, factsPath, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -499,7 +499,7 @@ func TestPlan_ReplacedByteIdenticalRootChangesDigest(t *testing.T) {
 		t.Fatal(err)
 	}
 	facts := filepath.Join(planFixtureDir, "greenfield", "facts.json")
-	first, err := Plan(root, facts)
+	first, err := Plan(root, facts, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -512,7 +512,7 @@ func TestPlan_ReplacedByteIdenticalRootChangesDigest(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "sample.txt"), []byte(sample), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	second, err := Plan(root, facts)
+	second, err := Plan(root, facts, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -532,7 +532,7 @@ func TestPlan_ReplacedEmptyOutputParentChangesDigest(t *testing.T) {
 		t.Fatal(err)
 	}
 	facts := filepath.Join(planFixtureDir, "greenfield", "facts.json")
-	first, err := Plan(root, facts)
+	first, err := Plan(root, facts, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -542,7 +542,7 @@ func TestPlan_ReplacedEmptyOutputParentChangesDigest(t *testing.T) {
 	if err := os.Mkdir(docs, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	second, err := Plan(root, facts)
+	second, err := Plan(root, facts, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -569,7 +569,7 @@ func TestPlan_RecognizesInstalledLDSUnderDocs(t *testing.T) {
 			if err := os.WriteFile(file, []byte(tc.content), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			plan, err := Plan(root, filepath.Join(planFixtureDir, "greenfield", "facts.json"))
+			plan, err := Plan(root, filepath.Join(planFixtureDir, "greenfield", "facts.json"), "")
 			var refusal *PlanRefusal
 			if !errors.As(err, &refusal) || refusal.Code != planLegacyDocs || !plan.Veto || plan.PlanDigest == nil {
 				t.Fatalf("installed LDS under docs/ not refused: error=%v plan=%+v", err, plan.PlanProjection)

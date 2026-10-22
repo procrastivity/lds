@@ -26,9 +26,11 @@ func renderCommand(streams *iostreams.Streams) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			outputs, err := adoption.Render(args[0], factsPath)
+			outputs, err := adoption.Render(args[0], factsPath, cliflags.FromContext(cmd.Context()).ProjectRoot)
 			if err != nil {
 				switch {
+				case errors.Is(err, adoption.ErrProjectAsset):
+					return ldserr.New("refusal.project-asset", err.Error())
 				case errors.Is(err, adoption.ErrInvalidRenderInput):
 					return ldserr.New("validation.render-invalid", err.Error())
 				case errors.Is(err, adoption.ErrUnsafeTarget):

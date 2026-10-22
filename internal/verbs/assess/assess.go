@@ -74,7 +74,8 @@ func runWorkflow(ctx context.Context, root, reason, audience string, sources []s
 	if err := adoption.CheckAssessmentOutput(root, output); err != nil {
 		return assessmentError(err)
 	}
-	document, err := resolveDocument()
+	projectRoot := cliflags.FromContext(ctx).ProjectRoot
+	document, err := resolveDocument(projectRoot)
 	if err != nil {
 		return err
 	}
@@ -110,8 +111,8 @@ func runWorkflow(ctx context.Context, root, reason, audience string, sources []s
 	if err != nil || strings.TrimSuffix(strings.TrimSuffix(line, "\n"), "\r") != "send" {
 		return ldserr.New("refusal.provider-transfer-declined", "transfer declined; no provider request, report or target edits were made")
 	}
-	current, err := resolveDocument()
-	if err != nil || current.Source != document.Source || !bytes.Equal(current.Bytes(), document.Bytes()) {
+	current, err := resolveDocument(projectRoot)
+	if err != nil || current.Source != document.Source || current.Path != document.Path || !bytes.Equal(current.Bytes(), document.Bytes()) {
 		return ldserr.New("refusal.flow-changed", "live assessment flow changed; start a new assessment")
 	}
 	if err := adoption.RecheckAssessment(root, observed); err != nil {
@@ -127,8 +128,8 @@ func runWorkflow(ctx context.Context, root, reason, audience string, sources []s
 	if err != nil {
 		return ldserr.New("internal.assess-provider-failed", "OpenCode Go request failed or returned an invalid response; no report or target edit was made")
 	}
-	current, err = resolveDocument()
-	if err != nil || current.Source != document.Source || !bytes.Equal(current.Bytes(), document.Bytes()) {
+	current, err = resolveDocument(projectRoot)
+	if err != nil || current.Source != document.Source || current.Path != document.Path || !bytes.Equal(current.Bytes(), document.Bytes()) {
 		return ldserr.New("refusal.flow-changed", "live assessment flow changed after transfer; no report was made")
 	}
 	result, err := adoption.AssessReviewed(root, observed, []byte(advice), output)

@@ -24,6 +24,9 @@ import (
 // ErrInvalidRenderInput marks a facts or template validation failure.
 var ErrInvalidRenderInput = errors.New("invalid render input")
 
+// ErrProjectAsset marks a failed explicitly selected project asset lookup.
+var ErrProjectAsset = errors.New("project asset unavailable")
+
 // RenderAsset identifies the selected template asset and its source hash.
 type RenderAsset struct {
 	RelativeName string `json:"relativeName"`
@@ -90,7 +93,7 @@ var (
 // only the four approved adoption assets. Validation does not authenticate the
 // approver or independently verify project claims. It reads the explicit
 // target root and facts file; it never writes to either.
-func Render(root, factsPath string) ([]RenderOutput, error) {
+func Render(root, factsPath, projectRoot string) ([]RenderOutput, error) {
 	rootDir, err := openRoot(root)
 	if err != nil {
 		return nil, fmt.Errorf("open render target: %w", err)
@@ -103,7 +106,7 @@ func Render(root, factsPath string) ([]RenderOutput, error) {
 	if err != nil {
 		return nil, err
 	}
-	return renderBundleOutputs(facts)
+	return renderBundleOutputs(facts, projectRoot)
 }
 
 func readRenderFacts(factsPath string) ([]byte, renderFactBundle, error) {
@@ -136,7 +139,7 @@ func readRenderFacts(factsPath string) ([]byte, renderFactBundle, error) {
 	return data, facts, nil
 }
 
-func renderBundleOutputs(facts renderFactBundle) ([]RenderOutput, error) {
+func renderBundleOutputs(facts renderFactBundle, projectRoot string) ([]RenderOutput, error) {
 	values := map[string]string{
 		"DisplayName":             escapeMarkdownText(facts.DisplayName),
 		"Purpose":                 escapeMarkdownText(facts.Purpose),
@@ -156,14 +159,23 @@ func renderBundleOutputs(facts renderFactBundle) ([]RenderOutput, error) {
 
 	outputs := make([]RenderOutput, 0, len(renderAssets))
 	for _, spec := range renderAssets {
-		// An existing but unreadable override must not silently fall through to
-		// the installed or embedded copy in a reviewed adoption render.
-		resolved, present, err := asset.ReadOverride(spec.assetPath)
-		if err != nil {
-			return nil, invalidRender("asset %q override: %v", spec.assetPath, err)
-		}
-		if !present {
-			resolved, err = asset.Resolve(spec.assetPath)
+		var resolved asset.Resolved
+		var err error
+		if projectRoot != "" {
+			resolved, err = asset.ResolveIn(projectRoot, spec.assetPath)
+			if err != nil {
+				return nil, fmt.Errorf("%w: resolve asset %q: %v", ErrProjectAsset, spec.assetPath, err)
+			}
+		} else {
+			// Preserve the legacy override validation classification.
+			var present bool
+			resolved, present, err = asset.ReadOverride(spec.assetPath)
+			if err != nil {
+				return nil, invalidRender("asset %q override: %v", spec.assetPath, err)
+			}
+			if !present {
+				resolved, err = asset.Resolve(spec.assetPath)
+			}
 		}
 		if err != nil {
 			return nil, fmt.Errorf("resolve asset %q: %w", spec.assetPath, err)

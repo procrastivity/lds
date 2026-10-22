@@ -40,7 +40,7 @@ func TestAssessmentCommand_ConsentBoundDraftAndPreservation(t *testing.T) {
 		{name: "discard-pretyped-send", decision: "decline", early: true, code: "refusal.provider-transfer-declined", exit: 3},
 		{name: "changed-source-before-transfer", decision: "send", mutation: "before", code: "refusal.assessment-stale", exit: 3},
 		{name: "changed-document-after-transfer", decision: "send", mutation: "during", calls: 1, code: "refusal.assessment-stale", exit: 3},
-		{name: "changed-flow-after-transfer", decision: "send", mutation: "flow", calls: 1, code: "refusal.flow-changed", exit: 3},
+		{name: "changed-flow-root-after-transfer", decision: "send", mutation: "flow", calls: 1, code: "refusal.flow-changed", exit: 3},
 		{name: "invalid-draft", decision: "send", reply: "invalid", calls: 1, code: "validation.assessment-brief", exit: 1},
 		{name: "model-cannot-expand-scope", decision: "send", reply: "scope", calls: 1, code: "refusal.assessment-scope-changed", exit: 3},
 		{name: "model-cannot-cite-unread-source", decision: "send", reply: "citation", calls: 1, code: "validation.assessment-brief", exit: 1},
@@ -66,7 +66,23 @@ func TestAssessmentCommand_ConsentBoundDraftAndPreservation(t *testing.T) {
 			write(filepath.Join(root, "unselected.txt"), "UNSELECTED PRIVATE MARKER\n")
 			expected := assessmentTree(t, root)
 			var expectedAfterReply string
+			projectRoot, flowSource := "", "override"
 			flow := filepath.Join(xdg, "lds", "flows", "assess.md")
+			if tc.name == "draft-report" || tc.mutation == "flow" {
+				projectRoot, flowSource = t.TempDir(), "project"
+				if err := os.MkdirAll(filepath.Dir(flow), 0o700); err != nil {
+					t.Fatal(err)
+				}
+				write(flow, "# Shadowed user flow\n")
+				flow = filepath.Join(projectRoot, ".lds/assets/flows/assess.md")
+				if tc.mutation == "flow" {
+					selected := filepath.Join(t.TempDir(), "selected")
+					if err := os.Symlink(projectRoot, selected); err != nil {
+						t.Fatal(err)
+					}
+					projectRoot = selected
+				}
+			}
 			if err := os.MkdirAll(filepath.Dir(flow), 0o700); err != nil {
 				t.Fatal(err)
 			}
@@ -127,7 +143,20 @@ func TestAssessmentCommand_ConsentBoundDraftAndPreservation(t *testing.T) {
 					expectedAfterReply = assessmentTree(t, root)
 				}
 				if tc.mutation == "flow" {
-					write(flow, "# Different flow after transfer\n")
+					// Retarget the selected root with byte-identical flow content:
+					// checking just source="project" and bytes must not pass.
+					replacement := t.TempDir()
+					destination := filepath.Join(replacement, ".lds/assets/flows/assess.md")
+					if err := os.MkdirAll(filepath.Dir(destination), 0o700); err != nil {
+						t.Fatal(err)
+					}
+					write(destination, "# Live assessment override\nCollect evidence and draft unverified advice.\n")
+					if err := os.Remove(projectRoot); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.Symlink(replacement, projectRoot); err != nil {
+						t.Fatal(err)
+					}
 				}
 				body, err := json.Marshal(map[string]any{"model": "deepseek-v4-flash", "choices": []any{map[string]any{"message": map[string]string{"content": string(advice)}}}})
 				return &http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(body)), Header: http.Header{}, Request: r}, err
@@ -137,7 +166,7 @@ func TestAssessmentCommand_ConsentBoundDraftAndPreservation(t *testing.T) {
 			var stdout bytes.Buffer
 			streams := &iostreams.Streams{In: slave, Out: &stdout, Err: slave}
 			command := cli.NewRootCommand(streams, buildinfo.Info{})
-			command.SetArgs([]string{"assess", root, "--reason", "Review option rename", "--audience", "CLI users", "--source", "command.txt", "--output", output, "--json"})
+			command.SetArgs([]string{"assess", root, "--reason", "Review option rename", "--audience", "CLI users", "--source", "command.txt", "--output", output, "--project-root", projectRoot, "--json"})
 			if tc.early {
 				if _, err := unix.Write(int(master.Fd()), []byte("send\n")); err != nil {
 					t.Fatal(err)
@@ -189,7 +218,7 @@ func TestAssessmentCommand_ConsentBoundDraftAndPreservation(t *testing.T) {
 					t.Fatal(err)
 				}
 				sum := sha256.Sum256(flowBytes)
-				if result.Status != "review-required" || result.Provider != "OpenCode Go" || result.Model != "deepseek-v4-flash" || result.FlowAsset.Source != "override" || result.FlowAsset.SHA256 != hex.EncodeToString(sum[:]) || result.Assessment.Brief.Proposals[0].ProposedText != "Use example --new." || result.Assessment.ValidationExitCode != 1 || len(result.Assessment.Validation.Skipped) != 1 {
+				if result.Status != "review-required" || result.Provider != "OpenCode Go" || result.Model != "deepseek-v4-flash" || result.FlowAsset.Source != flowSource || result.FlowAsset.SHA256 != hex.EncodeToString(sum[:]) || result.Assessment.Brief.Proposals[0].ProposedText != "Use example --new." || result.Assessment.ValidationExitCode != 1 || len(result.Assessment.Validation.Skipped) != 1 {
 					t.Fatalf("report lost advice, provenance, findings or skips: %+v", result)
 				}
 				report, err := os.ReadFile(output)

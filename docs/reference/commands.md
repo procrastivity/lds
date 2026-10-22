@@ -40,6 +40,49 @@ historical `lds docs ...` spellings):
 | `lds plumbing reconcile journal decide --pair <absolute-file> --journal <absolute-file> --scan <absolute-saved-file> --request <absolute-file>` | Record an explicit initial outcome. |
 | `lds plumbing reconcile journal reconsider --pair <absolute-file> --journal <absolute-file> --scan <absolute-saved-file> --request <absolute-file>` | Explicitly supersede a decision; none edit sources. |
 
+## Project-root runtime asset selection
+
+The BDS-234 LDS port adds a global `--project-root PATH` selector for eligible runtime asset
+reads only. An explicit path (absolute or relative to invocation cwd) selects
+one existing directory, canonicalized before looking under
+`<canonical-root>/.lds/assets/<shipped-relative-name>`. Only already-shipped
+relative asset names are eligible. With no flag, the current user-XDG →
+installed → embedded chain remains; with the flag, the selected project file
+is tried first, then that same chain. A missing project path falls through
+**per asset**, not per command. A selected file's `source`/provenance is
+`project` (with the canonical project asset path where a path is exposed);
+its bytes/hash are part of the runtime flow or template observation. Project
+content is returned as-is for the consuming reader to validate; malformed
+content is not a reason to use a lower-precedence copy.
+
+Runtime consumers are the four adoption templates in `docs render`,
+`docs plan`, `docs apply` and root `adopt`; the live `flows/adopt.md`,
+`flows/assess.md`, `flows/update.md` and `flows/reconcile.md` reads by their
+plumbing readers and root adoption, assessment, assisted update and assisted
+reconciliation forms. For example:
+
+```sh
+lds --project-root /work/acme plumbing adopt --json
+lds --project-root /work/acme plumbing docs plan /work/acme --facts facts.json --json
+```
+
+The positional `/work/acme` in the second command is a target, **not** an
+implicit asset selector. Neither target roots for other docs commands nor
+`--left-root`/`--right-root` in reconciliation select project assets. No
+cwd/Git/environment discovery occurs. A generated skill carrying an explicit
+human selection must pass the same selector to each applicable live flow
+reader and to adoption render/plan/apply plumbing; it must not cache project
+bytes in its installed guidance.
+
+Manifest, projection digest/stamp, configuration, install, uninstall and
+doctor remain project-independent even if supplied the flag; installed skill
+bytes are likewise unchanged. A project selection does not alter consent,
+exact-plan approval or freshness rechecks. Invalid roots, symlinks anywhere
+below the canonical root, nonregular paths and read errors refuse the
+selected runtime read instead of falling back. The selected directory and
+its writers must be trusted; this is not a hostile concurrent-writer sandbox.
+See [safety and scope](../explanation/safety-and-scope.md#project-local-asset-boundary).
+
 The guided hosts require terminal input and presentation even with `--json`:
 prompts, candidate evidence, prior decisions and the **full** digest-bound
 request/evidence/journal preview go to stderr; successful JSON goes to stdout.

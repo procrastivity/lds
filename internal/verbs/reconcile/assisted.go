@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/procrastivity/lds/internal/cliflags"
 	"github.com/procrastivity/lds/internal/iostreams"
 	"github.com/procrastivity/lds/internal/ldserr"
 	"github.com/procrastivity/lds/internal/opencode"
@@ -57,7 +58,8 @@ func assistedReportCommand(streams *iostreams.Streams) *cobra.Command {
 }
 
 func runAssistedReport(cmd *cobra.Command, streams *iostreams.Streams, key string) error {
-	document, err := resolveFlow()
+	projectRoot := cliflags.FromContext(cmd.Context()).ProjectRoot
+	document, err := resolveFlow(projectRoot)
 	if err != nil {
 		return err
 	}
@@ -107,8 +109,8 @@ func runAssistedReport(cmd *cobra.Command, streams *iostreams.Streams, key strin
 		return ldserr.New("refusal.provider-transfer-declined", "transfer declined; no provider request, report or journal write was made")
 	}
 	recheck := func() error {
-		current, err := resolveFlow()
-		if err != nil || current.Source != document.Source || !bytes.Equal(current.Bytes(), document.Bytes()) {
+		current, err := resolveFlow(projectRoot)
+		if err != nil || current.Source != document.Source || current.Path != document.Path || !bytes.Equal(current.Bytes(), document.Bytes()) {
 			return ldserr.New("refusal.flow-changed", "live reconciliation flow changed; start a new complete review")
 		}
 		return core.RecheckReport(input, observed)

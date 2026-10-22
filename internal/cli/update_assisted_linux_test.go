@@ -41,7 +41,16 @@ func TestAssistedUpdateConsentScopeAndFreshApply(t *testing.T) {
 			write(filepath.Join(root, "docs/other.md"), "Collected but not eligible for this draft.\n")
 			write(filepath.Join(root, "command.txt"), "Supported spelling: --new\n")
 			write(filepath.Join(root, "private.txt"), "UNSELECTED PRIVATE MARKER\n")
+			projectRoot := ""
 			flowPath := filepath.Join(xdg, "lds/flows/update.md")
+			if name == "apply" || name == "flow-response" || name == "flow-apply" {
+				projectRoot = t.TempDir()
+				if err := os.MkdirAll(filepath.Dir(flowPath), 0o700); err != nil {
+					t.Fatal(err)
+				}
+				write(flowPath, "# Shadowed user flow\n")
+				flowPath = filepath.Join(projectRoot, ".lds/assets/flows/update.md")
+			}
 			if err := os.MkdirAll(filepath.Dir(flowPath), 0o700); err != nil {
 				t.Fatal(err)
 			}
@@ -106,7 +115,7 @@ func TestAssistedUpdateConsentScopeAndFreshApply(t *testing.T) {
 			var stdout bytes.Buffer
 			streams := &iostreams.Streams{In: slave, Out: &stdout, Err: slave}
 			command := cli.NewRootCommand(streams, buildinfo.Info{})
-			command.SetArgs([]string{"update", root, "--assist", "--reason", "Review spelling", "--audience", "Maintainers", "--document", "README.md", "--source", "command.txt", "--json"})
+			command.SetArgs([]string{"update", root, "--assist", "--reason", "Review spelling", "--audience", "Maintainers", "--document", "README.md", "--source", "command.txt", "--project-root", projectRoot, "--json"})
 			if name == "queued-send" {
 				if _, err := unix.Write(int(master.Fd()), []byte("send\n")); err != nil {
 					t.Fatal(err)
@@ -173,6 +182,10 @@ func TestAssistedUpdateConsentScopeAndFreshApply(t *testing.T) {
 			if name == "apply" {
 				if exit != 0 {
 					t.Fatalf("apply exit=%d terminal=%s", exit, terminal)
+				}
+				var result struct{ FlowAsset struct{ Source string } }
+				if err := json.Unmarshal(stdout.Bytes(), &result); err != nil || result.FlowAsset.Source != "project" {
+					t.Fatalf("project flow provenance lost: %s, %v", stdout.Bytes(), err)
 				}
 				data, _ := os.ReadFile(filepath.Join(root, "README.md"))
 				if string(data) != "# After 😀\nUse --new.\n" {

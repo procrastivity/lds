@@ -19,7 +19,7 @@ func TestRender_PreservationComparisonsUseCurrentTemplates(t *testing.T) {
 	useIsolatedAssetDirectories(t)
 	fixtureRoot := filepath.Join("..", "asset", "testdata", "adoption")
 	greenfield := filepath.Join(fixtureRoot, "greenfield")
-	outputs, err := Render(filepath.Join(greenfield, "target"), filepath.Join(greenfield, "facts.json"))
+	outputs, err := Render(filepath.Join(greenfield, "target"), filepath.Join(greenfield, "facts.json"), "")
 	if err != nil {
 		t.Fatalf("render shared greenfield facts: %v", err)
 	}

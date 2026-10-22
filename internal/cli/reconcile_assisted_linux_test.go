@@ -40,13 +40,22 @@ func TestAssistedReconciliationConsentBaselineAndReport(t *testing.T) {
 			review := filepath.Join(setup.base, "review.json")
 			write(review, `{"schemaVersion":1,"purpose":"Review this pair","reviewer":"human-fixture","at":"2026-10-22T00:00:00Z","selections":[{"side":"left","path":"left.md"},{"side":"right","path":"maps/a.md"}],"claims":[],"questions":["Human question"]}`)
 			write(setup.journal, `{"schemaVersion":1,"pairId":"fixture:journal-cli:v1","leftProjectId":"left","rightProjectId":"right","revision":0,"events":[]}`)
+			projectRoot, flowSource := "", "override"
 			flow := filepath.Join(xdg, "lds/flows/reconcile.md")
+			if name == "report" || name == "flow-before" || name == "flow-response" {
+				projectRoot, flowSource = t.TempDir(), "project"
+				if err := os.MkdirAll(filepath.Dir(flow), 0o700); err != nil {
+					t.Fatal(err)
+				}
+				write(flow, "# Shadowed user flow\n")
+				flow = filepath.Join(projectRoot, ".lds/assets/flows/reconcile.md")
+			}
 			if err := os.MkdirAll(filepath.Dir(flow), 0o700); err != nil {
 				t.Fatal(err)
 			}
 			write(flow, "# Live reconciliation flow\nReport advice only.\n")
 			output := filepath.Join(setup.base, "report.md")
-			flags := []string{"--pair", setup.pairPath, "--left-root", setup.leftRoot, "--right-root", setup.rightRoot, "--map", filepath.Join(setup.rightRoot, "maps/a.md"), "--review", review, "--output", output, "--journal", setup.journal, "--json"}
+			flags := []string{"--pair", setup.pairPath, "--left-root", setup.leftRoot, "--right-root", setup.rightRoot, "--map", filepath.Join(setup.rightRoot, "maps/a.md"), "--review", review, "--output", output, "--journal", setup.journal, "--project-root", projectRoot, "--json"}
 			expected := assessmentTree(t, setup.base)
 			var calls atomic.Int32
 			var system, user string
@@ -190,6 +199,9 @@ func TestAssistedReconciliationConsentBaselineAndReport(t *testing.T) {
 				hash := func(value []byte) string { sum := sha256.Sum256(value); return hex.EncodeToString(sum[:]) }
 				if result.ReportSHA256 != hash(data) || packet.Assistance == nil || packet.Assistance.SystemSHA256 != hash([]byte(system)) || packet.Assistance.UserSHA256 != hash([]byte(user)) || packet.Assistance.UserBytes != len(user) || packet.Advice == nil || packet.Review.Questions[0] != "Human question" || packet.Journal == nil || packet.Journal.Revision != 0 {
 					t.Fatal("report receipt/advice/history not tied to actual request")
+				}
+				if packet.Assistance.FlowSource != flowSource {
+					t.Fatalf("flow source = %q, want %q", packet.Assistance.FlowSource, flowSource)
 				}
 				if name == "questions-only" && len(packet.Advice.Claims) != 0 {
 					t.Fatal("empty advice invented a claim")

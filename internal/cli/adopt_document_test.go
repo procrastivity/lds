@@ -282,6 +282,96 @@ func TestMaintenanceFlow_LiveOverrideAndInstalledGuidance(t *testing.T) {
 	}
 }
 
+func TestProjectAssets_RuntimeSelectionAndAdministrativeIsolation(t *testing.T) {
+	a, b, xdg, skills := t.TempDir(), t.TempDir(), t.TempDir(), t.TempDir()
+	nested := filepath.Join(a, "nested")
+	if err := os.Mkdir(nested, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	env := []string{"XDG_CONFIG_HOME=" + xdg, "LDS_CLAUDE_SKILLS_DIR=" + skills, "LDS_PROJECT_ROOT=" + b}
+	flows := [][]string{{"adopt"}, {"assess"}, {"update"}, {"reconcile", "flow"}}
+	for i, name := range []string{"adopt", "assess", "update", "reconcile"} {
+		for _, item := range []struct{ dir, marker string }{
+			{filepath.Join(a, ".lds/assets"), "Project A"},
+			{filepath.Join(b, ".lds/assets"), "Project B"},
+			{filepath.Join(xdg, "lds"), "User"},
+		} {
+			writeRenderAsset(t, item.dir, "flows/"+name+".md", []byte("# "+item.marker+" "+name+"\n"))
+		}
+		flows[i] = append([]string{"plumbing"}, flows[i]...)
+	}
+	// Administrative generators must not consume even valid project skill assets.
+	writeRenderAsset(t, filepath.Join(a, ".lds/assets"), "templates/skills/claude-code/judgment.md", []byte("DO NOT INSTALL PROJECT GUIDANCE\n"))
+	writeRenderAsset(t, filepath.Join(a, ".lds/assets"), "config.default.yaml", []byte("invalid: [project config\n"))
+	manifest := runInDir(t, nested, env, "manifest", "--json")
+	installed := runInDir(t, nested, env, "install", "claude-code", "--json")
+	if manifest.exitCode != 0 || installed.exitCode != 0 {
+		t.Fatalf("baseline manifest/install: %+v / %+v", manifest, installed)
+	}
+	skillDir := filepath.Join(skills, "lds")
+	before := renderTargetSnapshot(t, skillDir)
+	checkFlow := func(args []string, selected, marker, source string) {
+		t.Helper()
+		command := append([]string{}, args...)
+		if selected != "" {
+			command = append(command, "--project-root", selected)
+		}
+		r := runInDir(t, nested, env, append(command, "--json")...)
+		var payload struct {
+			Content string
+			Asset   struct{ Source, SHA256 string }
+		}
+		if err := json.Unmarshal([]byte(r.stdout), &payload); err != nil || r.exitCode != 0 || r.stderr != "" {
+			t.Fatalf("flow %v: %+v, %v", command, r, err)
+		}
+		if !strings.HasPrefix(payload.Content, "# "+marker+" ") || payload.Asset.Source != source {
+			t.Fatalf("flow %v = %+v, want %s/%s", command, payload, marker, source)
+		}
+		sum := sha256.Sum256([]byte(payload.Content))
+		if payload.Asset.SHA256 != hex.EncodeToString(sum[:]) {
+			t.Fatal("flow provenance does not match displayed bytes")
+		}
+	}
+	for _, flow := range flows {
+		checkFlow(flow, a, "Project A", "project")
+		checkFlow(flow, b, "Project B", "project")
+		checkFlow(flow, "..", "Project A", "project")
+		checkFlow(flow, ".", "User", "override") // No ancestor discovery.
+		checkFlow(flow, "", "User", "override")  // No cwd/env selection.
+	}
+	writeRenderAsset(t, filepath.Join(a, ".lds/assets"), "flows/adopt.md", []byte("# Edited A adopt\n"))
+	checkFlow(flows[0], a, "Edited A", "project")
+	if err := os.Remove(filepath.Join(a, ".lds/assets/flows/adopt.md")); err != nil {
+		t.Fatal(err)
+	}
+	checkFlow(flows[0], a, "User", "override")
+	for _, selected := range []string{a, b, filepath.Join(a, "missing")} {
+		got := runInDir(t, nested, env, "--project-root", selected, "manifest", "--json")
+		reinstall := runInDir(t, nested, env, "--project-root", selected, "install", "claude-code", "--json")
+		doctor := runInDir(t, nested, env, "--project-root", selected, "doctor", "--json")
+		if got.exitCode != 0 || got.stdout != manifest.stdout {
+			t.Fatalf("project selection changed manifest for %s: exit=%d stderr=%s", selected, got.exitCode, got.stderr)
+		}
+		if reinstall.exitCode != 0 || !strings.Contains(reinstall.stdout, `"status":"current"`) || doctor.exitCode != 0 || !strings.Contains(doctor.stdout, `"findings":[]`) || !equalRenderSnapshots(before, renderTargetSnapshot(t, skillDir)) {
+			t.Fatalf("project selection changed install/doctor state: %+v / %+v", reinstall, doctor)
+		}
+	}
+	for _, flow := range flows {
+		bad := runInDir(t, nested, env, append(append([]string{}, flow...), "--project-root", filepath.Join(a, "missing"), "--json")...)
+		if bad.exitCode != 3 || bad.stdout != "" || parseErrorEnvelope(t, bad.stderr).Error.Code != "refusal.project-asset" {
+			t.Fatalf("missing project root did not refuse: %+v", bad)
+		}
+	}
+	unsafe := filepath.Join(a, ".lds/assets/flows/adopt.md")
+	if err := os.Symlink(filepath.Join(b, ".lds/assets/flows/adopt.md"), unsafe); err != nil {
+		t.Fatal(err)
+	}
+	bad := runInDir(t, nested, env, "--project-root", a, "plumbing", "adopt", "--json")
+	if bad.exitCode != 3 || bad.stdout != "" || parseErrorEnvelope(t, bad.stderr).Error.Code != "refusal.project-asset" {
+		t.Fatalf("unsafe project flow fell through: %+v", bad)
+	}
+}
+
 func runInDir(t *testing.T, dir string, env []string, args ...string) result {
 	t.Helper()
 	cmd := exec.Command(binPath, args...)

@@ -215,11 +215,30 @@ implemented deterministic plumbing and must be settled before any real use:
    ([PR #6](https://github.com/procrastivity/toolsmith/pull/6)). On 2026-10-22,
    the orb's Toolsmith checkout and installed binary were updated/rebuilt
    from that main, with resolver, CLI and generated-tool tests passing.
-   Optional C5.5 uses explicit `--project-root` selection and
+   Optional C5.5 uses explicit global `--project-root PATH` selection of
+   `<canonical-root>/.lds/assets/<shipped-relative-name>` and
    project → user-XDG → installed → embedded precedence for eligible runtime
-   assets; administrative identity remains unchanged. **LDS has not ported
-   this support yet**: updating the generator does not rewrite its existing
-   generated resolver. An explicit LDS integration/rebuild remains work.
+   assets only. **The LDS port is implemented locally**; updating the
+   generator alone does not rewrite its existing generated resolver. The LDS
+   integration opts the four adoption templates into docs
+   render/plan/apply and root adopt, and the adoption, assessment, update
+   and reconciliation flows into their plumbing readers and root adopt,
+   assess, assisted update and assisted report forms. No positional target or
+   reconciliation pair root implies the selector; no cwd/Git/environment
+   discovery is in scope. A missing selected project path falls through per
+   file; invalid roots, symlinks below the canonical root, nonregular paths
+   and read errors refuse without fallback, as does malformed content at its
+   consuming reader. Trust selected directory/writers; there is no hostile
+   concurrent-writer sandbox guarantee. Project source/path/hash provenance
+   belongs in runtime observations and their freshness/approval checks.
+   Generated guidance must carry a human-selected root unchanged into live
+   flow readers **and** adoption template plumbing, not bake repository bytes
+   into installed skills. Manifest/projection digest/config/install/uninstall/
+   doctor and installed skill bytes remain project-independent even if the
+   flag is supplied. Consent, exact-plan approval and staleness checks remain;
+   this is local implementation, not a pilot, provider/native-parity result
+   or contract reconciliation. See the [command reference](../../docs/reference/commands.md#project-root-runtime-asset-selection)
+   and [safety boundary](../../docs/explanation/safety-and-scope.md#project-local-asset-boundary).
 2. Implement deterministic operations for inventorying files and links,
    validating the chosen layout, and rendering/scaffolding templates.
    Provide machine-readable results and tests before agent-driven flows.

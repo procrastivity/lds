@@ -24,7 +24,7 @@ func applyCommand(streams *iostreams.Streams) *cobra.Command {
 			facts, _ := cmd.Flags().GetString("facts")
 			plan, _ := cmd.Flags().GetString("plan")
 			confirm, _ := cmd.Flags().GetString("confirm")
-			result, applyErr := adoption.Apply(args[0], facts, plan, confirm)
+			result, applyErr := adoption.Apply(args[0], facts, plan, confirm, cliflags.FromContext(cmd.Context()).ProjectRoot)
 			if result.SchemaVersion == 1 {
 				if cliflags.FromContext(cmd.Context()).JSON {
 					data, err := json.Marshal(result)

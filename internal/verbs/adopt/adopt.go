@@ -28,8 +28,17 @@ var ErrInvalidDocument = errors.New("invalid adoption document")
 
 // ResolveDocument returns the live, validated shared adoption-flow asset.
 // The root workflow and the plumbing reader consume this same source.
-func ResolveDocument() (asset.Resolved, error) {
-	resolved, err := asset.Resolve(documentAsset)
+func ResolveDocument(projectRoot string) (asset.Resolved, error) {
+	var resolved asset.Resolved
+	var err error
+	if projectRoot == "" {
+		resolved, err = asset.Resolve(documentAsset)
+	} else {
+		resolved, err = asset.ResolveIn(projectRoot, documentAsset)
+		if err != nil {
+			return asset.Resolved{}, ldserr.New("refusal.project-asset", fmt.Sprintf("refusing selected project asset: %v", err))
+		}
+	}
 	if err != nil {
 		return asset.Resolved{}, fmt.Errorf("resolve %s: %w", documentAsset, err)
 	}
@@ -47,8 +56,12 @@ func Command(streams *iostreams.Streams) *cobra.Command {
 		Long:  "Print the live, preparation-only adoption flow document. This command does not run adoption, inspect a target, plan, request confirmation, or write project files.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			resolved, err := ResolveDocument()
+			resolved, err := ResolveDocument(cliflags.FromContext(cmd.Context()).ProjectRoot)
 			if err != nil {
+				var structured *ldserr.Error
+				if errors.As(err, &structured) {
+					return structured
+				}
 				if errors.Is(err, ErrInvalidDocument) {
 					return ldserr.New("validation.adopt-document-invalid", err.Error())
 				}
@@ -93,7 +106,7 @@ func Command(streams *iostreams.Streams) *cobra.Command {
 		},
 	}
 	surface.Annotate(cmd, surface.Plumbing)
-	manifest.SetOutputSchema(cmd, json.RawMessage(`{"type":"object","required":["schemaVersion","operation","status","availability","asset","content"],"properties":{"schemaVersion":{"const":1},"operation":{"const":"adopt"},"status":{"const":"preparatory"},"availability":{"const":"unavailable-for-execution"},"asset":{"type":"object","required":["relativeName","source","sha256"],"properties":{"relativeName":{"const":"flows/adopt.md"},"source":{"enum":["override","default","embedded"]},"sha256":{"type":"string"}}},"content":{"type":"string"}}}`))
+	manifest.SetOutputSchema(cmd, json.RawMessage(`{"type":"object","required":["schemaVersion","operation","status","availability","asset","content"],"properties":{"schemaVersion":{"const":1},"operation":{"const":"adopt"},"status":{"const":"preparatory"},"availability":{"const":"unavailable-for-execution"},"asset":{"type":"object","required":["relativeName","source","sha256"],"properties":{"relativeName":{"const":"flows/adopt.md"},"source":{"enum":["project","override","default","embedded"]},"sha256":{"type":"string"}}},"content":{"type":"string"}}}`))
 	return cmd
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/procrastivity/lds/internal/adoption"
+	"github.com/procrastivity/lds/internal/cliflags"
 	"github.com/procrastivity/lds/internal/iostreams"
 	"github.com/procrastivity/lds/internal/ldserr"
 	"github.com/procrastivity/lds/internal/opencode"
@@ -54,7 +55,8 @@ func runAssistedCommand(cmd *cobra.Command, root string, streams *iostreams.Stre
 }
 
 func runAssisted(ctx context.Context, root, reason, audience string, selected, sources []string, key string, streams *iostreams.Streams, jsonOut bool) error {
-	document, err := resolveDocument()
+	projectRoot := cliflags.FromContext(ctx).ProjectRoot
+	document, err := resolveDocument(projectRoot)
 	if err != nil {
 		return err
 	}
@@ -97,8 +99,8 @@ func runAssisted(ctx context.Context, root, reason, audience string, selected, s
 		return ldserr.New("refusal.provider-transfer-declined", "transfer declined; no provider request or target edit was made")
 	}
 	recheck := func() error {
-		current, err := resolveDocument()
-		if err != nil || current.Source != document.Source || !bytes.Equal(current.Bytes(), document.Bytes()) {
+		current, err := resolveDocument(projectRoot)
+		if err != nil || current.Source != document.Source || current.Path != document.Path || !bytes.Equal(current.Bytes(), document.Bytes()) {
 			return ldserr.New("refusal.flow-changed", "live update flow changed; start a new complete review")
 		}
 		return adoption.RecheckAssessment(root, observed)

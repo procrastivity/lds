@@ -2,6 +2,7 @@ package reconcile
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -22,8 +23,17 @@ type flowAsset struct {
 	SHA256       string `json:"sha256"`
 }
 
-func resolveFlow() (asset.Resolved, error) {
-	document, err := asset.Resolve("flows/reconcile.md")
+func resolveFlow(projectRoot string) (asset.Resolved, error) {
+	var document asset.Resolved
+	var err error
+	if projectRoot == "" {
+		document, err = asset.Resolve("flows/reconcile.md")
+	} else {
+		document, err = asset.ResolveIn(projectRoot, "flows/reconcile.md")
+		if err != nil {
+			return document, ldserr.New("refusal.project-asset", fmt.Sprintf("refusing selected project asset: %v", err))
+		}
+	}
 	if err != nil {
 		return document, ldserr.New("internal.reconcile-document-unavailable", "could not resolve the live reconciliation flow")
 	}
@@ -47,7 +57,7 @@ func flowCommand(streams *iostreams.Streams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "flow", Short: "read the shared reconciliation report flow (does not execute it)", Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			document, err := resolveFlow()
+			document, err := resolveFlow(cliflags.FromContext(cmd.Context()).ProjectRoot)
 			if err != nil {
 				return err
 			}

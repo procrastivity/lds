@@ -26,8 +26,17 @@ type flowAsset struct {
 	SHA256       string `json:"sha256"`
 }
 
-func resolveDocument() (asset.Resolved, error) {
-	document, err := asset.Resolve("flows/assess.md")
+func resolveDocument(projectRoot string) (asset.Resolved, error) {
+	var document asset.Resolved
+	var err error
+	if projectRoot == "" {
+		document, err = asset.Resolve("flows/assess.md")
+	} else {
+		document, err = asset.ResolveIn(projectRoot, "flows/assess.md")
+		if err != nil {
+			return document, ldserr.New("refusal.project-asset", fmt.Sprintf("refusing selected project asset: %v", err))
+		}
+	}
 	if err != nil {
 		return document, ldserr.New("internal.assess-document-unavailable", "could not resolve the live assessment flow")
 	}
@@ -53,7 +62,7 @@ func DocumentCommand(streams *iostreams.Streams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "assess", Short: "read the shared assessment flow (does not run assessment)", Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			document, err := resolveDocument()
+			document, err := resolveDocument(cliflags.FromContext(cmd.Context()).ProjectRoot)
 			if err != nil {
 				return err
 			}

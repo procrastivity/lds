@@ -72,11 +72,46 @@ installation does not prove native adoption or parity.
 Adoption's `docs apply` is Linux-only supported creation: four fixed paths and
 required parent directories, never a root README rewrite. Different occupied
 files veto every create, identical ones remain untouched; it has no update,
-delete, or migration mode. Assets resolve user-XDG → installed-default → embedded;
-the target repo cannot override them. Apply rechecks the plan and uses
-exclusive/no-follow creates, but a late failure may leave some files created.
+delete, or migration mode. By default assets resolve user-XDG → installed-default →
+embedded; the target repo cannot override them without the explicit
+selector below. Apply rechecks the plan and uses exclusive/no-follow creates,
+but a late failure may leave some files created.
 It does not roll back or provide a transaction. Inspect state and make a new
 plan and decision before any rerun.
+
+## Project-local asset boundary
+
+The BDS-234 port allows an explicitly human-selected global
+`--project-root PATH` to prepend
+`<canonical-root>/.lds/assets/<shipped-relative-name>` to the existing
+user-XDG → installed → embedded asset chain for eligible **runtime reads**.
+Only known shipped names may be selected. The root must exist as a directory;
+relative selector paths are relative to invocation cwd and canonicalized.
+No cwd, Git or environment discovery selects a project. Positional docs
+targets, the root adoption/assessment/update targets, and reconciliation pair
+roots do not implicitly select one. Absent a flag, the existing chain remains.
+A missing project path falls through per file; invalid roots, symlinks at any
+component below the canonical root, nonregular components and filesystem/read
+errors refuse rather than falling back. Selected bytes are never silently
+replaced with a default after a flow/template parse or validation failure.
+
+The opt-in readers are adoption render/plan/apply and root adopt for the
+four adoption templates, plus the adoption, assessment, update and
+reconciliation live flow readers and their root adopt/assess/assisted update/
+assisted report forms. Project provenance (`source: "project"`, canonical
+path where exposed and content hash) makes the selected bytes visible to
+review and freshness checks. A changed template or flow requires the
+existing fresh review/consent and exact-plan approval where applicable; a
+project file is not owner approval. Explicit source selection never broadens
+the allowed output paths, source collection scope or provider authority.
+Manifest and projection digest/stamps, configuration, install, uninstall,
+doctor and installed generated skill bytes remain project-independent
+even with a selector. Generated guidance must fetch live assets with the
+human's selection rather than copying project text into an installed skill.
+Trust the selected directory and its writers; the port does not guarantee
+isolation from hostile concurrent writers or make reads atomic. This is a
+local integration boundary, not pilot authorization, provider validation,
+native skill execution/parity or reconciliation of the Toolsmith contract.
 
 Separately, offline `lds update` and the canonical `docs update-plan` /
 `docs update-apply` steps handle only explicitly selected **existing** root

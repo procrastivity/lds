@@ -60,18 +60,18 @@ type createTarget struct {
 
 // Apply consumes a reviewed plan and creates only its missing approved files.
 // It re-plans before any write and refuses when any displayed input changed.
-func Apply(root, factsPath, planPath, confirmation string) (ApplyResult, error) {
+func Apply(root, factsPath, planPath, confirmation, projectRoot string) (ApplyResult, error) {
 	data, err := os.ReadFile(planPath)
 	if err != nil {
 		return refusedApplyResult(PlanResult{}, "refusal.plan-invalid", "reviewed plan cannot be read")
 	}
-	return ApplyReviewed(root, factsPath, data, confirmation)
+	return ApplyReviewed(root, factsPath, data, confirmation, projectRoot)
 }
 
 // ApplyReviewed consumes the exact in-memory plan shown by a host workflow.
 // It shares Apply's strict digest, stale-input, and exclusive-create checks
 // without requiring the orchestration layer to create a temporary plan file.
-func ApplyReviewed(root, factsPath string, data []byte, confirmation string) (ApplyResult, error) {
+func ApplyReviewed(root, factsPath string, data []byte, confirmation, projectRoot string) (ApplyResult, error) {
 	if err := rejectDuplicateJSONKeys(data); err != nil {
 		return refusedApplyResult(PlanResult{}, "refusal.plan-invalid", "reviewed plan contains duplicate JSON keys")
 	}
@@ -92,7 +92,7 @@ func ApplyReviewed(root, factsPath string, data []byte, confirmation string) (Ap
 		return refusedApplyResult(reviewed, "refusal.plan-veto", "a vetoed plan cannot be applied")
 	}
 
-	current, planErr := Plan(root, factsPath)
+	current, planErr := Plan(root, factsPath, projectRoot)
 	if planErr != nil || current.PlanDigest == nil || *current.PlanDigest != *reviewed.PlanDigest {
 		return refusedApplyWithObserved(reviewed, current, "refusal.plan-stale", "target, facts, assets, or diagnostics changed since review")
 	}

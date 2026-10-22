@@ -876,6 +876,51 @@ func TestDocsApply_ReviewedDigestCreatesThenNoops(t *testing.T) {
 	}
 }
 
+func TestDocsApply_ProjectTemplateSelectionAndFreshness(t *testing.T) {
+	a, b, target := t.TempDir(), t.TempDir(), t.TempDir()
+	const name = "templates/adoption/docs/README.md"
+	base, err := rootassets.FS.ReadFile(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, item := range []struct{ root, marker string }{{a, "A"}, {b, "B"}} {
+		writeRenderAsset(t, filepath.Join(item.root, ".lds/assets"), name, append([]byte("<!-- Project "+item.marker+" -->\n"), base...))
+	}
+	env := []string{"XDG_CONFIG_HOME=" + t.TempDir()}
+	facts := filepath.Join("..", "asset", "testdata", "adoption", "greenfield", "facts.json")
+	rendered := run(t, env, "plumbing", "docs", "render", target, "--facts", facts, "--project-root", a, "--json")
+	output := mustRenderOutput(t, rendered, "docs/README.md")
+	if output.Asset.Source != "project" || !strings.HasPrefix(output.Content, "<!-- Project A -->\n") {
+		t.Fatalf("render did not select explicit asset root: %+v", output)
+	}
+	planned := run(t, env, "plumbing", "docs", "plan", target, "--facts", facts, "--project-root", a, "--json")
+	var plan adoption.PlanResult
+	if err := json.Unmarshal([]byte(planned.stdout), &plan); err != nil || planned.exitCode != 0 || plan.PlanDigest == nil {
+		t.Fatalf("project plan: %+v, %v", planned, err)
+	}
+	planFile := filepath.Join(t.TempDir(), "plan.json")
+	if err := os.WriteFile(planFile, []byte(planned.stdout), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	apply := func(selected string) result {
+		return run(t, env, "plumbing", "docs", "apply", target, "--facts", facts, "--plan", planFile, "--confirm", *plan.PlanDigest, "--project-root", selected, "--json")
+	}
+	for _, selected := range []string{b, ""} {
+		refused := apply(selected)
+		if refused.exitCode != 3 || parseErrorEnvelope(t, refused.stderr).Error.Code != "refusal.plan-stale" {
+			t.Fatalf("different/missing selector accepted reviewed template: %+v", refused)
+		}
+		if entries, err := os.ReadDir(target); err != nil || len(entries) != 0 {
+			t.Fatalf("stale plan wrote target: %v / %v", entries, err)
+		}
+	}
+	accepted := apply(a)
+	data, err := os.ReadFile(filepath.Join(target, "docs/README.md"))
+	if accepted.exitCode != 0 || accepted.stderr != "" || err != nil || string(data) != output.Content {
+		t.Fatalf("approved project template did not apply exact reviewed bytes: %+v, %v", accepted, err)
+	}
+}
+
 func TestDocsPlan_IncompleteFactsCollisionAndUsage(t *testing.T) {
 	fixture := filepath.Join("..", "asset", "testdata", "adoption", "greenfield")
 	root := filepath.Join(fixture, "target")

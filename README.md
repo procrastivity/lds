@@ -73,6 +73,30 @@ lds install                     # project into every detected harness
 <harness>` removes exactly what install wrote; `lds plumbing doctor` reports
 stale or drifted projections.
 
+## Project-local runtime assets (BDS-234 port)
+
+LDS accepts an explicit global `--project-root PATH` for
+runtime asset reads. For a known shipped asset name, it tries
+`<canonical-root>/.lds/assets/<shipped-relative-name>` before the existing
+user-XDG → installed → embedded chain. For example, selecting `/work/acme`
+lets adoption render use `/work/acme/.lds/assets/templates/adoption/docs/README.md`;
+the flag is not inferred from the current directory, Git, environment,
+an adoption/assessment/update target, or reconciliation pair roots. A missing
+project file falls through for that asset only; unsafe or unreadable
+selected paths refuse rather than fall back. See the
+[command reference](docs/reference/commands.md#project-root-runtime-asset-selection)
+and [safety boundaries](docs/explanation/safety-and-scope.md#project-local-asset-boundary).
+
+The selection applies to adoption templates and the live adoption,
+assessment, update and reconciliation flows where their runtime readers opt
+in. It does not change manifest/projection-digest identity, configuration, install,
+uninstall, doctor or generated installed skill bytes. A generated skill must
+carry an explicitly human-selected root to its live flow and template
+plumbing calls, not embed repository content at installation time. Existing
+consent, plan approval and freshness gates still apply; this is a local
+integration, not a pilot, provider test, native skill/parity finding or
+contract-reconciliation claim.
+
 ## Use LDS
 
 Start with the [user documentation](docs/README.md) for an offline inspection

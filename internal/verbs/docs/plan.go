@@ -26,7 +26,7 @@ func planCommand(streams *iostreams.Streams) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			result, planErr := adoption.Plan(args[0], factsPath)
+			result, planErr := adoption.Plan(args[0], factsPath, cliflags.FromContext(cmd.Context()).ProjectRoot)
 			if result.SchemaVersion == 1 {
 				if cliflags.FromContext(cmd.Context()).JSON {
 					data, err := json.Marshal(result)
@@ -48,6 +48,8 @@ func planCommand(streams *iostreams.Streams) *cobra.Command {
 				return ldserr.New(refusal.Code, refusal.Message)
 			}
 			switch {
+			case errors.Is(planErr, adoption.ErrProjectAsset):
+				return ldserr.New("refusal.project-asset", planErr.Error())
 			case errors.Is(planErr, adoption.ErrInvalidRenderInput):
 				return ldserr.New("validation.render-invalid", planErr.Error())
 			case errors.Is(planErr, adoption.ErrUnsafeTarget):

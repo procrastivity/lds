@@ -61,7 +61,7 @@ func validateReportAssistance(value ReportAssistance) error {
 		return fmt.Errorf("unsupported provider or model")
 	}
 	switch value.FlowSource {
-	case "override", "default", "embedded":
+	case "project", "override", "default", "embedded":
 	default:
 		return fmt.Errorf("invalid flow source")
 	}

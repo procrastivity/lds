@@ -7,15 +7,81 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/procrastivity/lds/internal/asset"
 )
 
 const applyFactsPath = "../asset/testdata/adoption/greenfield/facts.json"
+
+func TestSelectedProjectTemplatePlanAndApply(t *testing.T) {
+	const name = "templates/adoption/docs/README.md"
+	for _, scenario := range []string{"unchanged", "edited", "deleted", "project-to-XDG"} {
+		t.Run(scenario, func(t *testing.T) {
+			useIsolatedAssetDirectories(t)
+			root, projectRoot := t.TempDir(), t.TempDir()
+			original, err := asset.Resolve(name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			selected := append([]byte("<!-- selected project template -->\n"), original.Bytes()...)
+			projectAsset := filepath.Join(projectRoot, ".lds", "assets", filepath.FromSlash(name))
+			if err := os.MkdirAll(filepath.Dir(projectAsset), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(projectAsset, selected, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			plan, err := Plan(root, applyFactsPath, projectRoot)
+			if err != nil || plan.PlanDigest == nil {
+				t.Fatalf("selected plan: %+v, %v", plan, err)
+			}
+			var selectedOutput *PlanOutput
+			for i := range plan.Outputs {
+				if plan.Outputs[i].Path == "docs/README.md" {
+					selectedOutput = &plan.Outputs[i]
+				}
+			}
+			if selectedOutput == nil || selectedOutput.Asset == nil || selectedOutput.Asset.Source != "project" || selectedOutput.Asset.SHA256 != sha256Hex(selected) || !bytes.Contains([]byte(selectedOutput.Content), []byte("selected project template")) {
+				t.Fatalf("plan omitted selected template provenance/content: %+v", selectedOutput)
+			}
+			reviewed, err := json.Marshal(plan)
+			if err != nil {
+				t.Fatal(err)
+			}
+			switch scenario {
+			case "edited":
+				err = os.WriteFile(projectAsset, append(selected, []byte("\nchanged\n")...), 0o600)
+			case "deleted", "project-to-XDG":
+				if scenario == "project-to-XDG" {
+					writeAssetOverride(t, os.Getenv("XDG_CONFIG_HOME"), name, string(selected))
+				}
+				err = os.Remove(projectAsset)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			result, err := ApplyReviewed(root, applyFactsPath, reviewed, *plan.PlanDigest, projectRoot)
+			if scenario == "unchanged" {
+				if err != nil || result.Status != "applied" || len(result.Created) != 4 {
+					t.Fatalf("selected apply: %+v, %v", result, err)
+				}
+				got, readErr := os.ReadFile(filepath.Join(root, "docs", "README.md"))
+				if readErr != nil || !bytes.Equal(got, []byte(selectedOutput.Content)) {
+					t.Fatalf("created bytes differ from selected plan: %v", readErr)
+				}
+			} else {
+				assertApplyRefused(t, result, err, "refusal.plan-stale")
+				assertNoApprovedOutputs(t, root)
+			}
+		})
+	}
+}
 
 func TestApply_CreatesOnlyReviewedOutputsAndIdenticalRerunIsCurrent(t *testing.T) {
 	useIsolatedAssetDirectories(t)
 	root := t.TempDir()
 	plan, planPath := writeApplyPlan(t, root, applyFactsPath)
-	result, err := Apply(root, applyFactsPath, planPath, *plan.PlanDigest)
+	result, err := Apply(root, applyFactsPath, planPath, *plan.PlanDigest, "")
 	if err != nil || result.Status != "applied" || len(result.Created) != 4 || len(result.Unattempted) != 0 {
 		t.Fatalf("first Apply = %+v, %v", result, err)
 	}
@@ -26,7 +92,7 @@ func TestApply_CreatesOnlyReviewedOutputsAndIdenticalRerunIsCurrent(t *testing.T
 		}
 	}
 	second, secondPlan := writeApplyPlan(t, root, applyFactsPath)
-	current, err := Apply(root, applyFactsPath, secondPlan, *second.PlanDigest)
+	current, err := Apply(root, applyFactsPath, secondPlan, *second.PlanDigest, "")
 	if err != nil || current.Status != "current" || len(current.Created) != 0 || len(current.IdenticalUntouched) != 4 {
 		t.Fatalf("identical Apply = %+v, %v", current, err)
 	}
@@ -35,7 +101,7 @@ func TestApply_CreatesOnlyReviewedOutputsAndIdenticalRerunIsCurrent(t *testing.T
 func TestApplyReviewedUsesRawDisplayedFieldsAndDigest(t *testing.T) {
 	useIsolatedAssetDirectories(t)
 	acceptedRoot := t.TempDir()
-	plan, err := Plan(acceptedRoot, applyFactsPath)
+	plan, err := Plan(acceptedRoot, applyFactsPath, "")
 	if err != nil || plan.PlanDigest == nil {
 		t.Fatalf("Plan: digest=%v err=%v", plan.PlanDigest, err)
 	}
@@ -43,13 +109,13 @@ func TestApplyReviewedUsesRawDisplayedFieldsAndDigest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	accepted, err := ApplyReviewed(acceptedRoot, applyFactsPath, raw, *plan.PlanDigest)
+	accepted, err := ApplyReviewed(acceptedRoot, applyFactsPath, raw, *plan.PlanDigest, "")
 	if err != nil || accepted.Status != "applied" || len(accepted.Created) != 4 {
 		t.Fatalf("exact in-memory reviewed bytes = %+v, %v", accepted, err)
 	}
 
 	changedRoot := t.TempDir()
-	changedPlan, err := Plan(changedRoot, applyFactsPath)
+	changedPlan, err := Plan(changedRoot, applyFactsPath, "")
 	if err != nil || changedPlan.PlanDigest == nil {
 		t.Fatalf("second Plan: digest=%v err=%v", changedPlan.PlanDigest, err)
 	}
@@ -61,7 +127,7 @@ func TestApplyReviewedUsesRawDisplayedFieldsAndDigest(t *testing.T) {
 	if !bytes.Contains(changedBytes, []byte(`"veto":true`)) {
 		t.Fatal("asymmetric reviewed-field mutation did not alter the raw plan")
 	}
-	refused, err := ApplyReviewed(changedRoot, applyFactsPath, changedBytes, *changedPlan.PlanDigest)
+	refused, err := ApplyReviewed(changedRoot, applyFactsPath, changedBytes, *changedPlan.PlanDigest, "")
 	assertApplyRefused(t, refused, err, "refusal.plan-invalid")
 	assertNoApprovedOutputs(t, changedRoot)
 }
@@ -71,7 +137,7 @@ func TestApply_DeclineTamperAndStaleInputsWriteNothing(t *testing.T) {
 		useIsolatedAssetDirectories(t)
 		root := t.TempDir()
 		plan, p := writeApplyPlan(t, root, applyFactsPath)
-		result, err := Apply(root, applyFactsPath, p, "sha256:not-confirmed")
+		result, err := Apply(root, applyFactsPath, p, "sha256:not-confirmed", "")
 		assertApplyRefused(t, result, err, "refusal.confirmation-declined")
 		assertNoApprovedOutputs(t, root)
 		_ = plan
@@ -85,7 +151,7 @@ func TestApply_DeclineTamperAndStaleInputsWriteNothing(t *testing.T) {
 		if err := os.WriteFile(p, data, 0o600); err != nil {
 			t.Fatal(err)
 		}
-		result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest)
+		result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest, "")
 		assertApplyRefused(t, result, err, "refusal.plan-invalid")
 		assertNoApprovedOutputs(t, root)
 	})
@@ -101,7 +167,7 @@ func TestApply_DeclineTamperAndStaleInputsWriteNothing(t *testing.T) {
 		if err := os.WriteFile(p, data, 0o600); err != nil {
 			t.Fatal(err)
 		}
-		result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest)
+		result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest, "")
 		assertApplyRefused(t, result, err, "refusal.plan-invalid")
 		assertNoApprovedOutputs(t, root)
 	})
@@ -120,7 +186,7 @@ func TestApply_DeclineTamperAndStaleInputsWriteNothing(t *testing.T) {
 		if err := os.WriteFile(facts, append(data, '\n'), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		result, err := Apply(root, facts, p, planDigestFromFile(t, p))
+		result, err := Apply(root, facts, p, planDigestFromFile(t, p), "")
 		assertApplyRefused(t, result, err, "refusal.plan-stale")
 		assertNoApprovedOutputs(t, root)
 	})
@@ -134,7 +200,7 @@ func TestApply_DeclineTamperAndStaleInputsWriteNothing(t *testing.T) {
 		if err := os.WriteFile(filepath.Join(root, "docs", "links.md"), []byte("[missing](absent.md)\n"), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		result, err := Apply(root, applyFactsPath, p, planDigestFromFile(t, p))
+		result, err := Apply(root, applyFactsPath, p, planDigestFromFile(t, p), "")
 		assertApplyRefused(t, result, err, "refusal.plan-stale")
 		assertNoApprovedOutputs(t, root)
 	})
@@ -149,7 +215,7 @@ func TestApply_DeclineTamperAndStaleInputsWriteNothing(t *testing.T) {
 		if err := os.WriteFile(sample, []byte("after\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest)
+		result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest, "")
 		assertApplyRefused(t, result, err, "refusal.plan-stale")
 		if len(result.Preserved) != 1 || result.Preserved[0].SHA256 != sha256Hex([]byte("after\n")) {
 			t.Fatalf("refusal reported stale preservation evidence: %+v", result.Preserved)
@@ -171,7 +237,7 @@ func TestApply_DeclineTamperAndStaleInputsWriteNothing(t *testing.T) {
 		if err := os.Mkdir(root, 0o755); err != nil {
 			t.Fatal(err)
 		}
-		result, err := Apply(root, applyFactsPath, p, planDigestFromFile(t, p))
+		result, err := Apply(root, applyFactsPath, p, planDigestFromFile(t, p), "")
 		assertApplyRefused(t, result, err, "refusal.plan-stale")
 		assertNoApprovedOutputs(t, root)
 	})
@@ -189,7 +255,7 @@ func TestApply_ChangedAssetAndUnsafeSymlinkPathsRefuse(t *testing.T) {
 		if err := os.WriteFile(assetOverride, []byte("# changed template\n"), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		result, err := Apply(root, applyFactsPath, p, planDigestFromFile(t, p))
+		result, err := Apply(root, applyFactsPath, p, planDigestFromFile(t, p), "")
 		assertApplyRefused(t, result, err, "refusal.plan-stale")
 		assertNoApprovedOutputs(t, root)
 	})
@@ -207,7 +273,7 @@ func TestApply_ChangedAssetAndUnsafeSymlinkPathsRefuse(t *testing.T) {
 		if err := os.Symlink(outside, link); err != nil {
 			t.Fatal(err)
 		}
-		plan, err := Plan(root, applyFactsPath)
+		plan, err := Plan(root, applyFactsPath, "")
 		var refusal *PlanRefusal
 		if !errors.As(err, &refusal) || !plan.Veto {
 			t.Fatalf("symlink plan=%+v err=%v", plan, err)
@@ -224,7 +290,7 @@ func TestApply_ChangedAssetAndUnsafeSymlinkPathsRefuse(t *testing.T) {
 		if err := os.Symlink(outside, filepath.Join(root, "docs")); err != nil {
 			t.Fatal(err)
 		}
-		plan, err := Plan(root, applyFactsPath)
+		plan, err := Plan(root, applyFactsPath, "")
 		var refusal *PlanRefusal
 		if !errors.As(err, &refusal) || !plan.Veto {
 			t.Fatalf("ancestor-symlink plan=%+v err=%v", plan, err)
@@ -249,7 +315,7 @@ func TestApply_ReportsPartialEffectsWithoutRollback(t *testing.T) {
 		return errors.New("injected")
 	}
 	t.Cleanup(func() { createOutputFile = original })
-	result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest)
+	result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest, "")
 	var applyErr *ApplyError
 	if !errors.As(err, &applyErr) || applyErr.Code != "internal.apply-failed" || result.Status != "partial" || len(result.Created) != 1 || result.Failed == nil || len(result.Unattempted) != 2 {
 		t.Fatalf("partial Apply = %+v, %v", result, err)
@@ -279,7 +345,7 @@ func TestApply_AncestorReplacementAfterReviewDoesNotFollowSymlink(t *testing.T) 
 		return original(target, rel, data)
 	}
 	t.Cleanup(func() { createOutputFile = original })
-	result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest)
+	result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest, "")
 	var applyErr *ApplyError
 	if !errors.As(err, &applyErr) || result.Status != "refused" || result.Failed == nil || len(result.Created) != 0 || len(result.Unattempted) != 3 {
 		t.Fatalf("ancestor swap result=%+v err=%v", result, err)
@@ -308,7 +374,7 @@ func TestApply_RefusesRegularParentReplacementAtWriteBoundary(t *testing.T) {
 		return original(target, rel, data)
 	}
 	t.Cleanup(func() { createOutputFile = original })
-	result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest)
+	result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest, "")
 	assertApplyRefused(t, result, err, "refusal.plan-stale")
 	assertNoApprovedOutputs(t, root)
 	if entries, err := os.ReadDir(filepath.Join(root, "docs.old")); err != nil || len(entries) != 0 {
@@ -335,7 +401,7 @@ func TestApply_RefusesNamedRootReplacementAtWriteBoundary(t *testing.T) {
 		return original(target, rel, data)
 	}
 	t.Cleanup(func() { createOutputFile = original })
-	result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest)
+	result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest, "")
 	assertApplyRefused(t, result, err, "refusal.plan-stale")
 	assertNoApprovedOutputs(t, root)
 	assertNoApprovedOutputs(t, root+".old")
@@ -358,7 +424,7 @@ func TestApply_LateOccupiedOutputIsPolicyCollision(t *testing.T) {
 		return original(target, rel, data)
 	}
 	t.Cleanup(func() { createOutputFile = original })
-	result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest)
+	result, err := Apply(root, applyFactsPath, p, *plan.PlanDigest, "")
 	assertApplyRefused(t, result, err, "refusal.output-collision")
 	if result.Failed == nil || result.Failed.Path != "docs/README.md" || result.Failed.SHA256 != sha256Hex([]byte("occupied\n")) || len(result.Unattempted) != 3 {
 		t.Fatalf("late occupied path result = %+v", result)
@@ -371,7 +437,7 @@ func TestApply_LateOccupiedOutputIsPolicyCollision(t *testing.T) {
 
 func writeApplyPlan(t *testing.T, root, facts string) (PlanResult, string) {
 	t.Helper()
-	plan, err := Plan(root, facts)
+	plan, err := Plan(root, facts, "")
 	if err != nil {
 		t.Fatalf("Plan: %v", err)
 	}
