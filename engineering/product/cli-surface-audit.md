@@ -88,7 +88,8 @@ flushes queued input, and requires freshly typed
 flag. It then uses strict in-memory apply and, with `--json`, returns schema-1
 `operation: "update"`, `status`, `plan` and nullable `apply` on stdout. No provider,
 temporary plan/report or native skill execution is involved. The current
-manifest, including offline root review, is 29 leaves, 19 projected qualified plumbing-kind entries,
+manifest, including offline root review and guided journal operations, is
+32 leaves, 19 projected qualified plumbing-kind entries,
 and nine docs leaves; the historical observations above do not verify the
 new root command's terminal behavior. See the
 [update contract](documentation-update-contract.md).
@@ -100,3 +101,13 @@ not complete, correct or current documentation; no semantic, cross-track or
 code-alignment verdict is claimed. It needs no terminal, credentials or authored
 JSON inputs and creates no report or target files. See the
 [review how-to](../../docs/how-to/review-documentation.md).
+
+The root-only `reconcile journal record`, `decide`, and `reconsider` hosts
+are separate deterministic terminal compositions, not plumbing aliases or
+projected entries. They capture fresh pinned evidence and journal state,
+collect explicit claims, and display the complete digest-bound preview before
+flushing queued input and requiring operation-specific fresh confirmation.
+They share the existing journal transition/replay and persistence rules with
+the manual file-based plumbing. Only the explicit external journal may be
+written; no project edit, provider call, authenticated authority or verified
+transfer follows. See the [guided journal how-to](../../docs/how-to/reconcile-projects.md#guide-a-journal-entry-in-the-terminal).

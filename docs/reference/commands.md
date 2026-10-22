@@ -29,10 +29,31 @@ historical `lds docs ...` spellings):
 | `lds plumbing reconcile scan --pair <absolute-file> --left-root <absolute-dir> --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] [--journal <absolute-existing-file>]` | Scan pinned clean roots; journal comparison optional. |
 | `lds reconcile report --pair <absolute-pair.json> --left-root <absolute-dir> --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] [--journal <absolute-existing-journal.json>] --review <absolute-review.json> --output <absolute-new-report.md> [--json]` | Linux offline deterministic review-required Markdown report with provenance JSON appendix; private new external file (0600), no overwrite, model, project command or source/journal write. |
 | `lds plumbing reconcile report` (same flags) | Identical deterministic report operation; only qualified plumbing form is generated-skill-table eligible, not proof of native execution or parity. |
+| `lds reconcile journal record\|decide\|reconsider --pair <absolute-pair.json> --left-root <absolute-clean-pinned-Git-root> --right-root <absolute-clean-pinned-Git-root> --map <absolute-tracked-raw-map> [--map ...] --journal <absolute-external-journal-path> [--json]` | Linux root-only interactive hosts for explicit reviewed journal entries. Fresh scan and prior journal state, full preview and fresh terminal digest confirmation; no authored `--scan`/`--request` files. First confirmed record may create the journal. See the [guided how-to](../how-to/reconcile-projects.md#guide-a-journal-entry-in-the-terminal). |
 | `lds plumbing reconcile journal read --pair <absolute-file> --journal <absolute-file>` | Read existing journal without writing. |
 | `lds plumbing reconcile journal record --pair <absolute-file> --journal <absolute-file> --scan <absolute-saved-file> --request <absolute-file>` | Record reviewed correspondence and evidence. |
 | `lds plumbing reconcile journal decide --pair <absolute-file> --journal <absolute-file> --scan <absolute-saved-file> --request <absolute-file>` | Record an explicit initial outcome. |
 | `lds plumbing reconcile journal reconsider --pair <absolute-file> --journal <absolute-file> --scan <absolute-saved-file> --request <absolute-file>` | Explicitly supersede a decision; none edit sources. |
+
+The guided hosts require terminal input and presentation even with `--json`:
+prompts, candidate evidence, prior decisions and the **full** digest-bound
+request/evidence/journal preview go to stderr; successful JSON goes to stdout.
+After queued input is flushed, type exactly `record sha256:<digest>`,
+`decide sha256:<digest>`, or `reconsider sha256:<digest>` for the displayed
+operation, or `decline`. No `--confirm` shortcut. The host collects explicit
+plain-text correspondence/provenance/assessment for record (optional complete
+replacement during reconsider), actor/rationale, owner authority declaration,
+permitted directions and outcome for decisions. Reconsider names its trigger
+and explicitly supersedes the last decision. An `applied` outcome requires an
+externally authored proof reference and explicit direction and authority;
+the host does not verify proof or perform transfer. No source edits, model,
+network, fetch, checkout or project commands beyond the existing read-only
+Git scan. Fresh pair/source/map/journal checks refuse drift before writing;
+there are no automatic retries. Preview/decline creates no journal, lock or
+output files. For an indeterminate write, read the journal and inspect its
+revision/request ID before any retry. The original saved-scan/request-file
+plumbing remains available. These three root-only plumbing-kind leaves are
+not generated/projection entries or a shared reconciliation flow.
 
 The report brief requires `schemaVersion: 1`, nonempty `purpose` and
 `reviewer`, an asserted RFC3339 `at` string, and `selections`, `claims`, and
@@ -92,15 +113,15 @@ skipped checks are not passes.
 Neither status establishes complete, correct or current documentation. Shell
 redirection, if used, is the caller's write responsibility.
 
-`lds manifest` is also an alias. Scan and journal successes emit JSON even
-without `--json`; report prints a human summary by default and JSON with
+`lds manifest` is also an alias. Plumbing scan and journal successes emit JSON
+even without `--json`; report prints a human summary by default and JSON with
 `--json`. Exit 0 is success; 1 is validation/evidence finding,
 2 usage, 3 refusal/staleness, 4 unexpected internal/I/O failure. Some docs
 diagnostics emit a JSON result to stdout **and** an error to stderr: inspect
 exit code and both streams. Cobra usage errors are human diagnostics. Root
 `init` remains a candidate; broader review and model-assisted update
-orchestration are deferred. Root `reconcile` has only the offline `report`
-slice, not an assisted facilitator. The manifest has 29 application leaves,
+orchestration are deferred. Root `reconcile` has offline report and guided
+journal slices, not an assisted facilitator. The manifest has 32 application leaves,
 19 qualified projected plumbing-kind entries and nine docs leaves;
 projection eligibility is not evidence of native execution or parity. The root
 LLM-kind command is not a deterministic projected member. See the

@@ -639,6 +639,12 @@ func WriteJournal(input JournalInput) (JournalResponse, error) {
 	if err != nil {
 		return JournalResponse{}, err
 	}
+	return writeJournalLocked(input.Operation, pair, scan, scanHash, request, journalPath, nil)
+}
+
+// review is nil for the original file-based API. Both paths use the same
+// anchored parent, sibling lock, transition planner, and persistence routine.
+func writeJournalLocked(operation string, pair loadedPair, scan Response, scanHash string, request journalWriteRequest, journalPath canonicalJournalPath, review *JournalReview) (JournalResponse, error) {
 	protected, err := protectedGitDirs(scan)
 	if err != nil {
 		return JournalResponse{}, staleEvidence("cannot validate source snapshot boundaries: %v", err)
@@ -675,17 +681,59 @@ func WriteJournal(input JournalInput) (JournalResponse, error) {
 		_ = unix.Flock(int(lock.Fd()), unix.LOCK_UN)
 		_ = lock.Close()
 	}()
-	currentPath, err := resolveJournalPath(journalPath.input, input.Operation == "record")
+	currentPath, err := resolveJournalPath(journalPath.input, operation == "record")
 	if err != nil || currentPath.target != journalPath.target {
 		return JournalResponse{}, ldserr.New("refusal.reconcile-write-target", "journal path changed after writer lock acquisition")
 	}
 	if err := checkJournalPathStillSafe(currentPath.target, currentPath.lock, dir, lock, protected); err != nil {
 		return JournalResponse{}, err
 	}
-	state, err := readJournalState(dir, filepath.Base(currentPath.target), input.Operation == "record", pair)
+	if review != nil {
+		if err := review.checkJournalBaseline(dir); err != nil {
+			return JournalResponse{}, err
+		}
+	}
+	state, err := readJournalState(dir, filepath.Base(currentPath.target), operation == "record", pair)
 	if err != nil {
 		return JournalResponse{}, err
 	}
+	result, err := planJournalWrite(operation, pair, scan, scanHash, request, state, currentPath.target)
+	if err != nil {
+		return JournalResponse{}, err
+	}
+	if result.replayed {
+		return result.response, nil
+	}
+	if err := checkJournalPathStillSafe(currentPath.target, currentPath.lock, dir, lock, protected); err != nil {
+		return JournalResponse{}, err
+	}
+	if review != nil {
+		if err := review.checkSource(); err != nil {
+			return JournalResponse{}, err
+		}
+		if err := review.checkJournalBaseline(dir); err != nil {
+			return JournalResponse{}, err
+		}
+		if err := checkJournalPathStillSafe(currentPath.target, currentPath.lock, dir, lock, protected); err != nil {
+			return JournalResponse{}, err
+		}
+	}
+	if err := persistJournal(dir, filepath.Base(currentPath.target), result.bytes, journalWriteHooks{}); err != nil {
+		return JournalResponse{}, err
+	}
+	return result.response, nil
+}
+
+type journalWritePlan struct {
+	response JournalResponse
+	bytes    []byte
+	replayed bool
+}
+
+// planJournalWrite is shared by the file-based writer and in-memory preview/apply.
+// It validates the same transition and replays the resulting document before
+// either caller is allowed to persist it.
+func planJournalWrite(operation string, pair loadedPair, scan Response, scanHash string, request journalWriteRequest, state *journalState, path string) (journalWritePlan, error) {
 	identity := scanIdentity{
 		ScanSHA256:     scanHash,
 		PairSHA256:     pair.hash,
@@ -693,23 +741,23 @@ func WriteJournal(input JournalInput) (JournalResponse, error) {
 		EvidenceDigest: request.common.ExpectedEvidenceDigest,
 	}
 	if prior := eventForRequestID(state.Events, request.common.RequestID); prior != nil {
-		if !eventMatchesOperation(input.Operation, prior.Type) || !jsonValuesEqual(prior.Request, request.data) || prior.ScanIdentity != identity {
-			return JournalResponse{}, ldserr.New("refusal.reconcile-journal-conflict", "requestId is already stored with different request fields or scan identity")
+		if !eventMatchesOperation(operation, prior.Type) || !jsonValuesEqual(prior.Request, request.data) || prior.ScanIdentity != identity {
+			return journalWritePlan{}, ldserr.New("refusal.reconcile-journal-conflict", "requestId is already stored with different request fields or scan identity")
 		}
 		replayed := true
-		response := projectJournal("reconcile journal "+input.Operation, currentPath.target, *pair.file.PairID, snapshotsFromPair(pair.file), state)
+		response := projectJournal("reconcile journal "+operation, path, *pair.file.PairID, snapshotsFromPair(pair.file), state)
 		response.Replayed = &replayed
-		return response, nil
+		return journalWritePlan{response: response, replayed: true}, nil
 	}
 	if request.common.ExpectedJournalRevision != state.Revision {
-		return JournalResponse{}, ldserr.New("refusal.reconcile-journal-conflict", fmt.Sprintf("expected journal revision %d, current revision is %d", request.common.ExpectedJournalRevision, state.Revision))
+		return journalWritePlan{}, ldserr.New("refusal.reconcile-journal-conflict", fmt.Sprintf("expected journal revision %d, current revision is %d", request.common.ExpectedJournalRevision, state.Revision))
 	}
 	candidate, ok := candidateByID(scan.Candidates, request.common.CandidateID)
 	if !ok || candidate.EvidenceStatus == "out-of-scope" || candidate.EvidenceDigest == nil {
-		return JournalResponse{}, staleEvidence("request candidate is absent from current scan scope")
+		return journalWritePlan{}, staleEvidence("request candidate is absent from current scan scope")
 	}
 	if *candidate.EvidenceDigest != request.common.ExpectedEvidenceDigest {
-		return JournalResponse{}, staleEvidence("request evidence digest differs from selected scan candidate")
+		return journalWritePlan{}, staleEvidence("request evidence digest differs from selected scan candidate")
 	}
 	observation := observationPayload{
 		CandidateKey:   candidate.CandidateKey,
@@ -718,14 +766,14 @@ func WriteJournal(input JournalInput) (JournalResponse, error) {
 		Evidence:       candidate.Evidence,
 	}
 	if request.common.CandidateID != candidateID(*pair.file.PairID, candidate.CandidateKey) {
-		return JournalResponse{}, staleEvidence("request candidate ID differs from selected scan candidate")
+		return journalWritePlan{}, staleEvidence("request candidate ID differs from selected scan candidate")
 	}
-	if err := validateWriteTransition(input.Operation, request, state, observation, *pair.file.PairID, *pair.file.Left.ProjectID, *pair.file.Right.ProjectID); err != nil {
-		return JournalResponse{}, err
+	if err := validateWriteTransition(operation, request, state, observation, *pair.file.PairID, *pair.file.Left.ProjectID, *pair.file.Right.ProjectID); err != nil {
+		return journalWritePlan{}, err
 	}
-	event, err := makeWriteEvent(input.Operation, request, observation, state.Revision+1, identity, state)
+	event, err := makeWriteEvent(operation, request, observation, state.Revision+1, identity, state)
 	if err != nil {
-		return JournalResponse{}, ldserr.New("internal.reconcile-journal-write", fmt.Sprintf("cannot serialize journal event: %v", err))
+		return journalWritePlan{}, ldserr.New("internal.reconcile-journal-write", fmt.Sprintf("cannot serialize journal event: %v", err))
 	}
 	events := append(append([]json.RawMessage(nil), state.Events...), event)
 	document := journalDocument{
@@ -738,22 +786,16 @@ func WriteJournal(input JournalInput) (JournalResponse, error) {
 	}
 	newBytes, err := json.Marshal(document)
 	if err != nil {
-		return JournalResponse{}, ldserr.New("internal.reconcile-journal-write", fmt.Sprintf("cannot serialize journal: %v", err))
+		return journalWritePlan{}, ldserr.New("internal.reconcile-journal-write", fmt.Sprintf("cannot serialize journal: %v", err))
 	}
 	newState, err := parseJournal(newBytes, *pair.file.PairID, *pair.file.Left.ProjectID, *pair.file.Right.ProjectID)
 	if err != nil {
-		return JournalResponse{}, evidenceInvalid("new event does not replay as a valid journal: %v", err)
-	}
-	if err := checkJournalPathStillSafe(currentPath.target, currentPath.lock, dir, lock, protected); err != nil {
-		return JournalResponse{}, err
-	}
-	if err := persistJournal(dir, filepath.Base(currentPath.target), newBytes, journalWriteHooks{}); err != nil {
-		return JournalResponse{}, err
+		return journalWritePlan{}, evidenceInvalid("new event does not replay as a valid journal: %v", err)
 	}
 	replayed := false
-	response := projectJournal("reconcile journal "+input.Operation, currentPath.target, *pair.file.PairID, snapshotsFromPair(pair.file), newState)
+	response := projectJournal("reconcile journal "+operation, path, *pair.file.PairID, snapshotsFromPair(pair.file), newState)
 	response.Replayed = &replayed
-	return response, nil
+	return journalWritePlan{response: response, bytes: newBytes}, nil
 }
 
 func snapshotsFromPair(pair pairFile) Snapshots {

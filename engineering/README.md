@@ -11,14 +11,19 @@ scan, explicit journal operations, and an offline report primitive. Root
 `lds reconcile report` produces a private new external review packet through
 the identical deterministic plumbing operation; only the qualified plumbing
 form is generated-skill-table eligible. Reconciliation is bounded to pinned
-evidence and a caller-owned journal. The interactive root
+evidence and a caller-owned journal. Linux root-only guided
+`lds reconcile journal record|decide|reconsider` hosts now collect explicit
+reviewer assertions from a terminal, show full digest-bound previews and
+require fresh confirmation before journal writes; they do not require authored
+scan/request JSON, edit sources or validate external applied proof. The
+interactive root
 `lds adopt <root> --facts <facts.json>` form uses the live shared flow and
 those deterministic docs operations. Generated Claude Code `/lds` adoption
 guidance fetches that flow live through `lds plumbing adopt --json`; the reader
 is preparatory and the guidance is not behavioral enforcement. S10 accepts
 executor CLI evidence and independent offline review, not native adoption or
-CLI/skill parity. No pilot or first-release claim follows; optional assistance,
-a shared human/skill flow, and journal decision UX remain deferred.
+CLI/skill parity. No pilot or first-release claim follows; optional assistance
+and a shared human/skill reconciliation flow remain deferred.
 
 The separate Linux-only offline `lds review <root> [--json]` is a root-only
 plumbing-kind composition of existing documentation inventory and local-link
@@ -26,7 +31,7 @@ validation. It writes no report and does not infer coverage or semantics; it
 adds no plumbing leaf, projection or shared LLM flow. See the
 [disposable review how-to](../docs/how-to/review-documentation.md) and
 [safety boundaries](../docs/explanation/safety-and-scope.md). The measured
-manifest is 29 total leaves, 19 qualified projected entries and nine docs
+manifest is 32 total leaves, 19 qualified projected entries and nine docs
 leaves; historical counts in older handoffs remain historical.
 
 Start with the [roadmap](product/roadmap.md) for proposed capabilities and
@@ -47,11 +52,12 @@ the offline human-facing `lds update` host, with exact-byte review, fresh
 digest confirmation and bounded per-file replacement; the
 [update how-to](../docs/how-to/update-documentation.md) uses a disposable
 target. The [human-facing reconciliation workflow](product/reconciliation-workflow.md)
-remains a proposal beyond its Linux offline report slice, not an assisted
-facilitator. No real-target update, journal/source transfer, pilot or native
-skill/parity result is authorized or established by these documents.
-The roadmap also records
-the source-checked, still-unimplemented Toolsmith BDS-234 dependency.
+describes the offline report and guided journal slices, with further assistance
+still proposed. The three journal hosts are plumbing-kind but root-only and
+not projected; they introduce no new shared flow. No real-target update,
+source transfer, real-pair journal authority, pilot or native skill/parity
+result is authorized or established by these documents. The roadmap also
+records the source-checked, still-unimplemented Toolsmith BDS-234 dependency.
 The [adoption runtime handoff](product/adoption-operations-runtime-handoff.md)
 records the implemented plumbing, executable disposable evidence, and limits.
 The [BDS-251 engineering handoff](product/bds-251-stage-4-engineering-handoff.md)

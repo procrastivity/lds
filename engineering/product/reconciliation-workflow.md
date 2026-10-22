@@ -1,9 +1,10 @@
-# Human-facing cross-project reconciliation — report-first contract
+# Human-facing cross-project reconciliation — offline slices and future assistance
 
-**Status:** The Linux-only offline report slice is implemented. Assistance,
-shared flow and journal decision UX below remain proposals. This is not
-authorization for a real pair, pilot, provider call, native integration, CLI/skill
-parity, release, source edit or journal write. This is separate from the
+**Status:** The Linux-only offline report and root-only guided journal
+record/decide/reconsider slices are implemented. Assistance and a shared
+human/skill flow remain proposals. This is not authorization for a real pair,
+pilot, provider call, native integration, CLI/skill parity, release, source edit
+or real-pair journal authority. This is separate from the
 [within-project existing-file maintenance workflow](documentation-maintenance-workflow.md).
 The owner authorized offline implementation separately from these later slices.
 
@@ -11,21 +12,21 @@ The accepted [ADR-0003](../decisions/0003-bound-cross-project-reconciliation.md)
 frozen [v1 operation contract](../specs/cross-project-reconciliation-v1.md),
 and [BDS-252 engineering handoff](bds-252-stage-4-engineering-handoff.md)
 remain authoritative for the implemented deterministic surface. The
-[current how-to](../../docs/how-to/reconcile-projects.md) describes that
-surface, not this proposed facilitator. The Stage 4 fixtures are bounded
+[current how-to](../../docs/how-to/reconcile-projects.md) describes the offline
+surface, not a future assisted facilitator. The Stage 4 fixtures are bounded
 evidence, not a real-pair authority choice or a completed reconciliation.
 
-## Recommendation and non-goals
+## Offline report and non-goals
 
-Deliver a **report-only first slice**: one private, caller-owned external
-Markdown report combines the current scan comparison, any explicitly reviewed
+The **report-only first slice** delivers one private, caller-owned external
+Markdown report combining the current scan comparison, any explicitly reviewed
 correspondence, contradictory claims, unresolved authority and questions.
 It should be useful offline, with no model: a reviewer can supply annotations
 and receive a traceable review packet without recording a decision. Optional
 model assistance may draft *advice* only after a separate, scoped content
-disclosure and fresh consent. No source or journal writes occur, including
-initialization, locks, or request staging in either root. A report is not a
-journal event, approval, port plan, applied proof, or runtime-parity finding.
+disclosure and fresh consent. This report causes no source or journal writes,
+including initialization, locks, or request staging in either root. A report is
+not a journal event, approval, port plan, applied proof, or runtime-parity finding.
 
 Implemented offline shape (also available as `lds plumbing reconcile report`):
 
@@ -122,6 +123,47 @@ claims, explicitly reviews correspondence and trust, names the pair/topic
 owner for unresolved authority, and decides what follow-up evidence is needed.
 An assisted reviewer may propose text, but cannot approve for that human.
 
+## Guided offline journal slice
+
+The separate root-only `lds reconcile journal record|decide|reconsider` Linux
+hosts take absolute `--pair`, `--left-root`, `--right-root`, repeatable tracked
+raw `--map` and external `--journal` paths, plus optional `--json`. The clean
+Git roots must match the pair's full pins. No authored scan or request JSON is
+needed: the host freshly scans and presents candidate evidence and prior
+decisions, then constructs the same strict v1 requests for the existing
+record/decide/reconsider plumbing. The manual saved-scan/request-file route
+remains available, unchanged. There is no additional shared flow or generated
+projection: the three new leaves are root-only plumbing-kind. The manifest
+now has 32 leaves, 19 qualified projected plumbing entries and nine docs
+leaves.
+
+The operator explicitly supplies plain-text correspondence with stable
+member keys and relation, provenance claims with trust, assessment, actor and
+rationale for a record; reconsider may replace the reviewed triple only as a
+complete optional group. For decide/reconsider the operator declares scoped
+owner authority and permitted directions and selects an outcome; reconsider
+also names a trigger and the latest decision being superseded. `unresolved`,
+`deferred` (with trigger), `divergence-retained`, `intent` (permitted direction)
+and `applied` (permitted direction and externally authored proof reference with
+URI, hash, source/destination revisions and paths, verifier, time and rationale)
+are not inferred from map labels, matching names or bytes. An applied proof
+reference is recorded as an unverified assertion, not authenticated or acted
+on. No host edits either source, executes a transfer, calls a model/network or
+runs project commands beyond the read-only Git scan.
+
+The terminal presents the **full** digest-bound request/evidence/journal
+preview and prompts on stderr even with `--json`; JSON success goes to stdout.
+After flushing queued input, only a freshly typed `record sha256:<digest>`,
+`decide sha256:<digest>` or `reconsider sha256:<digest>` for the exact preview
+permits its write; `decline` refuses. Preview or decline creates no journal,
+lock or output file. Pair/source/map/journal are checked afresh before the
+write; drift refuses without automatic retry. These checks are not an atomic
+snapshot. After an indeterminate write, read the journal revision and request
+ID before another attempt. A real pair, authority, proof-verification policy
+or pilot remains a separate owner decision. See the
+[guided how-to](../../docs/how-to/reconcile-projects.md#guide-a-journal-entry-in-the-terminal)
+and [safety notes](../../docs/explanation/safety-and-scope.md).
+
 ## Report contract and baseline
 
 Recommend one report with a machine-readable provenance appendix, not a
@@ -206,7 +248,7 @@ scratch rather than assuming nothing happened. Cleanup removes only verified
 owned scratch. Do not claim rollback or retry automatically.
 No journal or source mutation is allowed on either success or refusal.
 
-## Future shared flow and separate recording UX
+## Future shared assistance flow
 
 If assistance is authorized, use **one live shared reconciliation flow**
 for CLI and generated skill, resolved from the installed/overridden/embedded
@@ -222,17 +264,14 @@ private publication and typed result/refusal without a provider. Assistance
 must retain these boundaries and add its own disclosure and response checks.
 The v1 scan/journal JSON remains unchanged.
 
-A later **journal recording/decision UX** is separate: fresh human review of
-exact correspondence, authority, permitted direction, observation and
-outcome, not a button that promotes report proposals. It must consume the
-actual v1 `record`/`decide`/`reconsider` operations with fresh saved scan and
-expected evidence digest, expected journal revision, unique request ID and
-exact scan-byte identity. Retry only identical requests; after uncertain
-post-rename outcome, read journal revision/request ID before retrying. A new
+The implemented guided journal route remains separate from future assistance:
+it consumes the actual v1 `record`/`decide`/`reconsider` operations with fresh
+scan identity, expected evidence digest/revision and unique request ID. A new
 observation may preserve a prior decision; changing a decided relationship or
-outcome needs explicit reconsideration and trigger. Applied requires an
-external proof reference and separate verification/authority; a report cannot
-mint proof or grant a source edit. Nothing here authorizes that later UX.
+outcome needs explicit reconsideration and trigger. Applied requires external
+proof reference and separate verification/authority; a report cannot mint
+proof or grant a source edit. Future skill guidance must not promote report
+proposals to journal decisions without that independent review.
 
 ## Testable scenarios before implementation acceptance
 

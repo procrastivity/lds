@@ -57,9 +57,10 @@ func ReportCommand(streams *iostreams.Streams) *cobra.Command {
 // RootCommand exposes the offline human-facing entry point without giving it
 // a model surface or duplicating the qualified plumbing implementation.
 func RootCommand(streams *iostreams.Streams) *cobra.Command {
-	group := &cobra.Command{Use: "reconcile", Short: "review cross-project evidence without changing projects or journals"}
+	group := &cobra.Command{Use: "reconcile", Short: "review cross-project evidence and explicitly record external journal claims"}
 	report := ReportCommand(streams)
 	surface.Alias(report, "plumbing reconcile report")
 	group.AddCommand(report)
+	group.AddCommand(guidedJournalCommand(streams))
 	return group
 }

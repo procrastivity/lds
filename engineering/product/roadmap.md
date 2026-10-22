@@ -50,9 +50,17 @@ plus a reviewer-authored brief in a new private external Markdown report with
 provenance JSON. It never writes sources or the journal. The root form is
 deterministic; only the qualified plumbing form enters the generated skill
 table. Neither is a native execution or parity finding.
+The Linux-only root `lds reconcile journal record|decide|reconsider` adds a
+guided offline terminal route to the existing journal plumbing. It freshly
+scans pinned evidence, collects explicit human claims and authority/outcome,
+displays the complete digest-bound request/evidence/journal preview and gates
+each write on a fresh exact confirmation. No authored scan/request files are
+needed; the manual plumbing route remains available. These root-only
+plumbing-kind leaves are not projected and add no shared flow. They do not
+verify applied proof or authorize source transfer, a real pair or a pilot.
 The human-facing assessment workflow, bounded existing-file update plumbing
 and offline human-facing root `lds update` are implemented. The manifest
-has 29 leaves with the first offline root `lds review` slice, including 19
+has 32 leaves with the first offline root `lds review` slice, including 19
 qualified plumbing-kind projection entries and nine `docs` leaves; these
 counts do not establish native execution or parity.
 Reconciliation commands do not
@@ -126,16 +134,18 @@ was delivered. They proceed without selecting a pilot or reopening S10:
   inferred ownership and automatic assessment acceptance are not authorized.
   No real-target write or pilot is authorized; adoption remains create-only.
 - **Human-facing reconciliation:** local Matter
-  `lds-human-reconciliation-workflow` tracks the proposed
-  [workflow contract](reconciliation-workflow.md). Its first offline slice now
-  produces a private external review report from explicit pinned pair/map,
-  reviewer brief, and optional existing-journal evidence. It does not write
-  either source or the journal. Optional model assistance, a shared CLI/skill
-  flow, journal decision UX, and real-pair authority remain deferred.
+  `lds-human-reconciliation-workflow` tracks the
+  [workflow contract](reconciliation-workflow.md). Its offline report produces
+  a private external review packet from explicit pinned pair/map, reviewer
+  brief and optional journal evidence, without writing source or journal.
+  The separate guided journal slice can write only a confirmed caller-owned
+  external journal; local Matter `lds-guided-reconciliation-journal` tracks
+  its implementation and disposable verification. Optional model assistance,
+  a shared CLI/skill flow and real-pair authority remain deferred.
 
 The implemented update plumbing and offline root host do not grant
-permission to edit a real project. The remainder of the reconciliation
-workflow is proposed. Any live provider access, real target write, pilot or
+permission to edit a real project. Further reconciliation assistance is
+proposed. Any live provider access, real target write, pilot or
 release needs its own authorization. Existing
 assessment and reconciliation plumbing remain usable.
 
@@ -204,11 +214,12 @@ implemented deterministic plumbing and must be settled before any real use:
    not semantic matching, a real-pair decision, or a facilitator. Xcind's
    [cross-project procedure](https://github.com/scinddev/xcind/blob/main/engineering/maintenance/cross-project-sync.md)
    and ledgers remain reference evidence, not a schema copied into LDS.
-5. **First offline report slice implemented:** create a bounded report
-   separately from journal writes and any authorized pilot. Assistance,
-   shared flow and decision UX remain design work. Disposable source-derived
-   and synthetic fixtures do not validate a live adoption, port, or parity
-   claim.
+5. **Offline report and guided journal slices implemented:** create a bounded
+   report separately from journal writes and any authorized pilot; guide
+   explicitly reviewed record/decide/reconsider journal entries with terminal
+   preview and confirmation. Assistance and a shared flow remain design work.
+   Disposable source-derived and synthetic fixtures do not validate a live
+   adoption, port, or parity claim.
 
 ## Candidate verbs
 
@@ -226,6 +237,7 @@ would bootstrap documentation *inside another project*.
 | Porcelain (implemented first offline slice) | `lds review <root> [--json]` | Linux read-only scoped inventory and local-file link findings, skips and limitations on stdout. Root-only plumbing-kind composition, not projected or an alias; no report, completeness or semantic verdict. Broader review remains deferred. |
 | Porcelain (implemented, outside first-release claim) | `lds adopt <root> --facts <facts.json>` | Interactively review a create-only four-output documentation plan and apply only after fresh exact-digest human consent. |
 | Porcelain (implemented offline slice) | `lds reconcile report --pair <absolute-pair.json> --left-root <absolute-dir> --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] [--journal <absolute-existing-journal.json>] --review <absolute-review.json> --output <absolute-new-report.md> [--json]` | Linux private external report from clean pinned evidence and reviewer assertions; no model, source/journal writes, or project commands. See the [how-to](../../docs/how-to/reconcile-projects.md). |
+| Porcelain (implemented guided offline slice) | `lds reconcile journal record\|decide\|reconsider --pair <absolute-pair.json> --left-root <absolute-dir> --right-root <absolute-dir> --map <absolute-tracked-file> [--map ...] --journal <absolute-external-journal.json> [--json]` | Linux terminal evidence review, explicit reviewer claims, complete digest-bound preview and fresh operation-specific confirmation; only the named journal may be written. Root-only plumbing-kind, not projected. See the [how-to](../../docs/how-to/reconcile-projects.md#guide-a-journal-entry-in-the-terminal). |
 | Plumbing (implemented, bounded) | `lds plumbing docs inventory`, `validate`, `render`, `plan`, `apply` | Report scoped files/links, check supported local targets, render four assets, preview and create missing approved files without an LLM. |
 | Plumbing (implemented, bounded) | `lds plumbing docs assess` | Collect documentation and explicitly hashed source evidence, link findings and authored proposals/questions in one new external report; no provider, semantic inference or target edits. See the [design](documentation-maintenance-workflow.md). |
 | Plumbing (implemented, bounded) | `lds plumbing docs collect`; `lds plumbing docs assess --observed <collected.json>` | Offline full baseline packet with automatic source hashes; optional observed binding for a strict authored brief and external report. |

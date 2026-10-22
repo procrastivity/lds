@@ -7,9 +7,12 @@ create-only application, and maintenance assessment reports with
 reviewer-authored proposals, plus separately reviewed existing-file update
 planning/application and bounded `lds plumbing reconcile` evidence
 scanning, explicit caller-owned journal operations, and an offline
-`lds reconcile report` review packet. Reconciliation reads clean pinned Git
-snapshots and does not infer semantic matches or mutate source projects. The
-report is a private new external file, not a journal decision or applied proof;
+`lds reconcile report` review packet. Linux root-only interactive
+`lds reconcile journal record|decide|reconsider` hosts guide explicit journal
+entries directly from clean pinned roots, without authored scan or request
+JSON. Reconciliation reads clean pinned Git snapshots and does not infer
+semantic matches or mutate source projects. The report is a private new
+external file, not a journal decision or applied proof;
 the identical deterministic `lds plumbing reconcile report` is the only
 reconciliation report surface eligible for generated skill projection. No
 assisted reconciliation flow or native skill/parity result is claimed. The
@@ -71,7 +74,8 @@ tutorial, adoption and reconciliation how-tos, command reference, and the
 current safety boundaries. The [assessment how-to](docs/how-to/assess-documentation.md)
 collects evidence and proposed text outside the target without editing it.
 The [reconciliation how-to](docs/how-to/reconcile-projects.md) includes a
-disposable offline report example using an empty review brief.
+disposable offline report example using an empty review brief and the guided
+journal route. Recording a claim does not verify it or execute a transfer.
 The [update how-to](docs/how-to/update-documentation.md) shows disposable
 collect/request inputs, a human-invoked root update and the separate manual
 plumbing plan/apply route. None selects a pilot or authorizes unattended edits.
@@ -113,8 +117,8 @@ defines reviewed replacement; assessment itself still cannot edit files.
 The [BDS-252 engineering handoff](engineering/product/bds-252-stage-4-engineering-handoff.md)
 documents the reconciliation plumbing, bounded runtime evidence, and limits;
 it does not authorize a real-pair pilot or source transfer.
-The [proposed reconciliation workflow](engineering/product/reconciliation-workflow.md)
-records future assistance and decision UX; the implemented offline report is
-only its first slice, not the full facilitator.
+The [reconciliation workflow](engineering/product/reconciliation-workflow.md)
+records the implemented offline report and guided journal slice alongside
+future assistance; neither is the full facilitator.
 The GitHub CI workflow runs; the generated release workflow has not been
 exercised yet.

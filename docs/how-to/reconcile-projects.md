@@ -85,8 +85,74 @@ boundaries.
 
 For deliberate review history, name a caller-owned journal path **outside
 both worktrees and their Git common directories**. `journal read` and scan
-never initialize it. The first explicit `record` may create it. Write a
-request JSON with actor, UTC time, rationale, request ID, expected journal
+never initialize it. The first confirmed `record` may create it.
+
+## Guide a journal entry in the terminal
+
+Using the disposable pair and roots above, choose a new external path. Start
+with a Linux terminal, even when requesting JSON output:
+
+```sh
+journal="$work/journal.json"
+lds reconcile journal record --pair "$pair" --left-root "$left" \
+  --right-root "$right" --map "$right/docs/map.md" \
+  --journal "$journal" --json
+```
+
+The host freshly scans the declared candidate and map bytes, shows the
+evidence and any prior journal decisions, and asks for **your** plain-text
+correspondence (stable member keys and relation), cited provenance claims,
+assessment, actor and rationale. The bucket and matching filenames are not a
+reviewed match. Follow each prompt rather than piping answers or extracting a
+digest automatically. Select candidates and citations by their displayed
+1-based numbers. Lists use comma-separated values; a blank list means none.
+For this disposable example, a reviewed `one-to-one` correspondence could use
+member identifiers `left:topic` and `right:topic`; those identifiers are your
+claims, not discovered matches. Answers must be single-line UTF-8, at most
+4095 bytes excluding the newline. Invalid answers or EOF end the operation
+without writing; the manual plumbing route supports separately authored JSON.
+Before a write, inspect the **full** digest-bound
+request/evidence/journal preview on stderr. Input already queued before the
+preview is flushed; type `record sha256:<exact displayed digest>` freshly, or
+`decline`. Decline or a failed preview makes no journal, lock or output file.
+`--json` sends only a successful result to stdout; prompts and preview still
+require a terminal on stderr.
+
+After a confirmed record, a separate run can decide the pending candidate:
+
+```sh
+lds reconcile journal decide --pair "$pair" --left-root "$left" \
+  --right-root "$right" --map "$right/docs/map.md" \
+  --journal "$journal" --json
+lds plumbing reconcile journal read --pair "$pair" --journal "$journal"
+```
+
+Declare pair/topic owner authority and permitted directions explicitly, then
+select an allowed outcome: `unresolved`, `deferred` (revisit trigger),
+`divergence-retained`, `intent` (permitted direction), or `applied` (permitted
+direction and externally authored proof reference with explicit URI, hash,
+source/destination projects and revisions, scoped paths, verifier, time and
+rationale). A proof reference is an **unverified claim**, not a transfer
+performed or verified by LDS. Inspect the full preview and freshly type
+`decide sha256:<exact displayed digest>` or `decline`. To replace a decision
+later, run `lds reconcile journal reconsider`
+with the same flags. Review the latest decision to be superseded, supply an
+explicit trigger and replacement authority/outcome, and optionally replace
+correspondence, provenance and assessment together. Confirm only with fresh
+`reconsider sha256:<exact displayed digest>` or `decline`; history remains.
+No option infers authority, direction, correspondence, or semantic confidence.
+All three hosts recheck pair, clean pinned roots, map and journal before
+writing, refuse drift rather than silently retrying, and never edit a source,
+run project commands or use a model/network. If a write result is indeterminate,
+**read the journal before any retry** to check its revision and request ID.
+This disposable example is not authorization for a real pair or applied claim.
+
+## Retain the manual plumbing route
+
+The existing `lds plumbing reconcile journal` operations remain available
+when you need to author and review exact artifacts yourself. For this separate
+route (not a replay of the guided record), write a request JSON with actor,
+UTC time, rationale, request ID, expected journal
 revision and evidence digest, plus reviewed correspondence/provenance and
 assessment; use the [v1 contract](../../engineering/specs/cross-project-reconciliation-v1.md)
 for exact request fields and allowed values. Set `request` to the absolute path

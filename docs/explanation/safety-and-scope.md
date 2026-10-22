@@ -118,6 +118,30 @@ never edits source files or transfers changes. Journal writes stay at the
 caller-named location outside both roots/Git directories. A decision or
 `appliedProof` is caller-supplied, not an authenticated external fact.
 
+The Linux root-only `lds reconcile journal record|decide|reconsider` hosts
+guide those explicit journal operations without caller-authored scan or request
+JSON. They freshly scan clean pinned roots and tracked raw maps, display
+candidate evidence and prior decisions, and ask for plain-text reviewed
+correspondence, provenance and assessment (or an optional complete replacement
+on reconsider), actor/rationale, authority declaration, permitted directions,
+outcome and reconsider trigger as appropriate. The host never derives those
+claims from matching bytes, names or map labels. `applied` additionally needs
+explicit direction, authority and an external proof reference; neither a
+recorded reference nor a successful command verifies a transfer or edits a
+source. The full digest-bound request/evidence/journal preview and prompts go
+to stderr even under `--json` (successful JSON goes to stdout). Queued input is
+flushed before fresh exact `record sha256:<digest>`, `decide sha256:<digest>` or
+`reconsider sha256:<digest>` confirmation; `decline` refuses. A preview or
+decline creates no journal, lock or output file. Pair, pinned sources, maps and
+journal are rechecked before write, but this is not an atomic snapshot or
+protection from hostile concurrent writers. No automatic retry follows drift
+or an indeterminate write: read the journal and inspect revision/request ID
+before any new attempt. These hosts do no model/network calls or project
+commands beyond the existing read-only Git scan. Manual journal plumbing
+remains supported. The hosts are root-only plumbing-kind, not generated skill
+entries and not a shared reconciliation flow; no real pair, owner authority,
+pilot, provider or native parity is established.
+
 The Linux-only offline `lds reconcile report` and identical
 `lds plumbing reconcile report` add a bounded, private Markdown review packet
 with a provenance JSON appendix, not a journal event or authorization. Pair,
@@ -134,5 +158,6 @@ buckets, journal `appliedProof`, and report claims are not semantic matching,
 authority, or verified transfer. Even unselected scoped/map files face a
 64-KiB raw-file ceiling; report collection does not silently expand scope or
 truncate selected content. There is no assistance, model disclosure, shared
-flow, journal-decision UX, or native-skill/parity claim for this slice. A real
+flow, or native-skill/parity claim for this slice. The separate guided journal
+hosts do not turn the report into a decision or a full facilitator. A real
 pair or pilot requires separate authorization.
