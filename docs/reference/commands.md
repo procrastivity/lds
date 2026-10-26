@@ -13,6 +13,7 @@ historical `lds docs ...` spellings):
 | `lds plumbing docs render <root> --facts <file> --json` | Validate facts and render four candidate files without writes. |
 | `lds plumbing docs plan <root> --facts <file> --json` | Full read-only create/identical/collision/refusal plan and digest. |
 | `lds plumbing docs apply <root> --facts <file> --plan <reviewed.json> --confirm <digest> --json` | Linux create-only application after separate review and exact confirmation. |
+| `lds init <root> --facts <file> [--json]` | Offline Linux terminal-only host of the complete adoption plan and create-only apply; existing explicit root, approved facts and fresh exact-digest confirmation, no provider/key/flow reader/LLM or temporary plan. Optional global `--project-root PATH` selects the same templates through plan/apply. See the [disposable how-to](../how-to/initialize-a-project.md). |
 | `lds plumbing docs assess <root> --brief <file> --output <absolute-new-report.md> --json` | Linux evidence/report collection with authored proposals; exit 0 means report created, not semantic approval. No target edits. See the [brief contract and example](../how-to/assess-documentation.md). |
 | `lds plumbing docs collect <root> --reason <text> --audience <text> [--source <relative-file> ...] [--json]` | Offline scoped collection, automatic hashes and complete UTF-8 contents in a schema-1 packet; no report, provider or target writes. |
 | `lds plumbing docs assess <root> --brief <draft.json> --observed <collected.json> --output <absolute-new-report.md> [--json]` | Bind a strict authored brief to the complete collected baseline before creating a new external review report. The existing no-`--observed` form remains supported. |
@@ -56,10 +57,10 @@ content is returned as-is for the consuming reader to validate; malformed
 content is not a reason to use a lower-precedence copy.
 
 Runtime consumers are the four adoption templates in `docs render`,
-`docs plan`, `docs apply` and root `adopt`; the live `flows/adopt.md`,
+`docs plan`, `docs apply` and root `init`/`adopt`; the live `flows/adopt.md`,
 `flows/assess.md`, `flows/update.md` and `flows/reconcile.md` reads by their
 plumbing readers and root adoption, assessment, assisted update and assisted
-reconciliation forms. For example:
+reconciliation forms. Init reads only templates, never a flow. For example:
 
 ```sh
 lds --project-root /work/acme plumbing adopt --json
@@ -82,6 +83,50 @@ below the canonical root, nonregular paths and read errors refuse the
 selected runtime read instead of falling back. The selected directory and
 its writers must be trusted; this is not a hostile concurrent-writer sandbox.
 See [safety and scope](../explanation/safety-and-scope.md#project-local-asset-boundary).
+
+## Offline initialization
+
+`lds init <root> --facts <file> [--json]` requires Linux and terminal input and
+presentation, even with JSON. The target must already exist; facts use the
+[approved adoption schema](facts.md). Approval fields assert claims but do
+not authenticate them or approve the plan. Full canonical `adoption.Plan`
+JSON goes to stderr with every serialized field, retaining `operation: "docs plan"`:
+exact content and occupied bytes/hashes/provenance, template sources/hashes,
+root/parent identities, facts digest, preserved paths, report-only README notice,
+findings, skips, veto and nullable digest—not a reduced summary.
+
+A veto or incomplete facts cause refusal without a prompt or writes. Otherwise,
+after display LDS flushes queued input and accepts only freshly typed
+`apply sha256:<exact displayed digest>` or `decline` alone. Other text, bare
+digests and EOF refuse; no `--yes`/`--confirm` bypass or apply on a stdin pipe.
+It passes the exact in-memory displayed plan and the same optional global
+asset selector to `adoption.ApplyReviewed`, without a temporary plan/report.
+
+With `--json`, final stdout has `schemaVersion: 1`, `operation: "init"`,
+`status` (`applied`, `current`, `refused`, `partial`), the complete `plan`
+object and `apply` (actual-effects object or null when not attempted).
+Nested operations remain `docs plan` and `docs apply`. Without JSON, stdout
+is a human status summary; presentation, prompt and errors stay on stderr.
+Early failures such as noninteractive invocation produce only the existing
+stderr error envelope with empty stdout, not an init result with an empty plan.
+
+Only the four adoption outputs and their necessary parents may be created;
+root README stays report-only. Any different occupied output or recognizable/
+ambiguous legacy LDS evidence vetoes **all** creates, never just skips the
+conflict. No migrations, root README edits, Git commands, harness install,
+other creates or extra empty layers. An identical rerun needs a new complete
+review and confirmation, then returns `current`. Changed facts, selected
+sources/templates, evidence/diagnostics, root or parents refuse through the
+existing stale-input checks. Exclusive per-file creation can be partial:
+inspect `created`, `identicalUntouched`, `unattempted`, `failed`, `preserved`
+and actual state; no rollback or automatic retry. Init is root-only
+plumbing-kind composition, not projected or an alias, and adds no plumbing
+leaf/shared model flow. This is implemented and verified offline,
+not pilot, release or native-parity evidence. See the
+[how-to](../how-to/initialize-a-project.md) and
+[bounded contract](../../engineering/product/initialization-workflow.md).
+
+## Other command contracts
 
 The guided hosts require terminal input and presentation even with `--json`:
 prompts, candidate evidence, prior decisions and the **full** digest-bound
@@ -201,9 +246,10 @@ even without `--json`; report prints a human summary by default and JSON with
 2 usage, 3 refusal/staleness, 4 unexpected internal/I/O failure. Some docs
 diagnostics emit a JSON result to stdout **and** an error to stderr: inspect
 exit code and both streams. Cobra usage errors are human diagnostics. Root
-`init` remains a candidate; broader review is deferred. Root `reconcile` has
+`init` is implemented locally within the bounded offline contract above;
+broader review is deferred. Root `reconcile` has
 offline/assisted report and guided journal slices, not an authority-granting
-facilitator. The manifest has 35 application leaves, 22 qualified projected plumbing-kind
+facilitator. The manifest has 36 application leaves, 22 qualified projected plumbing-kind
 entries and nine docs leaves;
 projection eligibility is not evidence of native execution or parity. Root
 report is LLM-kind (although default remains offline), not a plumbing alias

@@ -31,9 +31,22 @@ plumbing-kind composition of existing documentation inventory and local-link
 validation. It writes no report and does not infer coverage or semantics; it
 adds no plumbing leaf, projection or shared LLM flow. See the
 [disposable review how-to](../docs/how-to/review-documentation.md) and
-[safety boundaries](../docs/explanation/safety-and-scope.md). The measured
-manifest is 35 total leaves, 22 qualified projected entries and nine docs
-leaves; historical counts in older handoffs remain historical.
+[safety boundaries](../docs/explanation/safety-and-scope.md).
+
+The offline Linux terminal-only `lds init <root> --facts <file> [--json]`
+hosts the existing four-output adoption plan and create-only apply. It needs
+an existing explicit root and approved facts, no provider/key/flow reader/LLM.
+Full canonical plan JSON goes to stderr; veto/incomplete facts refuse before
+prompting, otherwise queued input is flushed and a fresh exact-digest human
+decision gates `adoption.ApplyReviewed` of the displayed in-memory plan and
+same optional `--project-root` selector. It adds no temporary plan, plumbing
+leaf, shared model flow, alias or projected entry; root is plumbing-kind.
+See the [bounded initialization contract](product/initialization-workflow.md)
+and [disposable how-to](../docs/how-to/initialize-a-project.md).
+This is implemented and verified offline, not pilot,
+release or native-parity evidence. The resulting manifest is 36 total leaves,
+22 qualified projected entries and nine docs leaves; historical counts in
+older handoffs remain historical.
 
 Start with the [roadmap](product/roadmap.md) for proposed capabilities and
 their status. The [source-repository map](architecture/source-repositories.md)
@@ -65,7 +78,8 @@ deterministic steps; `flow --json` reads the live preparatory shared flow. The
 three journal hosts remain plumbing-kind but root-only and not projected. No real-target update,
 source transfer, real-pair journal authority, pilot or native skill/parity
 result is authorized or established by these documents. The roadmap also
-records the source-checked, still-unimplemented Toolsmith BDS-234 dependency.
+records the local LDS port of the source-checked Toolsmith BDS-234 asset
+selector, including initialization's template reads.
 The [adoption runtime handoff](product/adoption-operations-runtime-handoff.md)
 records the implemented plumbing, executable disposable evidence, and limits.
 The [BDS-251 engineering handoff](product/bds-251-stage-4-engineering-handoff.md)

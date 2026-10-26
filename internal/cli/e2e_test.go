@@ -139,12 +139,34 @@ func TestAdoptUsageAndNoninteractiveRefusal(t *testing.T) {
 	}
 }
 
+func TestInitRefusesNoninteractiveAndApprovalFlags(t *testing.T) {
+	root := t.TempDir()
+	for _, extra := range [][]string{nil, {"--confirm", "sha256:unused"}, {"--yes"}} {
+		args := []string{"init", root, "--facts", "must-not-be-read.json", "--json"}
+		args = append(args, extra...)
+		r := run(t, []string{"OPENCODE_API_KEY=", "XDG_CONFIG_HOME=" + t.TempDir()}, args...)
+		wantExit := 2
+		if len(extra) == 0 {
+			wantExit = 3
+			if parseErrorEnvelope(t, r.stderr).Error.Code != "refusal.interactive-required" {
+				t.Fatalf("noninteractive init read inputs or bypassed terminal gate: %+v", r)
+			}
+		}
+		if r.exitCode != wantExit || r.stdout != "" {
+			t.Fatalf("init bypass result: %+v", r)
+		}
+	}
+	if entries, err := os.ReadDir(root); err != nil || len(entries) != 0 {
+		t.Fatalf("refused initialization wrote target files: %v (%v)", entries, err)
+	}
+}
+
 func TestHelpSeparatesPorcelainAndPlumbing(t *testing.T) {
 	root := run(t, nil, "--help")
 	if root.exitCode != 0 || root.stderr != "" {
 		t.Fatalf("root help: exit=%d stderr=%q", root.exitCode, root.stderr)
 	}
-	for _, name := range []string{"adopt", "assess", "doctor", "install", "manifest", "plumbing", "reconcile", "review", "uninstall", "update", "version"} {
+	for _, name := range []string{"adopt", "assess", "doctor", "init", "install", "manifest", "plumbing", "reconcile", "review", "uninstall", "update", "version"} {
 		if !strings.Contains(root.stdout, "\n  "+name) {
 			t.Errorf("root help omits root command %q: %s", name, root.stdout)
 		}
@@ -351,6 +373,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		}
 	}
 	want := map[string]string{
+		"init":                                  "",
 		"adopt":                                 "",
 		"assess":                                "",
 		"update":                                "",
@@ -396,7 +419,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		if (verb.Name == "adopt" || verb.Name == "assess" || verb.Name == "update" || verb.Name == "reconcile report") && verb.Kind != "llm" {
 			t.Errorf("root %s kind = %q, want llm so it cannot enter the deterministic skill projection", verb.Name, verb.Kind)
 		}
-		if (verb.Name == "review" || strings.HasPrefix(verb.Name, "reconcile journal ")) && verb.Kind != "plumbing" {
+		if (verb.Name == "init" || verb.Name == "review" || strings.HasPrefix(verb.Name, "reconcile journal ")) && verb.Kind != "plumbing" {
 			t.Errorf("offline %s kind = %q, want plumbing", verb.Name, verb.Kind)
 		}
 		if canonical, required := want[verb.Name]; required {
@@ -411,8 +434,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 35 || len(seen) != len(want) || projectable != 22 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want thirty-five leaves and twenty-two projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 36 || len(seen) != len(want) || projectable != 22 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want thirty-six leaves and twenty-two projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 

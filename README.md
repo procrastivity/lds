@@ -29,6 +29,17 @@ was accepted for executor CLI cases and independent offline review, not native
 skill execution or CLI/skill parity. Neither form authorizes a real pilot or
 establishes first-release inclusion.
 
+The offline `lds init <root> --facts <file> [--json]` is a Linux terminal-only
+host of the same four-file create-only adoption plan and apply, without a
+provider, key, flow reader or LLM. It requires an existing explicit root and
+complete approved facts, displays the full plan on stderr and accepts only a
+freshly typed `apply sha256:<exact displayed digest>` or `decline` after review.
+Collisions or incomplete facts refuse before prompting; no confirmation flag
+or stdin-pipe bypass exists. See the
+[disposable initialization how-to](docs/how-to/initialize-a-project.md).
+This is implemented and verified offline, not release,
+pilot or native-skill/parity evidence; facts approval is not plan approval.
+
 The human maintenance workflow `lds assess <root>` produces
 model-assisted, review-required proposals in a new report **outside** the
 target, after fresh consent to send the complete scoped documentation and
@@ -81,15 +92,16 @@ runtime asset reads. For a known shipped asset name, it tries
 user-XDG → installed → embedded chain. For example, selecting `/work/acme`
 lets adoption render use `/work/acme/.lds/assets/templates/adoption/docs/README.md`;
 the flag is not inferred from the current directory, Git, environment,
-an adoption/assessment/update target, or reconciliation pair roots. A missing
+an init/adoption/assessment/update target, or reconciliation pair roots. A missing
 project file falls through for that asset only; unsafe or unreadable
 selected paths refuse rather than fall back. See the
 [command reference](docs/reference/commands.md#project-root-runtime-asset-selection)
 and [safety boundaries](docs/explanation/safety-and-scope.md#project-local-asset-boundary).
 
-The selection applies to adoption templates and the live adoption,
-assessment, update and reconciliation flows where their runtime readers opt
-in. It does not change manifest/projection-digest identity, configuration, install,
+The selection applies to adoption templates (including root `init`) and the
+live adoption, assessment, update and reconciliation flows where their runtime
+readers opt in. Init reads templates only, not a flow. It does not change
+manifest/projection-digest identity, configuration, install,
 uninstall, doctor or generated installed skill bytes. A generated skill must
 carry an explicitly human-selected root to its live flow and template
 plumbing calls, not embed repository content at installation time. Existing
@@ -101,7 +113,9 @@ contract-reconciliation claim.
 
 Start with the [user documentation](docs/README.md) for an offline inspection
 tutorial, adoption and reconciliation how-tos, command reference, and the
-current safety boundaries. The [assessment how-to](docs/how-to/assess-documentation.md)
+current safety boundaries. The [initialization how-to](docs/how-to/initialize-a-project.md)
+uses disposable test-only facts for offline terminal review and create-only
+application; it authorizes no real target. The [assessment how-to](docs/how-to/assess-documentation.md)
 collects evidence and proposed text outside the target without editing it.
 The [reconciliation how-to](docs/how-to/reconcile-projects.md) includes a
 disposable offline report example using an empty review brief and the guided
@@ -139,6 +153,10 @@ sets out the reduced-scope acceptance and evidence limits; the
 [BDS-251 engineering handoff](engineering/product/bds-251-stage-4-engineering-handoff.md)
 records offline regressions and remaining limits. No real project has been
 authorized as an adoption pilot. The
+[initialization contract](engineering/product/initialization-workflow.md)
+bounds the offline root host, exact in-memory plan review and existing
+create-only apply, with disposable verification and explicit safety limits.
+The
 [maintenance-workflow design](engineering/product/documentation-maintenance-workflow.md)
 records the accepted assessment/report boundary and implemented deterministic
 authored-brief report. Its human-facing assessment workflow adds scoped

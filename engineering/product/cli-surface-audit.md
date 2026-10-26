@@ -4,8 +4,10 @@
 implemented. The original rows record the pre-Step-4 root leaves; Stage 4
 Step 8 added the separately classified root LLM form shown below.
 Step 6 also added the preparation-only `lds plumbing adopt` reader.
-The later root `lds update` (including its assisted mode) and offline
-`lds review` slices are classified separately. Historical Step 4/Step 8
+The later root `lds update` (including its assisted mode), offline
+`lds review` and offline `lds init` slices are classified separately.
+Initialization is implemented and verified with disposable offline fixtures.
+Historical Step 4/Step 8
 counts and projection observations are not current
 manifest measurements.
 
@@ -35,6 +37,7 @@ requires both a canonical `lds plumbing` path and kind `plumbing`.
 | `lds adopt <root> --facts <facts.json>` | Human/operator running the bounded CLI-side LLM adoption form · `llm` | Retain as root porcelain; it is separate from the read-only `lds plumbing adopt` reader. | No: root-only and kind `llm`; both gates exclude it. | No projected skill or shipped consumer calls it; no compatibility alias. |
 | `lds update <root> --observed <collected.json> --request <edits.json> [--json]` or explicit `--assist --reason <text> --audience <text> --document <relative-existing-markdown> ...` | Human/operator reviewing an offline plan or consent-gating an assisted draft and making a separate fresh terminal apply decision · `llm` for the whole root registration | Root porcelain host of the existing canonical `docs update-plan` and `docs update-apply` steps, not a same-deliverable alias for either. Default offline behavior stays provider-free; only `--assist` invokes the model. | No: root-only and LLM-kind; only qualified `plumbing ...` members project. | No compatibility alias. |
 | `lds review <root> [--json]` | Human/operator reading offline documentation inventory, local-link findings, skips and limitations · `plumbing` | Root porcelain composition of canonical `docs inventory` and `docs validate`, not an alias for either. | No: root-only despite plumbing kind. | No compatibility alias. |
+| `lds init <root> --facts <file> [--json]` | Human/operator reviewing an offline four-output adoption plan and freshly confirming create-only application · `plumbing` | Linux terminal-only root composition of canonical `docs plan`/`docs apply`, reusing `adoption.ApplyReviewed` with the exact displayed in-memory plan and same optional global asset selector. | No: root-only despite plumbing kind; no new plumbing leaf/shared model flow. | No compatibility alias. |
 | `lds reconcile report` (offline default or explicit `--assist`) | Human/operator requesting a bounded private review packet and, only with assistance, consenting to model advice · `llm` for the whole registration | Root host, not an alias for deterministic `plumbing reconcile report`; offline remains provider-free. | No: root-only and LLM-kind. | No compatibility alias. |
 | `lds reconcile journal record\|decide\|reconsider` | Human/operator recording explicit journal assertions after a terminal preview · `plumbing` | Root-only guided host of canonical journal operations, not an alias. | No: root-only. | No compatibility alias. |
 
@@ -126,7 +129,7 @@ the manual file-based plumbing. Only the explicit external journal may be
 written; no project edit, provider call, authenticated authority or verified
 transfer follows. See the [guided journal how-to](../../docs/how-to/reconcile-projects.md#guide-a-journal-entry-in-the-terminal).
 
-The current manifest has **35 application leaves, 22 qualified projected
+The reconciliation slice brought the manifest to **35 application leaves, 22 qualified projected
 plumbing-kind entries and nine docs leaves**. New qualified members are
 `plumbing reconcile collect` (original bounded evidence JSON, no publication)
 and `plumbing reconcile flow` (live preparatory/unavailable-for-execution flow
@@ -142,3 +145,30 @@ the live reconciliation flow, discloses harness processing and obtains its
 own consent without automating root terminal input. Projection is not native
 execution or parity; no real provider/pair/pilot is established. See the
 [reconciliation workflow](reconciliation-workflow.md).
+
+The current initialization slice brings the manifest to **36 application
+leaves, 22 qualified projected plumbing-kind entries and nine docs leaves**.
+Root `init` is a deterministic composition, not an alias, new projected
+entry or shared LLM flow. It requires an existing explicit root, complete
+approved facts and Linux terminal input/presentation; no provider, key or
+flow reader. Full canonical `docs plan` JSON is displayed on stderr. Veto
+or incomplete facts cause refusal without a prompt or writes; otherwise queued
+input is flushed and only fresh `apply sha256:<exact displayed digest>` or
+`decline` alone is accepted. Other text/EOF refuses, without confirmation-flag
+or stdin-pipe bypass. The same exact in-memory plan and global optional
+`--project-root` selector go to `adoption.ApplyReviewed`, with no temporary
+plan/report. JSON final stdout is schema 1, `operation: "init"`, `status`
+(`applied`, `current`, `refused`, `partial`), full `plan` and nullable `apply`;
+nested operations remain `docs plan`/`docs apply`. Early noninteractive
+failures have only the existing stderr error envelope and empty stdout.
+
+The existing four-file collision/legacy all-create veto, source/facts/template/
+root/parent freshness checks and per-file partial-effects recovery remain.
+An identical rerun requires new review and confirmation before `current`.
+No migrations, root README edits, Git commands, harness install, extra output
+paths or empty layers. Facts approval is neither authenticated truth nor plan
+approval. This is implemented and verified offline, not
+pilot/release/native-parity evidence; historical handoffs and projection
+observations above are unchanged. See the
+[initialization contract](initialization-workflow.md) and
+[disposable how-to](../../docs/how-to/initialize-a-project.md).

@@ -30,8 +30,14 @@ tutorial or deterministic plumbing.
 - [Review documentation offline](how-to/review-documentation.md) — one root
   command for scoped inventory and local-link findings, without a report or
   semantic verdict.
+- [Initialize documentation offline](how-to/initialize-a-project.md) — Linux
+  terminal-only `lds init <root> --facts <file> [--json]`: full plan review and
+  fresh exact-digest confirmation for four create-only adoption files, without
+  a provider, key or LLM. Implemented and verified with disposable fixtures;
+  disposable facts are not real-project approval or release/pilot evidence.
 - [Adopt documentation in a project](how-to/adopt-a-project.md) — prepare facts,
-  inspect the complete plan, and make a separate human decision.
+  inspect a separately saved plumbing plan and make a fresh human decision,
+  or use the distinct advisory-provider `lds adopt` route.
 - [Assess documentation](how-to/assess-documentation.md) — an offline
   authored-brief report, collect/observed binding, and a consent-gated
   model workflow; all reports stay outside the project and never apply edits.
@@ -56,7 +62,9 @@ detected harnesses, or `lds install claude-code` targets Claude Code alone.
 `lds uninstall claude-code` removes a stamped installation. Install refuses
 hand-edited, unstamped, or incompatible targets by default; inspect before
 considering its destructive `--force` option. Installation is separate from
-adopting a project. The generated `/lds` guidance reads the live flow via
+initializing or adopting a project. Root `init` is plumbing-kind but not
+projected or an alias; it adds no plumbing leaf or shared model flow.
+The generated `/lds` guidance reads the live flow via
 `lds plumbing adopt --json`, but that reader is preparatory, not an adoption
 execution. Installing or discovering a skill does not establish native
 execution or parity with the root CLI.

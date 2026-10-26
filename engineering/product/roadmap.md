@@ -66,7 +66,9 @@ verify applied proof or authorize source transfer, a real pair or a pilot.
 The human-facing assessment workflow, bounded existing-file update plumbing,
 unchanged offline root `lds update`, and explicit assisted update mode are
 implemented. The live `lds plumbing update` reader supplies a preparatory
-shared flow to generated Claude Code guidance. The manifest has 35 leaves,
+shared flow to generated Claude Code guidance. The offline initialization
+host below is implemented and verified with disposable offline fixtures.
+The resulting manifest has 36 leaves,
 including 22 qualified plumbing-kind projection entries and nine `docs`
 leaves; these counts do not establish native execution or parity.
 Reconciliation commands do not
@@ -132,7 +134,7 @@ guidance fetches it live and must disclose harness processing and obtain its
 own consent without terminal automation or model-derived approval. No real
 provider, target/pilot, native execution or parity is claimed by mock and
 disposable verification. Broader semantic review remains deferred; root
-`init` remains a candidate.
+`init` is implemented locally under the bounded contract below.
 Local WIP Matter `lds-offline-review` tracks the authorized first Linux-only
 `lds review <root> [--json]` slice. It composes existing inventory and
 local-link validation on stdout without authored inputs, a terminal, provider,
@@ -141,6 +143,33 @@ file target; it does not certify coverage, semantics, cross-track consistency,
 code alignment or runtime behavior. The [disposable how-to](../../docs/how-to/review-documentation.md)
 shows its bounded use. No pilot, owner checkpoint wave or live test follows.
 Pilot selection and first-release inclusion remain separate decisions.
+
+## Offline initialization: bounded local implementation
+
+The owner authorized `lds init <root> --facts <file> [--json]` as a Linux
+terminal-only, provider-free composition of the existing four-output
+adoption planner and `adoption.ApplyReviewed`. It requires an explicit
+existing root and complete approved facts, displays the full canonical
+`docs plan` JSON on stderr and refuses veto/incomplete facts before prompting
+or writes. Otherwise it flushes queued input and accepts only fresh
+`apply sha256:<exact displayed digest>` or `decline` alone; other text/EOF
+refuses, with no confirmation-flag or stdin-pipe bypass. The exact displayed
+in-memory plan and same optional global `--project-root` selector go to apply;
+no temporary plan, provider/key/flow reader or LLM is involved.
+
+Identical outputs remain untouched; any differing occupied output or legacy
+LDS evidence vetoes all creates. No migrations, root README edits, Git
+commands, harness installation, extra outputs or empty layers. An identical
+rerun requires a new review/confirmation and returns `current`. Existing
+facts/template/source/root/parent stale-input checks and per-file exclusive
+creation govern: partial effects are possible, without rollback or automatic
+retry. Facts approval neither authenticates claims nor approves the plan.
+Init is root-only plumbing-kind, not projected or an alias, and adds no
+plumbing leaf or shared model flow. See the
+[bounded contract](initialization-workflow.md) and
+[disposable how-to](../../docs/how-to/initialize-a-project.md).
+Status is **implemented and verified offline**, not a
+pilot, release or native-parity finding; historical handoffs stay unchanged.
 
 ## Separate update implementation and assisted reconciliation design
 
@@ -183,9 +212,10 @@ two forms as independently maintained workflows.
 The following product choices remain open; they are not prerequisites for the
 implemented deterministic plumbing and must be settled before any real use:
 
-- **First usable release:** Which project is the pilot? What must `lds init`
-  produce or preserve to count as useful, and how much partial adoption is
-  supported?
+- **First usable release:** Which project is the pilot, and is the bounded
+  four-file offline `lds init` sufficient for that release? The create-only
+  output/preservation contract is settled; broader adoption and real-target
+  usefulness are not established by local implementation.
 - **Existing-file write safety for a real target:** Decide the authorized
   project/paths/reviewer and accept inode/timestamp replacement there. The
   bounded update contract requires exact before/after approval, stale-input
@@ -221,7 +251,7 @@ implemented deterministic plumbing and must be settled before any real use:
    assets only. **The LDS port is implemented locally**; updating the
    generator alone does not rewrite its existing generated resolver. The LDS
    integration opts the four adoption templates into docs
-   render/plan/apply and root adopt, and the adoption, assessment, update
+   render/plan/apply and root init/adopt (init reads templates only), and the adoption, assessment, update
    and reconciliation flows into their plumbing readers and root adopt,
    assess, assisted update and assisted report forms. No positional target or
    reconciliation pair root implies the selector; no cwd/Git/environment
@@ -269,12 +299,12 @@ implemented deterministic plumbing and must be settled before any real use:
 Names and boundaries below are proposals except the marked implemented rows.
 Porcelain is the human-facing workflow;
 plumbing is deterministic and suitable for JSON/exit-code use by skills and
-scripts. `toolsmith new` bootstraps the *CLI application*; a future `lds init`
-would bootstrap documentation *inside another project*.
+scripts. `toolsmith new` bootstraps the *CLI application*; the bounded `lds init`
+bootstraps four documentation files *inside an existing explicit project*.
 
 | Surface | Candidate | Purpose |
 | --- | --- | --- |
-| Porcelain | `lds init` | Set up the selected documentation tracks and templates. |
+| Porcelain (implemented offline) | `lds init <root> --facts <file> [--json]` | Linux terminal-only offline four-output adoption host: complete plan, fresh exact-digest approval, same in-memory create-only apply and optional global asset selector. Root-only plumbing-kind, no projection/alias/new plumbing leaf/shared flow. See the [contract](initialization-workflow.md). |
 | Porcelain (implemented, outside first-release claim) | `lds assess <root> --reason <text> --audience <text> --output <absolute-new-report.md> [--source <relative-file> ...] [--json]` | Collect scoped documentation and named source bytes, ask fresh transfer consent, and request reviewable model-authored maintenance proposals; no target edits. |
 | Porcelain (implemented offline mode) | `lds update <root> --observed <collected.json> --request <edits.json> [--json]` | Unchanged Linux terminal host of the complete deterministic plan and fresh exact-digest human gate; reuses original packet and authored edits, then strict in-memory apply. No provider or temporary plan/report. Whole root registration is LLM-kind due to the explicit assisted mode, but this mode stays offline; root is not projected. See the [update how-to](../../docs/how-to/update-documentation.md). |
 | Porcelain (implemented assisted mode) | `lds update <root> --assist --reason <text> --audience <text> --document <relative-existing-markdown> [--document ...] [--source <relative-file> ...] [--json]` | Explicit bounded original collection, full outbound disclosure and fresh send consent, one tool-free request for unverified full drafts/questions, strict original-baseline exact-byte plan and independent fresh apply gate. No inferred edit selection or real-target authority. |

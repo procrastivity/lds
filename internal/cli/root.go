@@ -16,6 +16,7 @@ import (
 	assessverb "github.com/procrastivity/lds/internal/verbs/assess"
 	docsverb "github.com/procrastivity/lds/internal/verbs/docs"
 	doctorverb "github.com/procrastivity/lds/internal/verbs/doctor"
+	initializeverb "github.com/procrastivity/lds/internal/verbs/initialize"
 	installverb "github.com/procrastivity/lds/internal/verbs/install"
 	manifestverb "github.com/procrastivity/lds/internal/verbs/manifest"
 	reconcileverb "github.com/procrastivity/lds/internal/verbs/reconcile"
@@ -65,6 +66,7 @@ func NewRootCommand(streams *iostreams.Streams, build buildinfo.Info) *cobra.Com
 	root.PersistentFlags().String("project-root", "", "explicit project root for runtime templates and flows (not the target root)")
 
 	root.AddCommand(versionverb.Command(streams, build))
+	root.AddCommand(initializeverb.Command(streams))
 	root.AddCommand(adoptflowverb.Command(streams))
 	root.AddCommand(assessverb.Command(streams))
 	root.AddCommand(updateverb.Command(streams))

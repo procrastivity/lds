@@ -79,6 +79,34 @@ but a late failure may leave some files created.
 It does not roll back or provide a transaction. Inspect state and make a new
 plan and decision before any rerun.
 
+The offline `lds init <root> --facts <file> [--json]` hosts that same adoption
+boundary on Linux with terminal input and presentation. It uses no provider,
+key, flow reader or LLM, no Git/project commands or harness installation, and
+no temporary plan/report artifact. The explicit target must already exist.
+It displays the **full** canonical plan JSON on stderr (nested operation
+`docs plan`); incomplete facts or a veto cause refusal without prompting or writes.
+Otherwise it flushes queued input after display and accepts only a freshly
+typed `apply sha256:<exact displayed digest>` or `decline` alone. Any other
+text or EOF refuses; no `--yes`/`--confirm` bypass or apply on a stdin pipe.
+Facts approval does not authenticate claims or approve the plan. Apply uses
+the exact displayed in-memory plan through `adoption.ApplyReviewed` and the
+same optional explicit asset selector. Facts, template sources/bytes,
+evidence/diagnostics, root and parent changes refuse through existing stale
+checks. Different occupied outputs or recognizable/ambiguous legacy evidence
+veto **all** creates; conflicts are never skipped to create other files.
+No migrations, root README edits, other outputs or extra empty layers.
+
+With `--json`, final stdout is schema 1, `operation: "init"`, `status` of
+`applied`, `current`, `refused` or `partial`, complete `plan` and nullable
+`apply`; nested apply retains `operation: "docs apply"`. Early noninteractive
+failures emit only the existing stderr error envelope and leave stdout empty.
+Even an identical rerun needs new full review and confirmation before
+returning `current`. Exclusive per-file creation can leave partial effects,
+without rollback or automatic retry; inspect actual files/parents and make a
+new plan and decision. Disposable offline verification does not establish
+release, pilot or native skill/parity evidence. See the
+[disposable initialization how-to](../how-to/initialize-a-project.md).
+
 ## Project-local asset boundary
 
 The BDS-234 port allows an explicitly human-selected global
@@ -88,19 +116,19 @@ user-XDG → installed → embedded asset chain for eligible **runtime reads**.
 Only known shipped names may be selected. The root must exist as a directory;
 relative selector paths are relative to invocation cwd and canonicalized.
 No cwd, Git or environment discovery selects a project. Positional docs
-targets, the root adoption/assessment/update targets, and reconciliation pair
+targets, the root init/adoption/assessment/update targets, and reconciliation pair
 roots do not implicitly select one. Absent a flag, the existing chain remains.
 A missing project path falls through per file; invalid roots, symlinks at any
 component below the canonical root, nonregular components and filesystem/read
 errors refuse rather than falling back. Selected bytes are never silently
 replaced with a default after a flow/template parse or validation failure.
 
-The opt-in readers are adoption render/plan/apply and root adopt for the
+The opt-in readers are adoption render/plan/apply and root init/adopt for the
 four adoption templates, plus the adoption, assessment, update and
 reconciliation live flow readers and their root adopt/assess/assisted update/
-assisted report forms. Project provenance (`source: "project"`, canonical
-path where exposed and content hash) makes the selected bytes visible to
-review and freshness checks. A changed template or flow requires the
+assisted report forms. Init does not read a flow. Project provenance
+(`source: "project"`, canonical path where exposed and content hash) makes the
+selected bytes visible to review and freshness checks. A changed template or flow requires the
 existing fresh review/consent and exact-plan approval where applicable; a
 project file is not owner approval. Explicit source selection never broadens
 the allowed output paths, source collection scope or provider authority.
