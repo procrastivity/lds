@@ -68,8 +68,9 @@ unchanged offline root `lds update`, and explicit assisted update mode are
 implemented. The live `lds plumbing update` reader supplies a preparatory
 shared flow to generated Claude Code guidance. The offline initialization
 host below is implemented and verified with disposable offline fixtures.
-The offline facts questionnaire described below adds an unapproved draft
-without a new approval or write boundary. The resulting manifest has 37 leaves,
+The offline facts helper described below drafts and resumes pending assertions,
+then separately records fresh facts review without approving target writes.
+The resulting manifest has 37 leaves,
 including 22 qualified plumbing-kind projection entries and nine `docs`
 leaves; these counts do not establish native execution or parity.
 Reconciliation commands do not
@@ -194,15 +195,19 @@ plumbing leaf or shared model flow. See the
 Status is **implemented and verified offline**, not a
 pilot, release or native-parity finding; historical handoffs stay unchanged.
 
-The root-only `lds facts [--json]` helper is a Linux terminal questionnaire
-for the existing fourteen assertion/citation strings. It emits a raw fact
-bundle on stdout only after completion; unknowns stay empty and approval is
-always pending with no approver or approved groups. It does not read a target,
-validate citations, run the supplied invocation, resolve assets or call a
-provider. The caller owns private external redirection. Independent completion,
-verification and facts approval remain necessary before init/adopt, followed
-by the unchanged full-plan review and fresh apply decision. This helper adds
-no projected plumbing member, shared flow, target write or pilot requirement.
+The root-only `lds facts [--resume <file> | --review <file>] [--json]` helper
+is a Linux terminal workflow for the existing fourteen assertion/citation
+strings. The questionnaire and selected-field resume emit pending raw bundles;
+resume always resets loaded approval. Separate complete-bundle review checks
+citation syntax, names a reviewer, displays every candidate byte and requires
+fresh `approve facts sha256:<digest>` before emitting approved facts. Saved
+inputs are bounded and rechecked by raw bytes and identity, never overwritten.
+It does not read a target, fetch citations, run the supplied invocation,
+resolve assets or call a provider. The caller owns private external redirection
+to a different file. Facts review asserts independent verification without
+proving truth or replacing full-plan review and the fresh init/adopt apply
+decision. No projected plumbing member, shared flow, target write or pilot
+requirement is added.
 See the [helper reference](../../docs/reference/facts.md#draft-facts-with-the-offline-helper).
 
 ## Separate update implementation and assisted reconciliation design
@@ -338,7 +343,7 @@ bootstraps four documentation files *inside an existing explicit project*.
 
 | Surface | Candidate | Purpose |
 | --- | --- | --- |
-| Porcelain (implemented offline) | `lds facts [--json]` | Linux terminal questionnaire emitting the existing raw unapproved fact bundle on stdout; unknowns blank, approval pending, no project inspection, inference, commands, provider or managed file. Root-only plumbing-kind and not projected. |
+| Porcelain (implemented offline) | `lds facts [--resume <file> \| --review <file>] [--json]` | Linux terminal draft/resume emits pending facts; separate full-candidate review records named fresh exact-digest facts approval. No project inspection, inference, commands, provider, input overwrite or plan approval. Root-only plumbing-kind and not projected. |
 | Porcelain (implemented offline) | `lds init <root> --facts <file> [--json]` | Linux terminal-only offline four-output adoption host: complete plan, fresh exact-digest approval, same in-memory create-only apply and optional global asset selector. Root-only plumbing-kind, no projection/alias/new plumbing leaf/shared flow. See the [contract](initialization-workflow.md). |
 | Porcelain (implemented, outside first-release claim) | `lds assess <root> --reason <text> --audience <text> --output <absolute-new-report.md> [--source <relative-file> ...] [--json]` | Collect scoped documentation and named source bytes, ask fresh transfer consent, and request reviewable model-authored maintenance proposals; no target edits. |
 | Porcelain (implemented offline mode) | `lds update <root> --observed <collected.json> --request <edits.json> [--json]` | Unchanged Linux terminal host of the complete deterministic plan and fresh exact-digest human gate; reuses original packet and authored edits, then strict in-memory apply. No provider or temporary plan/report. Whole root registration is LLM-kind due to the explicit assisted mode, but this mode stays offline; root is not projected. See the [update how-to](../../docs/how-to/update-documentation.md). |

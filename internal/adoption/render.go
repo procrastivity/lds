@@ -8,9 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"text/template"
@@ -116,29 +118,39 @@ func readRenderFacts(factsPath string) ([]byte, FactBundle, error) {
 	if err != nil {
 		return nil, FactBundle{}, invalidRender("cannot read facts file")
 	}
+	facts, err := DecodeFactBundle(data)
+	if err != nil {
+		return data, FactBundle{}, err
+	}
+	if err := ValidateFactBundle(facts); err != nil {
+		return data, FactBundle{}, invalidRender("validate facts: %v", err)
+	}
+	return data, facts, nil
+}
+
+// DecodeFactBundle strictly decodes caller assertions without requiring approval
+// or nonempty values. ValidateFactBundle is still required before adoption.
+func DecodeFactBundle(data []byte) (FactBundle, error) {
 	if !utf8.Valid(data) {
-		return data, FactBundle{}, invalidRender("facts file is not valid UTF-8")
+		return FactBundle{}, invalidRender("facts file is not valid UTF-8")
 	}
 	if err := rejectDuplicateJSONKeys(data); err != nil {
-		return data, FactBundle{}, invalidRender("decode facts file: %v", err)
+		return FactBundle{}, invalidRender("decode facts file: %v", err)
 	}
 	if err := validateExactFactKeys(data); err != nil {
-		return data, FactBundle{}, invalidRender("decode facts file: %v", err)
+		return FactBundle{}, invalidRender("decode facts file: %v", err)
 	}
 
 	var facts FactBundle
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&facts); err != nil {
-		return data, FactBundle{}, invalidRender("decode facts file: %v", err)
+		return FactBundle{}, invalidRender("decode facts file: %v", err)
 	}
 	if err := requireJSONEOF(decoder); err != nil {
-		return data, FactBundle{}, invalidRender("decode facts file: %v", err)
+		return FactBundle{}, invalidRender("decode facts file: %v", err)
 	}
-	if err := validateRenderFacts(facts); err != nil {
-		return data, FactBundle{}, invalidRender("validate facts: %v", err)
-	}
-	return data, facts, nil
+	return facts, nil
 }
 
 func renderBundleOutputs(facts FactBundle, projectRoot string) ([]RenderOutput, error) {
@@ -206,7 +218,9 @@ func renderBundleOutputs(facts FactBundle, projectRoot string) ([]RenderOutput, 
 	return outputs, nil
 }
 
-func validateRenderFacts(facts FactBundle) error {
+// ValidateFactAssertions checks complete assertions and safe citation syntax,
+// without requiring approval or verifying the truth of any assertion.
+func ValidateFactAssertions(facts FactBundle) error {
 	stringsToValidate := []struct {
 		name  string
 		value string
@@ -225,8 +239,6 @@ func validateRenderFacts(facts FactBundle) error {
 		{"OutputEvidence", facts.OutputEvidence},
 		{"OperationSource", facts.OperationSource},
 		{"Limitations", facts.Limitations},
-		{"approval.approver", facts.Approval.Approver},
-		{"approval.status", facts.Approval.Status},
 	}
 	for _, field := range stringsToValidate {
 		if strings.TrimSpace(field.value) == "" {
@@ -244,6 +256,26 @@ func validateRenderFacts(facts FactBundle) error {
 	}{{"DisplayNameSource", facts.DisplayNameSource}, {"PurposeSource", facts.PurposeSource}, {"CurrentCapabilitySource", facts.CurrentCapabilitySource}, {"OperationSource", facts.OperationSource}} {
 		if strings.ContainsAny(field.value, "\r\n\t\\") || hasUnsafeLocalSource(field.value) || !hasSourceCitation(field.value) {
 			return fmt.Errorf("%s must contain a safe relative source citation", field.name)
+		}
+	}
+	return nil
+}
+
+// ValidateFactBundle checks completeness, safe citation syntax and explicit
+// approval structure, not the truth of assertions or the approver's identity.
+func ValidateFactBundle(facts FactBundle) error {
+	if err := ValidateFactAssertions(facts); err != nil {
+		return err
+	}
+	for _, field := range []struct{ name, value string }{
+		{"approval.approver", facts.Approval.Approver},
+		{"approval.status", facts.Approval.Status},
+	} {
+		if strings.TrimSpace(field.value) == "" {
+			return fmt.Errorf("%s is required", field.name)
+		}
+		if strings.ContainsFunc(field.value, func(r rune) bool { return unicode.IsControl(r) && r != '\n' }) {
+			return fmt.Errorf("%s contains a control character", field.name)
 		}
 	}
 	// Free-form status text cannot reliably distinguish approval from its
@@ -443,6 +475,11 @@ func validateExactFactKeys(data []byte) error {
 			return fmt.Errorf("unknown fact field %q", key)
 		}
 	}
+	for _, key := range slices.Sorted(maps.Keys(wantTop)) {
+		if value, ok := top[key]; !ok || bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+			return fmt.Errorf("fact field %q must be present and non-null; use an empty string for an unknown assertion", key)
+		}
+	}
 	var approval map[string]json.RawMessage
 	if err := json.Unmarshal(top["approval"], &approval); err != nil {
 		return fmt.Errorf("approval must be an object: %w", err)
@@ -451,6 +488,11 @@ func validateExactFactKeys(data []byte) error {
 	for key := range approval {
 		if _, ok := wantApproval[key]; !ok {
 			return fmt.Errorf("unknown approval field %q", key)
+		}
+	}
+	for _, key := range slices.Sorted(maps.Keys(wantApproval)) {
+		if value, ok := approval[key]; !ok || bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+			return fmt.Errorf("approval field %q must be present and non-null", key)
 		}
 	}
 	return nil

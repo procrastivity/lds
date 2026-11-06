@@ -40,11 +40,14 @@ or stdin-pipe bypass exists. See the
 This is implemented and verified offline, not release,
 pilot or native-skill/parity evidence; facts approval is not plan approval.
 
-The offline [`lds facts` questionnaire](docs/reference/facts.md#draft-facts-with-the-offline-helper)
-collects assertions and citations in a Linux terminal and emits the existing
-fact-bundle JSON shape. Unknowns remain blank and approval always stays
-pending. It reads no project, runs no commands and uses no provider; complete,
-verify and independently approve the draft before init/adopt.
+The offline [`lds facts` helper](docs/reference/facts.md#draft-facts-with-the-offline-helper)
+collects assertions and citations in a Linux terminal. `--resume <file>` edits
+selected saved fields and always resets approval to pending; `--review <file>`
+validates complete facts and records a named reviewer's fresh exact-digest
+approval after displaying the entire candidate. All modes emit the existing
+fact-bundle JSON on stdout without overwriting input. They inspect no project,
+run no commands and use no provider. Facts approval asserts independent
+verification; it is not proof of truth or approval of the later init/adopt plan.
 
 The human maintenance workflow `lds assess <root>` produces
 model-assisted, review-required proposals in a new report **outside** the

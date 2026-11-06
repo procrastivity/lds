@@ -63,12 +63,17 @@ Guidance is not enforcement, and offline checks establish neither live
 provider reliability nor native skill execution/parity, release inclusion or
 a pilot.
 
-The offline `lds facts` terminal questionnaire collects caller assertions
-without inspecting a project, executing the entered invocation, checking
-citations or calling a provider. It emits only an unapproved raw JSON draft
-after all questions finish; unknowns stay empty and approval stays pending.
-Completion is not facts approval or plan approval. It writes no managed file:
-stdout redirection, private storage and any later edits belong to the caller.
+The offline `lds facts` terminal helper collects caller assertions without
+inspecting a project, executing the entered invocation, fetching citations or
+calling a provider. Questionnaire completion and `--resume <file>` emit pending
+raw JSON drafts; resume always discards prior approval. `--review <file>` checks
+completeness/citation syntax, displays the entire candidate and records the
+named reviewer's fresh `approve facts sha256:<digest>` decision. This is an
+unauthenticated assertion of verification, not proof of truth, real-project
+authority or plan approval. Saved modes recheck raw bytes and file identity;
+inputs/ancestors require trusted, quiescent writers, not hostile-writer safety.
+They write no managed file or input: caller-owned private stdout redirection
+must use a different path, because the shell can truncate input before LDS starts.
 See the [helper reference](../reference/facts.md#draft-facts-with-the-offline-helper).
 
 Adoption facts are caller assertions: structural validation cannot verify

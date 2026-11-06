@@ -38,7 +38,7 @@ requires both a canonical `lds plumbing` path and kind `plumbing`.
 | `lds update <root> --observed <collected.json> --request <edits.json> [--json]` or explicit `--assist --reason <text> --audience <text> --document <relative-existing-markdown> ...` | Human/operator reviewing an offline plan or consent-gating an assisted draft and making a separate fresh terminal apply decision · `llm` for the whole root registration | Root porcelain host of the existing canonical `docs update-plan` and `docs update-apply` steps, not a same-deliverable alias for either. Default offline behavior stays provider-free; only `--assist` invokes the model. | No: root-only and LLM-kind; only qualified `plumbing ...` members project. | No compatibility alias. |
 | `lds review <root> [--json]` | Human/operator reading offline documentation inventory, local-link findings, skips and limitations · `plumbing` | Root porcelain composition of canonical `docs inventory` and `docs validate`, not an alias for either. | No: root-only despite plumbing kind. | No compatibility alias. |
 | `lds init <root> --facts <file> [--json]` | Human/operator reviewing an offline four-output adoption plan and freshly confirming create-only application · `plumbing` | Linux terminal-only root composition of canonical `docs plan`/`docs apply`, reusing `adoption.ApplyReviewed` with the exact displayed in-memory plan and same optional global asset selector. | No: root-only despite plumbing kind; no new plumbing leaf/shared model flow. | No compatibility alias. |
-| `lds facts [--json]` | Human/operator drafting unapproved adoption assertions and citations offline · `plumbing` | Linux terminal-only questionnaire emitting the existing raw fact bundle, with pending approval and unknowns blank. No project argument, inference, asset/target reads, commands, provider or managed file. | No: root-only despite plumbing kind; no shared flow. | No compatibility alias. |
+| `lds facts [--resume <file> \| --review <file>] [--json]` | Human/operator drafting, resuming or reviewing adoption assertions offline · `plumbing` | Linux terminal-only raw bundles: questionnaire/resume pending; separate complete-candidate review with named fresh exact-digest facts approval, never plan approval. No project argument, inference, asset/target reads, commands, provider or input overwrite. | No: root-only despite plumbing kind; no shared flow. | No compatibility alias. |
 | `lds reconcile report` (offline default or explicit `--assist`) | Human/operator requesting a bounded private review packet and, only with assistance, consenting to model advice · `llm` for the whole registration | Root host, not an alias for deterministic `plumbing reconcile report`; offline remains provider-free. | No: root-only and LLM-kind. | No compatibility alias. |
 | `lds reconcile journal record\|decide\|reconsider` | Human/operator recording explicit journal assertions after a terminal preview · `plumbing` | Root-only guided host of canonical journal operations, not an alias. | No: root-only. | No compatibility alias. |
 
@@ -176,12 +176,17 @@ observations above are unchanged. See the
 
 The offline facts helper brings the current manifest to **37 application
 leaves, 22 qualified projected plumbing-kind entries and nine docs leaves**.
-Root `facts` is a deterministic terminal questionnaire, not an alias or
-projected member. It emits the existing adoption bundle directly, with or
-without `--json`, rather than wrapping it in a workflow result. Only caller
-answers are collected; unknowns stay blank and approval always remains pending.
+Root `facts` is a deterministic terminal helper, not an alias or projected
+member. It emits the existing adoption bundle directly, with or without
+`--json`, rather than wrapping it in a workflow result. The questionnaire and
+`--resume` keep unknowns blank and approval pending; resume always discards
+loaded approval. Separate `--review` validates complete assertions/citation
+syntax, displays the full candidate and records a named reviewer's fresh
+exact-digest approval. Saved regular files are bounded to 256 KiB and rechecked
+for raw-byte and identity changes; private output must use a different path.
 Input and stderr must be Linux terminals, but stdout may be redirected.
 Cancellation, invalid input and early refusal leave stdout empty. No project,
 asset, command, provider or new managed write boundary is involved. Existing
-adoption validation and full-plan confirmation remain unchanged. See the
+adoption validation remains required; facts approval never replaces full-plan
+confirmation or proves the claims. See the
 [helper reference](../../docs/reference/facts.md#draft-facts-with-the-offline-helper).

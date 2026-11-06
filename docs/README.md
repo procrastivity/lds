@@ -38,9 +38,9 @@ tutorial or deterministic plumbing.
   checkout-build recipe preserving review JSON, findings, skips and actual
   exit status outside the inspected root; the repository CI runs the same
   wrapper after its Nix build.
-- [Draft adoption facts offline](reference/facts.md#draft-facts-with-the-offline-helper)
-  — Linux terminal questionnaire emitting an unapproved JSON draft; unknowns
-  stay blank and evidence/facts approval remain separate responsibilities.
+- [Draft, resume and review adoption facts offline](reference/facts.md#draft-facts-with-the-offline-helper)
+  — Linux terminal questionnaire and selected-field resume emit pending JSON;
+  separate full-bundle review records fresh named facts approval, never plan approval.
 - [Initialize documentation offline](how-to/initialize-a-project.md) — Linux
   terminal-only `lds init <root> --facts <file> [--json]`: full plan review and
   fresh exact-digest confirmation for four create-only adoption files, without

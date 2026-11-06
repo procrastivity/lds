@@ -50,9 +50,12 @@ See the [bounded initialization contract](product/initialization-workflow.md)
 and [disposable how-to](../docs/how-to/initialize-a-project.md).
 This is implemented and verified offline, not pilot,
 release or native-parity evidence. The offline `lds facts` terminal
-questionnaire emits unapproved assertions in the existing bundle shape;
-unknowns stay blank, approval stays pending, and no project/asset is read or
-command/provider called. See the [facts reference](../docs/reference/facts.md#draft-facts-with-the-offline-helper).
+helper emits the existing bundle shape: questionnaire/resume pending,
+separate complete-bundle review named and freshly digest-approved. Resume
+always resets old approval; saved bytes/identity are rechecked without
+overwriting input. No project/asset is read or command/provider called, and
+facts approval never confirms a target-write plan.
+See the [facts reference](../docs/reference/facts.md#draft-facts-with-the-offline-helper).
 The resulting manifest is 37 total leaves,
 22 qualified projected entries and nine docs leaves; historical counts in
 older handoffs remain historical.
