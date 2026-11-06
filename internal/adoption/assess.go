@@ -328,7 +328,7 @@ func assessmentMarkdown(result AssessmentResult, payload []byte) []byte {
 	report.WriteString("## Review brief\n\nReason: " + escapeMarkdownText(result.Brief.Reason) + "\n\nAudience: " + escapeMarkdownText(result.Brief.Audience) + "\n\n")
 	report.WriteString("## Observed local-link findings\n\n")
 	if len(result.Validation.Findings) == 0 {
-		report.WriteString("No missing supported local file targets observed. This does not verify content accuracy or complete link coverage.\n\n")
+		report.WriteString("No missing supported local file or heading targets observed. This does not verify content accuracy or complete link coverage.\n\n")
 	}
 	for _, finding := range result.Validation.Findings {
 		report.WriteString("- " + escapeMarkdownText(fmt.Sprintf("%s:%d: %s", finding.Path, finding.Line, finding.Message)) + "\n")
@@ -348,7 +348,7 @@ func assessmentMarkdown(result AssessmentResult, payload []byte) []byte {
 	for _, question := range result.Brief.Questions {
 		report.WriteString("- " + escapeMarkdownText(question) + "\n")
 	}
-	report.WriteString("\n## Evidence and limits\n\nInputs are observed working-tree bytes, not authenticated claims or clean Git pins. Collection was repeated to detect changes, not taken atomically. Recheck evidence before acting on this report. Trusted, quiescent target and report ancestors are required.\n\nInventory covers root README.md and Markdown under engineering/ and docs/. Additional files were explicitly named by the brief. Skipped checks are not passes; fragments, external URLs and semantic correctness are not verified. This deterministic collector executes no project commands, provider calls or automatic matching, and never edits the target. Supplied proposals may be model-authored and are not verified facts. Accepting advice does not apply it.\n\nComplete inventory, validation, skips, input hashes/content and authored brief:\n\n")
+	report.WriteString("\n## Evidence and limits\n\nInputs are observed working-tree bytes, not authenticated claims or clean Git pins. Collection was repeated to detect changes, not taken atomically. Recheck evidence before acting on this report. Trusted, quiescent target and report ancestors are required.\n\nInventory covers root README.md and Markdown under engineering/ and docs/. Additional files were explicitly named by the brief. Supported local files and bounded ASCII ATX heading anchors are checked. Skipped checks are not passes; unsupported fragments/Markdown, external URLs and semantic correctness remain unchecked. This deterministic collector executes no project commands, provider calls or automatic matching, and never edits the target. Supplied proposals may be model-authored and are not verified facts. Accepting advice does not apply it.\n\nComplete inventory, validation, skips, input hashes/content and authored brief:\n\n")
 	report.WriteString(fencedInvocation(string(payload)) + "\n")
 	return []byte(report.String())
 }

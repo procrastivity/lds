@@ -182,7 +182,7 @@ func TestPlan_LinkDiagnosticsAreVirtualAndDoNotVeto(t *testing.T) {
 	var external, anchor bool
 	for _, skipped := range after.Skipped {
 		external = external || skipped.Code == "inventory.external-skipped" && strings.Contains(skipped.Reason, "not fetched")
-		anchor = anchor || skipped.Code == "inventory.fragment-only-skipped" && strings.Contains(skipped.Reason, "not checked")
+		anchor = anchor || skipped.Code == "validation.fragment-skipped" && strings.Contains(skipped.Reason, "not checked")
 	}
 	if !external || !anchor {
 		t.Fatalf("external/anchor skips not reported distinctly: %+v", after.Skipped)

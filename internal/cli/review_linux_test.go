@@ -18,7 +18,7 @@ import (
 func TestReviewReportsFindingsSkipsAndRepairWithoutWrites(t *testing.T) {
 	root, outside := t.TempDir(), t.TempDir()
 	files := map[string]string{
-		"README.md":     "# Demo\n[guide](docs/guide.md#not-checked)\n[missing](docs/missing.md)\n[web](https://example.invalid)\n[query](docs/guide.md?raw=1)\n[alias](docs/alias.md)\n[escape](../outside.md)\n",
+		"README.md":     "# Demo\n[guide](docs/guide.md#install)\n[missing](docs/missing.md)\n[web](https://example.invalid)\n[query](docs/guide.md?raw=1)\n[alias](docs/alias.md)\n[escape](../outside.md)\n",
 		"docs/guide.md": "# Guide\n", "engineering/decision.md": "# Decision\n",
 		"source.go": "PRIVATE UNSELECTED CONTENT\n",
 	}
@@ -45,6 +45,10 @@ func TestReviewReportsFindingsSkipsAndRepairWithoutWrites(t *testing.T) {
 				t.Fatal(err)
 			}
 			files["docs/missing.md"] = "# Repaired\n"
+			files["docs/guide.md"] = "# Guide\n## Install\n"
+			if err := os.WriteFile(filepath.Join(root, "docs/guide.md"), []byte(files["docs/guide.md"]), 0o640); err != nil {
+				t.Fatal(err)
+			}
 		}
 		before, outsideBefore := assessmentTree(t, root), assessmentTree(t, outside)
 		got := run(t, env, "review", root, "--json")
@@ -59,14 +63,17 @@ func TestReviewReportsFindingsSkipsAndRepairWithoutWrites(t *testing.T) {
 			t.Fatalf("invalid review report: %+v (%v)", got, err)
 		}
 		wantExit, wantStatus, wantFiles := 1, "findings", 3
-		wantFindings := []adoption.Finding{{Code: "validation.local-target-missing", Path: "README.md", Line: 3, Target: "docs/missing.md", Message: "local file target is missing: docs/missing.md"}}
+		wantFindings := []adoption.Finding{
+			{Code: "validation.local-anchor-missing", Path: "README.md", Line: 2, Target: "docs/guide.md#install", Message: "local heading anchor is missing: docs/guide.md#install"},
+			{Code: "validation.local-target-missing", Path: "README.md", Line: 3, Target: "docs/missing.md", Message: "local file target is missing: docs/missing.md"},
+		}
 		if repaired {
 			wantExit, wantStatus, wantFiles, wantFindings = 0, "no-findings", 4, []adoption.Finding{}
 		}
 		if got.exitCode != wantExit || report.Status != wantStatus || len(report.Inventory.Files) != wantFiles || len(report.Inventory.Links) != 5 || !reflect.DeepEqual(report.Validation.Findings, wantFindings) {
 			t.Fatalf("incorrect evidence/status: %+v, %+v", got, report)
 		}
-		if !repaired && parseErrorEnvelope(t, got.stderr).Error.Code != "validation.local-target-missing" || repaired && got.stderr != "" {
+		if !repaired && parseErrorEnvelope(t, got.stderr).Error.Code != "validation.local-anchor-missing" || repaired && got.stderr != "" {
 			t.Fatalf("lost diagnostic exit/error: %+v", got)
 		}
 		for _, file := range report.Inventory.Files {
@@ -79,14 +86,14 @@ func TestReviewReportsFindingsSkipsAndRepairWithoutWrites(t *testing.T) {
 		for _, skip := range report.Validation.Skipped {
 			codes[skip.Code]++
 		}
-		if !reflect.DeepEqual(codes, map[string]int{"inventory.external-skipped": 1, "inventory.symlink-skipped": 1, "validation.fragment-skipped": 1, "validation.query-skipped": 1, "validation.unsafe-link-skipped": 2}) {
+		if !reflect.DeepEqual(codes, map[string]int{"inventory.external-skipped": 1, "inventory.symlink-skipped": 1, "validation.query-skipped": 1, "validation.unsafe-link-skipped": 2}) {
 			t.Fatalf("skips were hidden, duplicated or promoted: %+v", report.Validation.Skipped)
 		}
 		if len(report.Limitations) == 0 || !strings.Contains(strings.Join(report.Limitations, " "), "not assessed") || !strings.Contains(strings.Join(report.Limitations, " "), "not an atomic snapshot") {
 			t.Fatalf("missing semantic/concurrency limitations: %v", report.Limitations)
 		}
 		human := run(t, env, "review", root)
-		for _, text := range []string{"README.md", "sha256:", "Local-link findings", "Skipped checks", "validation.fragment-skipped", "not assessed"} {
+		for _, text := range []string{"README.md", "sha256:", "Local-link findings", "Skipped checks", "validation.query-skipped", "not assessed"} {
 			if !strings.Contains(human.stdout, text) {
 				t.Errorf("human report omitted %q: %s", text, human.stdout)
 			}

@@ -27,9 +27,16 @@ tutorial or deterministic plumbing.
 
 - [Inspect a disposable project](tutorials/inspect-a-project.md) — a read-only,
   offline first run.
+- [Maintain a disposable documentation layer](tutorials/maintain-documentation.md)
+  — one offline Wordcount fixture connecting init, review, authored assessment,
+  a separately approved full-file update and final review; no provider or
+  real-project authorization.
 - [Review documentation offline](how-to/review-documentation.md) — one root
   command for scoped inventory and local-link findings, without a report or
   semantic verdict.
+- [Check documentation in CI](how-to/check-documentation-in-ci.md) — a Linux
+  checkout-build recipe preserving review JSON, findings, skips and actual
+  exit status outside the inspected root; no active workflow is installed.
 - [Initialize documentation offline](how-to/initialize-a-project.md) — Linux
   terminal-only `lds init <root> --facts <file> [--json]`: full plan review and
   fresh exact-digest confirmation for four create-only adoption files, without

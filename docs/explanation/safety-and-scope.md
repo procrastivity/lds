@@ -2,17 +2,22 @@
 
 LDS's bounded checks are not an audit of a project. Inventory reads root
 `README.md` and Markdown below `engineering/` and `docs/`, not all source
-files. The link validator checks supported relative local **file existence**;
-it does not check fragments, fetch external URLs, validate content semantics,
-or parse every Markdown/HTML link form. Unsupported checks are skips, not
-passes. A missing-link finding does not itself veto adoption.
+files. The link validator checks supported relative local file existence and
+bounded GitHub-style ASCII ATX heading fragments in inventoried UTF-8 Markdown
+up to 1 MiB. It does not fetch external URLs, validate content semantics or
+parse every Markdown/HTML form. Unsupported heading syntax makes the whole
+target's fragments explicit skips, avoiding guessed duplicate numbering;
+changed bytes and targets outside inventory are also skipped. See the
+[heading subset](../how-to/review-documentation.md#understand-the-bounded-heading-subset).
+Unsupported checks are skips, not passes. Create-only adoption plans retain
+file-only diagnostics; missing-link findings do not themselves veto adoption.
 
 The Linux-only `lds review <root> [--json]` composes that same inventory and
 local-link validation as a root-only, offline, read-only first pass. It follows
 no symlinks, needs no terminal, credential or authored JSON, and prints only
 file metadata (sizes/hashes), links, findings, combined skips and limitations
 to stdout—not full source text or a report artifact. Exit 1 means a supported
-local file target is missing; exit 0 means no such finding, **not** that docs
+local file or supported heading target is missing; exit 0 means no such finding, **not** that docs
 are complete, correct or current. Absent optional tracks are allowed, and
 empty coverage or skipped checks are not passes. It does not validate layout,
 completeness, semantics, cross-track consistency, code alignment or runtime

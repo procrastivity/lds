@@ -1041,7 +1041,7 @@ func TestDocsPlan_BrokenLinkIsDiagnosticNotVeto(t *testing.T) {
 	var external, anchor bool
 	for _, skipped := range result.Skipped {
 		external = external || skipped.Code == "inventory.external-skipped"
-		anchor = anchor || skipped.Code == "inventory.fragment-only-skipped"
+		anchor = anchor || skipped.Code == "validation.fragment-skipped"
 	}
 	if !external || !anchor || result.PlanDigest == nil {
 		t.Fatalf("plan diagnostics/digest = %+v", result)
@@ -1110,16 +1110,16 @@ func TestDocsReadOnly_ExactJSONAndExits(t *testing.T) {
 		t.Fatal(err)
 	}
 	r = run(t, nil, "plumbing", "docs", "validate", root, "--json")
-	want = `{"schemaVersion":1,"operation":"docs validate","findings":[{"code":"validation.local-target-missing","path":"docs/links.md","line":2,"target":"reference/missing.md#install","message":"local file target is missing: reference/missing.md#install"}],"skipped":[{"source":"docs/links.md","line":3,"code":"inventory.external-skipped","reason":"external URL is not fetched"},{"source":"docs/links.md","line":4,"code":"inventory.fragment-only-skipped","reason":"fragment-only target is not checked"}]}` + "\n"
+	want = `{"schemaVersion":1,"operation":"docs validate","findings":[{"code":"validation.local-target-missing","path":"docs/links.md","line":2,"target":"reference/missing.md#install","message":"local file target is missing: reference/missing.md#install"},{"code":"validation.local-anchor-missing","path":"docs/links.md","line":4,"target":"#overview","message":"local heading anchor is missing: #overview"}],"skipped":[{"source":"docs/links.md","line":3,"code":"inventory.external-skipped","reason":"external URL is not fetched"}]}` + "\n"
 	if r.exitCode != 1 || r.stdout != want || parseErrorEnvelope(t, r.stderr).Error.Code != "validation.local-target-missing" {
 		t.Fatalf("finding validate: exit=%d stdout=%q stderr=%q; want stdout=%q", r.exitCode, r.stdout, r.stderr, want)
 	}
 
-	if err := os.WriteFile(filepath.Join(root, "docs", "links.md"), []byte("[external](https://example.invalid)\n[fragment](#only)\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "docs", "links.md"), []byte("[external](https://example.invalid)\n[fragment](#only)\n# Only\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	r = run(t, nil, "plumbing", "docs", "validate", root, "--json")
-	want = `{"schemaVersion":1,"operation":"docs validate","findings":[],"skipped":[{"source":"docs/links.md","line":1,"code":"inventory.external-skipped","reason":"external URL is not fetched"},{"source":"docs/links.md","line":2,"code":"inventory.fragment-only-skipped","reason":"fragment-only target is not checked"}]}` + "\n"
+	want = `{"schemaVersion":1,"operation":"docs validate","findings":[],"skipped":[{"source":"docs/links.md","line":1,"code":"inventory.external-skipped","reason":"external URL is not fetched"}]}` + "\n"
 	if r.exitCode != 0 || r.stderr != "" || r.stdout != want {
 		t.Fatalf("skips-only validate: exit=%d stdout=%q stderr=%q; want stdout=%q", r.exitCode, r.stdout, r.stderr, want)
 	}
@@ -1219,7 +1219,7 @@ func TestDocsAssessment_ReportAndPreservation(t *testing.T) {
 	if got.SchemaVersion != 1 || got.Operation != "docs assess" || got.Status != "review-required" || got.ReportPath != output || got.TargetRoot != root || got.BriefSHA256 != fmt.Sprintf("%x", sha256.Sum256([]byte(brief))) || got.InventoryExitCode != 0 || got.ValidationExitCode != 1 {
 		t.Fatalf("assessment metadata: %+v", got)
 	}
-	if len(got.Inventory.Files) != 1 || got.Inventory.Files[0].Path != "docs/guide.md" || len(got.Validation.Findings) != 1 || got.Validation.Findings[0].Target != "missing.md" || len(got.Validation.Skipped) != 2 {
+	if len(got.Inventory.Files) != 1 || got.Inventory.Files[0].Path != "docs/guide.md" || len(got.Validation.Findings) != 2 || got.Validation.Findings[0].Target != "#unknown" || got.Validation.Findings[1].Target != "missing.md" || len(got.Validation.Skipped) != 1 {
 		t.Fatalf("assessment lost findings or skipped coverage: %+v", got)
 	}
 	if len(got.Evidence) != 3 || got.Evidence[0].Path != "command.go" || got.Evidence[0].Content != source || got.Evidence[0].SHA256 != fmt.Sprintf("%x", sha256.Sum256([]byte(source))) || got.Evidence[1].Content != guide || got.Evidence[2].Path != "docs/new.md" || got.Evidence[2].Exists {

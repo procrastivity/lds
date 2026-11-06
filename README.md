@@ -66,8 +66,11 @@ create-only adoption; no real target or pilot is authorized. See the
 scoped documentation: file sizes/hashes, supported local-link findings, skips
 and explicit limitations on stdout. It needs no terminal, credential or
 authored JSON input and writes no report. Exit 0 means no supported missing
-local file target, **not** complete or current documentation. See the
-[review how-to](docs/how-to/review-documentation.md).
+local file or supported heading target, **not** complete or current documentation.
+Heading checks use a bounded ASCII ATX subset; unsupported syntax remains
+explicitly skipped. See the [review how-to](docs/how-to/review-documentation.md),
+[CI recipe](docs/how-to/check-documentation-in-ci.md) and
+[connected offline maintenance tutorial](docs/tutorials/maintain-documentation.md).
 
 Built on the [toolsmith contract](https://github.com/procrastivity/toolsmith)
 (`toolsmith/v1` — the manifest declares it): a single static Go binary

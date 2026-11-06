@@ -75,6 +75,10 @@ func TestUpdatePlanAndApplyExactFilesWithCompletedObservationOverlay(t *testing.
 	if !reflect.DeepEqual(before, snapshotPlanTarget(t, root)) {
 		t.Fatal("apply changed unselected files or left scratch")
 	}
+	validation, err := Validate(root)
+	if err != nil || len(validation.Findings) != 2 || validation.Findings[0].Code != "validation.local-anchor-missing" || validation.Findings[0].Target != "docs/z.md#usage" || validation.Findings[1].Target != "new-missing.md" {
+		t.Fatalf("heading rename and file findings must match the completed observation overlay: %+v, %v", validation, err)
+	}
 	result, err = ApplyUpdates(root, planPath, plan.PlanDigest)
 	assertUpdateRefusal(t, result, err, "refusal.update-stale")
 }

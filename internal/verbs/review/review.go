@@ -57,7 +57,7 @@ func Command(streams *iostreams.Streams) *cobra.Command {
 				Inventory: inventory, Validation: validation,
 				Limitations: []string{
 					"Inventory covers only root README.md and regular Markdown below docs/ and engineering/; absent optional tracks are not findings.",
-					"Only supported local file targets are checked. External URLs, fragments, queries and unsupported Markdown are not validated; see skipped checks.",
+					"Local files and bounded ASCII ATX heading anchors in inventoried Markdown are checked. External URLs, queries and unsupported fragments/Markdown remain unchecked; see skipped checks.",
 					"Documentation completeness, prose accuracy, semantic/cross-track consistency, code alignment and runtime behavior are not assessed.",
 					"Observations are not an atomic snapshot; concurrent changes may affect results. No findings does not mean complete, correct or current documentation.",
 				},
@@ -74,7 +74,7 @@ func Command(streams *iostreams.Streams) *cobra.Command {
 				return ldserr.New("internal.review-output", err.Error())
 			}
 			if len(validation.Findings) != 0 {
-				return ldserr.New("validation.local-target-missing", fmt.Sprintf("%d local target(s) missing", len(validation.Findings)))
+				return ldserr.New(validation.Findings[0].Code, fmt.Sprintf("%d local file or heading target(s) missing", len(validation.Findings)))
 			}
 			return nil
 		},

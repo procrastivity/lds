@@ -27,7 +27,9 @@ lds plumbing docs validate "$project" --json
 ```
 
 Now `findings` is empty and exit is 0. The validator checks supported local
-**file existence**, not whether a fragment exists or the linked text is
-correct; it does not fetch external URLs. See [safety and scope](../explanation/safety-and-scope.md)
+file existence and bounded ASCII ATX heading fragments, not whether the
+linked text is correct; it does not fetch external URLs. See the
+[heading-check limits](../how-to/review-documentation.md#understand-the-bounded-heading-subset)
+and [safety and scope](../explanation/safety-and-scope.md)
 before applying these tools to a real project. Delete this disposable directory
 when finished (`rm -rf "$project"` only after checking its value).

@@ -8,7 +8,7 @@ historical `lds docs ...` spellings):
 | --- | --- |
 | `lds version --json` | Report compiled version, commit and build date. |
 | `lds plumbing docs inventory <root> --json` | Scoped root README and `engineering/`, `docs/` Markdown inventory, links, skips. |
-| `lds plumbing docs validate <root> --json` | Supported local file-target existence; findings exit 1. |
+| `lds plumbing docs validate <root> --json` | Supported local file existence and bounded ASCII ATX heading targets in inventoried Markdown; findings exit 1. Unsupported fragments remain explicit skips; see the [heading subset](../how-to/review-documentation.md#understand-the-bounded-heading-subset). |
 | `lds review <root> [--json]` | Linux-only offline read-only root command composing canonical inventory and validate; scoped files, local-link findings, combined skips and limitations on stdout, no report artifact. See the [disposable how-to](../how-to/review-documentation.md). |
 | `lds plumbing docs render <root> --facts <file> --json` | Validate facts and render four candidate files without writes. |
 | `lds plumbing docs plan <root> --facts <file> --json` | Full read-only create/identical/collision/refusal plan and digest. |
@@ -232,7 +232,7 @@ authored JSON or `--output`; stdout contains human output or schema-1 JSON
 Human output lists scoped regular Markdown files with sizes and hashes,
 local-link findings, skips and limitations. Validation includes inventory
 skips. Only metadata and links, not full source text, are reported. Exit 1
-means a supported local file target is missing, 0 means none was found; 2 is
+means a supported local file or heading target is missing, 0 means none was found; 2 is
 usage, 3 unsafe target or unsupported platform, and 4 unexpected I/O. A
 missing root exits 1 without a review result. Empty or absent optional
 documentation tracks are not automatically findings, and empty coverage or

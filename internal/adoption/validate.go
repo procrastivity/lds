@@ -3,14 +3,17 @@ package adoption
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path"
 	"sort"
 	"strings"
 	"syscall"
+	"unicode"
+	"unicode/utf8"
 )
 
-// Finding describes a missing local file target in a scoped Markdown file.
+// Finding describes a missing local file or supported heading target.
 type Finding struct {
 	Code    string `json:"code"`
 	Path    string `json:"path"`
@@ -25,9 +28,8 @@ type Validation struct {
 	Skipped  []Skip    `json:"skipped"`
 }
 
-// Validate checks only supported local file targets in scoped Markdown.
-// Fragments are not checked; external, query-bearing, unsafe and other
-// unsupported targets are reported as skips rather than successes.
+// Validate checks supported local files and bounded heading fragments in
+// inventoried Markdown. Unsupported syntax remains an explicit skip.
 func Validate(root string) (Validation, error) {
 	return validateWithOverlay(root, nil)
 }
@@ -39,7 +41,7 @@ func Review(root string) (Inventory, Validation, error) {
 	if err != nil {
 		return inventory, Validation{Findings: []Finding{}, Skipped: []Skip{}}, err
 	}
-	validation, err := validateInventory(root, inventory)
+	validation, err := validateInventory(root, inventory, nil)
 	return inventory, validation, err
 }
 
@@ -48,10 +50,10 @@ func validateWithOverlay(root string, overlay map[string]string) (Validation, er
 	if err != nil {
 		return Validation{Findings: []Finding{}, Skipped: []Skip{}}, err
 	}
-	return validateInventory(root, inventory)
+	return validateInventory(root, inventory, overlay)
 }
 
-func validateInventory(root string, inventory Inventory) (Validation, error) {
+func validateInventory(root string, inventory Inventory, overlay map[string]string) (Validation, error) {
 	result := Validation{Findings: []Finding{}, Skipped: []Skip{}}
 	result.Skipped = append(result.Skipped, inventory.Skipped...)
 	dir, err := openRoot(root)
@@ -59,22 +61,32 @@ func validateInventory(root string, inventory Inventory) (Validation, error) {
 		return result, fmt.Errorf("open target root: %w", err)
 	}
 	defer func() { _ = dir.Close() }()
+	files := map[string]File{}
+	for _, file := range inventory.Files {
+		files[file.Path] = file
+	}
+	indexes := map[string]headingIndex{}
 	for _, link := range inventory.Links {
 		target := link.Target
+		fragment := ""
 		hasFragment := false
+		if i := strings.IndexByte(target, '#'); i >= 0 {
+			fragment = target[i+1:]
+			target = target[:i]
+			hasFragment = true
+		}
 		if strings.Contains(target, "?") {
 			result.Skipped = append(result.Skipped, Skip{Source: link.Source, Line: link.Line, Code: "validation.query-skipped", Reason: "query-bearing link is not checked"})
 			continue
-		}
-		if i := strings.IndexByte(target, '#'); i >= 0 {
-			target = target[:i]
-			hasFragment = true
 		}
 		if path.IsAbs(target) || strings.HasPrefix(target, "\\") {
 			result.Skipped = append(result.Skipped, Skip{Source: link.Source, Line: link.Line, Code: "validation.unsafe-link-skipped", Reason: "absolute local target is not followed"})
 			continue
 		}
 		candidate := path.Clean(path.Join(path.Dir(link.Source), target))
+		if target == "" {
+			candidate = link.Source
+		}
 		if candidate == ".." || strings.HasPrefix(candidate, "../") {
 			result.Skipped = append(result.Skipped, Skip{Source: link.Source, Line: link.Line, Code: "validation.unsafe-link-skipped", Reason: "target escapes the explicit root"})
 			continue
@@ -90,7 +102,30 @@ func validateInventory(root string, inventory Inventory) (Validation, error) {
 		case !regular:
 			result.Skipped = append(result.Skipped, Skip{Source: link.Source, Line: link.Line, Code: "validation.not-file-skipped", Reason: "local target is not a regular file"})
 		case hasFragment:
-			result.Skipped = append(result.Skipped, Skip{Source: link.Source, Line: link.Line, Code: "validation.fragment-skipped", Reason: "fragment anchor is not checked"})
+			file, scoped := files[candidate]
+			decoded, decodeErr := url.PathUnescape(fragment)
+			reason := ""
+			switch {
+			case !scoped:
+				reason = "heading target is outside inventoried Markdown scope"
+			case decodeErr != nil || decoded == "" || !utf8.ValidString(decoded) || strings.IndexFunc(decoded, unicode.IsControl) >= 0:
+				reason = "empty, malformed or control-bearing fragment is not checked"
+			case lineFragment.MatchString(decoded):
+				reason = "source-line fragment is outside heading checks"
+			default:
+				index, cached := indexes[candidate]
+				if !cached {
+					index = readHeadings(dir, file, overlay)
+					indexes[candidate] = index
+				}
+				reason = index.reason
+				if reason == "" && !index.anchors[decoded] {
+					result.Findings = append(result.Findings, Finding{Code: "validation.local-anchor-missing", Path: link.Source, Line: link.Line, Target: link.Target, Message: "local heading anchor is missing: " + link.Target})
+				}
+			}
+			if reason != "" {
+				result.Skipped = append(result.Skipped, Skip{Source: link.Source, Line: link.Line, Code: "validation.fragment-skipped", Reason: reason})
+			}
 		}
 	}
 	sort.Slice(result.Findings, func(i, j int) bool {

@@ -201,11 +201,12 @@ func extractLinks(source, content string) ([]Link, []Skip) {
 				}
 				target = target[1 : len(target)-1]
 			}
-			if strings.HasPrefix(target, "#") || target == "" {
-				skipped = append(skipped, Skip{Source: source, Line: lineNumber + 1, Code: "inventory.fragment-only-skipped", Reason: "fragment-only target is not checked"})
+			if target == "" {
+				skipped = append(skipped, Skip{Source: source, Line: lineNumber + 1, Code: "inventory.unsupported-link", Reason: "empty target is not checked"})
 				continue
 			}
-			if strings.Contains(target, ":") || strings.HasPrefix(target, "//") {
+			address, _, _ := strings.Cut(target, "#")
+			if strings.Contains(address, ":") || strings.HasPrefix(address, "//") {
 				skipped = append(skipped, Skip{Source: source, Line: lineNumber + 1, Code: "inventory.external-skipped", Reason: "external URL is not fetched"})
 				continue
 			}
@@ -230,19 +231,35 @@ func escapedBracket(line string, start int) bool {
 // not claim to recognize every Markdown construct; unsupported syntax is
 // outside the bounded inline/reference-link contract.
 func proseLines(content string) []string {
+	lines := blockLines(content)
+	for i, line := range lines {
+		trimmed := strings.TrimLeft(line, " ")
+		if strings.HasPrefix(line, "\t") || len(line)-len(trimmed) >= 4 {
+			lines[i] = ""
+		} else {
+			lines[i] = withoutCodeSpans(line)
+		}
+	}
+	return lines
+}
+
+// blockLines excludes fenced code but retains inline markup and indentation
+// for readers that need to distinguish supported headings from ambiguous ones.
+func blockLines(content string) []string {
 	lines := strings.Split(content, "\n")
 	var fence byte
 	var fenceLength int
 	for i, line := range lines {
 		trimmed := strings.TrimLeft(line, " ")
-		if fence == 0 && (strings.HasPrefix(line, "\t") || len(line)-len(trimmed) >= 4) {
-			lines[i] = ""
-			continue
-		}
 		if len(line)-len(trimmed) <= 3 && len(trimmed) >= 3 && (trimmed[0] == '`' || trimmed[0] == '~') {
 			run := 0
 			for run < len(trimmed) && trimmed[run] == trimmed[0] {
 				run++
+			}
+			// A backtick in a backtick fence's info string makes it prose,
+			// not a code block that can hide subsequent headings or links.
+			if fence == 0 && trimmed[0] == '`' && strings.ContainsRune(trimmed[run:], '`') {
+				continue
 			}
 			if run >= 3 && (fence == 0 || fence == trimmed[0] && run >= fenceLength && strings.TrimSpace(trimmed[run:]) == "") {
 				if fence == 0 {
@@ -256,8 +273,6 @@ func proseLines(content string) []string {
 		}
 		if fence != 0 {
 			lines[i] = ""
-		} else {
-			lines[i] = withoutCodeSpans(line)
 		}
 	}
 	return lines

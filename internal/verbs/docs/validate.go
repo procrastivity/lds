@@ -18,7 +18,7 @@ import (
 
 func validateCommand(streams *iostreams.Streams) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "validate <root>", Short: "check supported local Markdown file targets",
+		Use: "validate <root>", Short: "check local file targets and supported Markdown heading anchors",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			result, err := adoption.Validate(args[0])
@@ -49,7 +49,7 @@ func validateCommand(streams *iostreams.Streams) *cobra.Command {
 				}
 			}
 			if len(result.Findings) != 0 {
-				return ldserr.New("validation.local-target-missing", fmt.Sprintf("%d local target(s) missing", len(result.Findings)))
+				return ldserr.New(result.Findings[0].Code, fmt.Sprintf("%d local file or heading target(s) missing", len(result.Findings)))
 			}
 			return nil
 		},

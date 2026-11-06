@@ -28,10 +28,14 @@ CLI/skill parity. No pilot or first-release claim follows.
 
 The separate Linux-only offline `lds review <root> [--json]` is a root-only
 plumbing-kind composition of existing documentation inventory and local-link
-validation. It writes no report and does not infer coverage or semantics; it
+validation, now including bounded ASCII ATX heading targets with explicit
+unsupported-fragment skips. It writes no report and does not infer coverage or semantics; it
 adds no plumbing leaf, projection or shared LLM flow. See the
 [disposable review how-to](../docs/how-to/review-documentation.md) and
 [safety boundaries](../docs/explanation/safety-and-scope.md).
+The [CI recipe](../docs/how-to/check-documentation-in-ci.md) is opt-in, not an
+installed workflow; the [connected tutorial](../docs/tutorials/maintain-documentation.md)
+uses only one disposable offline project. Neither requires a pilot.
 
 The offline Linux terminal-only `lds init <root> --facts <file> [--json]`
 hosts the existing four-output adoption plan and create-only apply. It needs

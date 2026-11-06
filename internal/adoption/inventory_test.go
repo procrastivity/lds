@@ -56,12 +56,13 @@ func TestInspectScopedFilesLinksAndSymlinks(t *testing.T) {
 		{Source: "README.md", Line: 2, Target: "z.md", Kind: "inline"},
 		{Source: "README.md", Line: 2, Target: "a.md", Kind: "inline"},
 		{Source: "engineering/product/overview.md", Line: 1, Target: "../../docs/reference/usage.md#run", Kind: "reference"},
+		{Source: "engineering/product/overview.md", Line: 3, Target: "#intro", Kind: "inline"},
 	}
 	if !reflect.DeepEqual(got.Links, wantLinks) {
 		t.Fatalf("links = %+v, want %+v", got.Links, wantLinks)
 	}
-	if len(got.Skipped) != 3 || got.Skipped[0].Source != "docs/linked" || got.Skipped[0].Code != "inventory.symlink-skipped" || got.Skipped[1].Line != 2 || got.Skipped[2].Line != 3 {
-		t.Fatalf("skipped = %+v, want symlink and two nonlocal links", got.Skipped)
+	if len(got.Skipped) != 2 || got.Skipped[0].Source != "docs/linked" || got.Skipped[0].Code != "inventory.symlink-skipped" || got.Skipped[1].Line != 2 {
+		t.Fatalf("skipped = %+v, want symlink and external link", got.Skipped)
 	}
 }
 

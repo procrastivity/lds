@@ -139,10 +139,30 @@ Local WIP Matter `lds-offline-review` tracks the authorized first Linux-only
 `lds review <root> [--json]` slice. It composes existing inventory and
 local-link validation on stdout without authored inputs, a terminal, provider,
 report artifact or target write. Exit 0 only means no supported missing local
-file target; it does not certify coverage, semantics, cross-track consistency,
+file or supported heading target; it does not certify coverage, semantics, cross-track consistency,
 code alignment or runtime behavior. The [disposable how-to](../../docs/how-to/review-documentation.md)
 shows its bounded use. No pilot, owner checkpoint wave or live test follows.
 Pilot selection and first-release inclusion remain separate decisions.
+
+### Offline review improvements and connected guidance
+
+The shared validator now checks bounded GitHub-style ASCII ATX heading
+fragments in inventoried UTF-8 Markdown up to 1 MiB, including same-document
+links and collision-aware duplicate suffixes. Unsupported heading syntax,
+uncertain target bytes and out-of-scope content remain explicit fragment
+skips, not guesses. Update observation overlays use their exact reviewed
+bytes; create-only adoption plans retain file-only diagnostics. Manifest
+counts and write/consent boundaries are unchanged. See the
+[review how-to](../../docs/how-to/review-documentation.md).
+
+The [CI recipe](../../docs/how-to/check-documentation-in-ci.md) builds a local
+checkout and preserves JSON, skips and actual exit statuses outside the
+inspected root; it installs no active workflow. The
+[connected maintenance tutorial](../../docs/tutorials/maintain-documentation.md)
+walks one disposable fixture through offline init, review, authored assessment,
+separately confirmed existing-file update and final review. These are useful
+without a pilot, provider or native-harness acceptance wave. Pilot selection
+remains deferred; release inclusion is a separate decision.
 
 ## Offline initialization: bounded local implementation
 
