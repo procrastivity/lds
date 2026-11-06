@@ -373,6 +373,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		}
 	}
 	want := map[string]string{
+		"facts":                                 "",
 		"init":                                  "",
 		"adopt":                                 "",
 		"assess":                                "",
@@ -419,7 +420,7 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 		if (verb.Name == "adopt" || verb.Name == "assess" || verb.Name == "update" || verb.Name == "reconcile report") && verb.Kind != "llm" {
 			t.Errorf("root %s kind = %q, want llm so it cannot enter the deterministic skill projection", verb.Name, verb.Kind)
 		}
-		if (verb.Name == "init" || verb.Name == "review" || strings.HasPrefix(verb.Name, "reconcile journal ")) && verb.Kind != "plumbing" {
+		if (verb.Name == "facts" || verb.Name == "init" || verb.Name == "review" || strings.HasPrefix(verb.Name, "reconcile journal ")) && verb.Kind != "plumbing" {
 			t.Errorf("offline %s kind = %q, want plumbing", verb.Name, verb.Kind)
 		}
 		if canonical, required := want[verb.Name]; required {
@@ -434,8 +435,8 @@ func TestManifest_JSON_DeclaresContractAndDigest(t *testing.T) {
 			projectable++
 		}
 	}
-	if len(m.Verbs) != 36 || len(seen) != len(want) || projectable != 22 {
-		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want thirty-six leaves and twenty-two projected members", len(m.Verbs), len(seen), len(want), projectable)
+	if len(m.Verbs) != 37 || len(seen) != len(want) || projectable != 22 {
+		t.Fatalf("manifest leaves=%d, expected names seen=%d/%d, projectable=%d; want thirty-seven leaves and twenty-two projected members", len(m.Verbs), len(seen), len(want), projectable)
 	}
 }
 

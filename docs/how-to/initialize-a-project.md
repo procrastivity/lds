@@ -14,6 +14,13 @@ root, infer facts, authenticate an approver or verify capability claims.
 Facts-file approval is not approval of the eventual plan. This guide selects
 no real target and grants no real-project write authority.
 
+For a real project's first draft, the offline
+[`lds facts` questionnaire](../reference/facts.md#draft-facts-with-the-offline-helper)
+collects your assertions and citations without hand-authoring the JSON shape.
+Unknowns remain blank and approval remains pending; independently complete,
+verify and approve that draft before using it with init. No extra pilot or
+owner-driven test wave is needed to use the disposable example below.
+
 ## Prepare a disposable example
 
 With a current local `lds` binary on `PATH`, run this from the LDS checkout

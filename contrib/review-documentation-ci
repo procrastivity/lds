@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Preserve LDS's result and exit status; never turn unchecked links into passes.
+set -eu
+umask 077
+root=$(realpath "${GITHUB_WORKSPACE:?}")
+scratch=$(realpath "${RUNNER_TEMP:?}")
+case "$scratch/" in
+	"$root/"*) printf '%s\n' 'RUNNER_TEMP must be outside the inspected root' >&2; exit 4 ;;
+esac
+capture=$(mktemp -d "$scratch/lds-review.XXXXXX")
+status=0
+./result/bin/lds review "$root" --json \
+	> "$capture/review.json" 2> "$capture/review.stderr" || status=$?
+render_status=0
+python3 - "$capture" <<'PY' || render_status=$?
+import json
+import pathlib
+import sys
+
+capture = pathlib.Path(sys.argv[1])
+# Prefix and JSON-escape untrusted text so it cannot become a workflow command.
+def show(label, value):
+    print(label + " " + json.dumps(value, ensure_ascii=True))
+
+errors = (capture / "review.stderr").read_text(errors="replace")
+for line in errors.splitlines():
+    show("LDS stderr:", line)
+try:
+    result = json.loads((capture / "review.json").read_text())
+    if (result["schemaVersion"] != 1 or result["operation"] != "review"
+            or result["status"] not in ("findings", "no-findings")
+            or not isinstance(result["targetRoot"], str)):
+        raise ValueError("not a schema-1 review result")
+    files = result["inventory"]["files"]
+    findings = result["validation"]["findings"]
+    skips = result["validation"]["skipped"]
+    limits = result["limitations"]
+    for entries in (files, findings, skips):
+        if not isinstance(entries, list) or not all(isinstance(e, dict) for e in entries):
+            raise ValueError("expected arrays of result objects")
+    if not isinstance(limits, list) or not limits or not all(isinstance(e, str) for e in limits):
+        raise ValueError("expected nonempty limitations")
+    show("Review status:", result["status"])
+    show("Inspected root:", result["targetRoot"])
+    print(f"Scope: {len(files)} Markdown file(s), {len(findings)} finding(s), {len(skips)} skip(s)")
+    for label, entries in (("FILE:", files), ("FINDING:", findings), ("SKIP:", skips)):
+        for entry in entries:
+            show(label, entry)
+    if not files:
+        print("Empty scope is not evidence of documentation correctness.")
+    if not findings:
+        print("No supported findings; unchecked areas are not passes.")
+    for limit in limits:
+        show("LIMIT:", limit)
+except (OSError, UnicodeError, ValueError, KeyError, TypeError) as error:
+    show("Cannot render review JSON:", str(error))
+    sys.exit(1)
+PY
+printf 'LDS exit status: %s; renderer exit status: %s\n' "$status" "$render_status"
+printf 'Runner-local captures: %s\n' "$capture"
+if [ "$render_status" -ne 0 ] && [ "$status" -eq 0 ]; then
+	printf '%s\n' 'LDS returned 0 without usable JSON; failing the wrapper with 4' >&2
+	exit 4
+fi
+exit "$status"

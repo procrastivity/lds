@@ -33,9 +33,10 @@ unsupported-fragment skips. It writes no report and does not infer coverage or s
 adds no plumbing leaf, projection or shared LLM flow. See the
 [disposable review how-to](../docs/how-to/review-documentation.md) and
 [safety boundaries](../docs/explanation/safety-and-scope.md).
-The [CI recipe](../docs/how-to/check-documentation-in-ci.md) is opt-in, not an
-installed workflow; the [connected tutorial](../docs/tutorials/maintain-documentation.md)
-uses only one disposable offline project. Neither requires a pilot.
+The [CI recipe](../docs/how-to/check-documentation-in-ci.md) describes the
+review wrapper run after the existing Nix build in repository CI; the
+[connected tutorial](../docs/tutorials/maintain-documentation.md) uses only one
+disposable offline project. Neither requires a pilot.
 
 The offline Linux terminal-only `lds init <root> --facts <file> [--json]`
 hosts the existing four-output adoption plan and create-only apply. It needs
@@ -48,7 +49,11 @@ leaf, shared model flow, alias or projected entry; root is plumbing-kind.
 See the [bounded initialization contract](product/initialization-workflow.md)
 and [disposable how-to](../docs/how-to/initialize-a-project.md).
 This is implemented and verified offline, not pilot,
-release or native-parity evidence. The resulting manifest is 36 total leaves,
+release or native-parity evidence. The offline `lds facts` terminal
+questionnaire emits unapproved assertions in the existing bundle shape;
+unknowns stay blank, approval stays pending, and no project/asset is read or
+command/provider called. See the [facts reference](../docs/reference/facts.md#draft-facts-with-the-offline-helper).
+The resulting manifest is 37 total leaves,
 22 qualified projected entries and nine docs leaves; historical counts in
 older handoffs remain historical.
 

@@ -7,13 +7,17 @@ LDS from the checked-out source, not a released installer.
 
 ## Keep the result and the actual exit status
 
-The following is a **proposed workflow**, not an installed workflow. It uses
-the checkout and Nix action pins already in this repository's
-`.github/workflows/ci.yml`. Review it before separately deciding to enable CI;
-this guide does not add an active workflow or trigger any shared state.
-The explicit inspected root here is the LDS checkout itself. In a different
-integration, deliberately choose the root and the source checkout used to
-build LDS rather than silently inspecting the current directory.
+This repository's [CI workflow](../../.github/workflows/ci.yml) runs
+[the review wrapper](../../contrib/review-documentation-ci) immediately after
+its existing `nix build` step. Pushes and pull requests to `main` therefore
+review the LDS checkout with that checkout's binary, without a second build.
+The wrapper requires Bash, Python 3 and `realpath`, available on the Ubuntu
+runner. It does not require a provider or upload artifacts.
+
+The following is a standalone equivalent for an LDS checkout. In a different
+integration, deliberately choose the inspected root and the source checkout
+used to build LDS rather than silently inspecting the current directory;
+copying this snippet alone does not supply LDS's wrapper or source.
 
 ```yaml
 name: Documentation review (example)
@@ -30,71 +34,7 @@ jobs:
         run: nix build .#default
       - name: Review the explicit documentation root
         shell: bash
-        run: |
-          set -eu
-          umask 077
-          root=$(realpath "${GITHUB_WORKSPACE:?}")
-          scratch=$(realpath "${RUNNER_TEMP:?}")
-          case "$scratch/" in
-            "$root/"*) printf '%s\n' 'RUNNER_TEMP must be outside the inspected root' >&2; exit 4 ;;
-          esac
-          capture=$(mktemp -d "$scratch/lds-review.XXXXXX")
-          status=0
-          ./result/bin/lds review "$root" --json \
-            > "$capture/review.json" 2> "$capture/review.stderr" || status=$?
-          render_status=0
-          python3 - "$capture" <<'PY' || render_status=$?
-          import json
-          import pathlib
-          import sys
-
-          capture = pathlib.Path(sys.argv[1])
-          # Prefix and JSON-escape untrusted text, including line breaks and
-          # control characters, so it cannot become a workflow log command.
-          def show(label, value):
-              print(label + " " + json.dumps(value, ensure_ascii=True))
-
-          errors = (capture / "review.stderr").read_text(errors="replace")
-          for line in errors.splitlines():
-              show("LDS stderr:", line)
-          try:
-              result = json.loads((capture / "review.json").read_text())
-              if (result["schemaVersion"] != 1 or result["operation"] != "review"
-                      or result["status"] not in ("findings", "no-findings")
-                      or not isinstance(result["targetRoot"], str)):
-                  raise ValueError("not a schema-1 review result")
-              files = result["inventory"]["files"]
-              findings = result["validation"]["findings"]
-              skips = result["validation"]["skipped"]
-              limits = result["limitations"]
-              for entries in (files, findings, skips):
-                  if not isinstance(entries, list) or not all(isinstance(e, dict) for e in entries):
-                      raise ValueError("expected arrays of result objects")
-              if not isinstance(limits, list) or not limits or not all(isinstance(e, str) for e in limits):
-                  raise ValueError("expected nonempty limitations")
-              show("Review status:", result["status"])
-              show("Inspected root:", result["targetRoot"])
-              print(f"Scope: {len(files)} Markdown file(s), {len(findings)} finding(s), {len(skips)} skip(s)")
-              for label, entries in (("FILE:", files), ("FINDING:", findings), ("SKIP:", skips)):
-                  for entry in entries:
-                      show(label, entry)
-              if not files:
-                  print("Empty scope is not evidence of documentation correctness.")
-              if not findings:
-                  print("No supported findings; unchecked areas are not passes.")
-              for limit in limits:
-                  show("LIMIT:", limit)
-          except (OSError, UnicodeError, ValueError, KeyError, TypeError) as error:
-              show("Cannot render review JSON:", str(error))
-              sys.exit(1)
-          PY
-          printf 'LDS exit status: %s; renderer exit status: %s\n' "$status" "$render_status"
-          printf 'Runner-local captures: %s\n' "$capture"
-          if [ "$render_status" -ne 0 ] && [ "$status" -eq 0 ]; then
-            printf '%s\n' 'LDS returned 0 without usable JSON; failing the wrapper with 4' >&2
-            exit 4
-          fi
-          exit "$status"
+        run: bash contrib/review-documentation-ci
 ```
 
 The shell captures stdout and stderr separately **outside** the inspected
@@ -139,11 +79,18 @@ and access controls, then save those exact captures. Do not move captures
 inside the inspected root. Paths, hashes and diagnostics can be sensitive;
 assess what may be retained or shared.
 
-For a local Linux rehearsal from the LDS checkout, build with
-`nix build .#default`, put the exact contents of the YAML review step's `run`
-block in a temporary shell script **outside** the checkout, and run it with
-Bash. Set `GITHUB_WORKSPACE` to the absolute checkout root and `RUNNER_TEMP`
-to an existing private temporary directory outside it. No GitHub event,
-terminal interaction, provider or active workflow is needed. Keep the script's
-exit status and inspect both captures, including skips; existing findings in
-the chosen checkout are evidence to review, not a reason to weaken the step.
+For a local Linux rehearsal from the LDS checkout:
+
+```sh
+nix build .#default
+umask 077
+scratch=$(mktemp -d)
+GITHUB_WORKSPACE="$PWD" RUNNER_TEMP="$scratch" bash contrib/review-documentation-ci
+```
+
+The scratch directory must be outside the checkout. No GitHub event,
+terminal interaction or provider is needed. Keep the wrapper's exit status
+and inspect both captures, including skips; existing findings in the chosen
+checkout are evidence to review, not a reason to weaken the step. The wrapper
+never modifies the inspected documentation; the build produces its normal
+`result` link separately.

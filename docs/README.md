@@ -36,7 +36,11 @@ tutorial or deterministic plumbing.
   semantic verdict.
 - [Check documentation in CI](how-to/check-documentation-in-ci.md) — a Linux
   checkout-build recipe preserving review JSON, findings, skips and actual
-  exit status outside the inspected root; no active workflow is installed.
+  exit status outside the inspected root; the repository CI runs the same
+  wrapper after its Nix build.
+- [Draft adoption facts offline](reference/facts.md#draft-facts-with-the-offline-helper)
+  — Linux terminal questionnaire emitting an unapproved JSON draft; unknowns
+  stay blank and evidence/facts approval remain separate responsibilities.
 - [Initialize documentation offline](how-to/initialize-a-project.md) — Linux
   terminal-only `lds init <root> --facts <file> [--json]`: full plan review and
   fresh exact-digest confirmation for four create-only adoption files, without
@@ -69,8 +73,8 @@ detected harnesses, or `lds install claude-code` targets Claude Code alone.
 `lds uninstall claude-code` removes a stamped installation. Install refuses
 hand-edited, unstamped, or incompatible targets by default; inspect before
 considering its destructive `--force` option. Installation is separate from
-initializing or adopting a project. Root `init` is plumbing-kind but not
-projected or an alias; it adds no plumbing leaf or shared model flow.
+initializing or adopting a project. Root `facts` and `init` are plumbing-kind
+but neither is projected or an alias; they add no plumbing leaf or shared model flow.
 The generated `/lds` guidance reads the live flow via
 `lds plumbing adopt --json`, but that reader is preparatory, not an adoption
 execution. Installing or discovering a skill does not establish native

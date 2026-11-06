@@ -451,7 +451,7 @@ func TestPlan_RequiresVerifiedOwnerOperationEvidence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var facts renderFactBundle
+	var facts FactBundle
 	if err := json.Unmarshal(data, &facts); err != nil {
 		t.Fatal(err)
 	}

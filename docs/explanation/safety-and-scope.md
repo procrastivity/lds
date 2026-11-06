@@ -63,6 +63,14 @@ Guidance is not enforcement, and offline checks establish neither live
 provider reliability nor native skill execution/parity, release inclusion or
 a pilot.
 
+The offline `lds facts` terminal questionnaire collects caller assertions
+without inspecting a project, executing the entered invocation, checking
+citations or calling a provider. It emits only an unapproved raw JSON draft
+after all questions finish; unknowns stay empty and approval stays pending.
+Completion is not facts approval or plan approval. It writes no managed file:
+stdout redirection, private storage and any later edits belong to the caller.
+See the [helper reference](../reference/facts.md#draft-facts-with-the-offline-helper).
+
 Adoption facts are caller assertions: structural validation cannot verify
 approval, evidence, or current capability. The interactive provider sees
 the live flow, supplied facts, and bounded counts after explicit `send`;

@@ -40,6 +40,12 @@ or stdin-pipe bypass exists. See the
 This is implemented and verified offline, not release,
 pilot or native-skill/parity evidence; facts approval is not plan approval.
 
+The offline [`lds facts` questionnaire](docs/reference/facts.md#draft-facts-with-the-offline-helper)
+collects assertions and citations in a Linux terminal and emits the existing
+fact-bundle JSON shape. Unknowns remain blank and approval always stays
+pending. It reads no project, runs no commands and uses no provider; complete,
+verify and independently approve the draft before init/adopt.
+
 The human maintenance workflow `lds assess <root>` produces
 model-assisted, review-required proposals in a new report **outside** the
 target, after fresh consent to send the complete scoped documentation and
@@ -71,6 +77,8 @@ Heading checks use a bounded ASCII ATX subset; unsupported syntax remains
 explicitly skipped. See the [review how-to](docs/how-to/review-documentation.md),
 [CI recipe](docs/how-to/check-documentation-in-ci.md) and
 [connected offline maintenance tutorial](docs/tutorials/maintain-documentation.md).
+The repository CI runs that review after its existing Nix build, preserving
+findings, explicit skips and actual exit status without a provider.
 
 Built on the [toolsmith contract](https://github.com/procrastivity/toolsmith)
 (`toolsmith/v1` — the manifest declares it): a single static Go binary

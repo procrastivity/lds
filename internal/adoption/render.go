@@ -42,7 +42,9 @@ type RenderOutput struct {
 	Asset   RenderAsset `json:"asset"`
 }
 
-type renderFactBundle struct {
+// FactBundle contains caller-authored adoption assertions and approval metadata.
+// Its shape alone does not establish completeness, approval or verified facts.
+type FactBundle struct {
 	DisplayName             string `json:"DisplayName"`
 	Purpose                 string `json:"Purpose"`
 	CurrentCapability       string `json:"CurrentCapability"`
@@ -109,37 +111,37 @@ func Render(root, factsPath, projectRoot string) ([]RenderOutput, error) {
 	return renderBundleOutputs(facts, projectRoot)
 }
 
-func readRenderFacts(factsPath string) ([]byte, renderFactBundle, error) {
+func readRenderFacts(factsPath string) ([]byte, FactBundle, error) {
 	data, err := os.ReadFile(factsPath)
 	if err != nil {
-		return nil, renderFactBundle{}, invalidRender("cannot read facts file")
+		return nil, FactBundle{}, invalidRender("cannot read facts file")
 	}
 	if !utf8.Valid(data) {
-		return data, renderFactBundle{}, invalidRender("facts file is not valid UTF-8")
+		return data, FactBundle{}, invalidRender("facts file is not valid UTF-8")
 	}
 	if err := rejectDuplicateJSONKeys(data); err != nil {
-		return data, renderFactBundle{}, invalidRender("decode facts file: %v", err)
+		return data, FactBundle{}, invalidRender("decode facts file: %v", err)
 	}
 	if err := validateExactFactKeys(data); err != nil {
-		return data, renderFactBundle{}, invalidRender("decode facts file: %v", err)
+		return data, FactBundle{}, invalidRender("decode facts file: %v", err)
 	}
 
-	var facts renderFactBundle
+	var facts FactBundle
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&facts); err != nil {
-		return data, renderFactBundle{}, invalidRender("decode facts file: %v", err)
+		return data, FactBundle{}, invalidRender("decode facts file: %v", err)
 	}
 	if err := requireJSONEOF(decoder); err != nil {
-		return data, renderFactBundle{}, invalidRender("decode facts file: %v", err)
+		return data, FactBundle{}, invalidRender("decode facts file: %v", err)
 	}
 	if err := validateRenderFacts(facts); err != nil {
-		return data, renderFactBundle{}, invalidRender("validate facts: %v", err)
+		return data, FactBundle{}, invalidRender("validate facts: %v", err)
 	}
 	return data, facts, nil
 }
 
-func renderBundleOutputs(facts renderFactBundle, projectRoot string) ([]RenderOutput, error) {
+func renderBundleOutputs(facts FactBundle, projectRoot string) ([]RenderOutput, error) {
 	values := map[string]string{
 		"DisplayName":             escapeMarkdownText(facts.DisplayName),
 		"Purpose":                 escapeMarkdownText(facts.Purpose),
@@ -204,7 +206,7 @@ func renderBundleOutputs(facts renderFactBundle, projectRoot string) ([]RenderOu
 	return outputs, nil
 }
 
-func validateRenderFacts(facts renderFactBundle) error {
+func validateRenderFacts(facts FactBundle) error {
 	stringsToValidate := []struct {
 		name  string
 		value string
