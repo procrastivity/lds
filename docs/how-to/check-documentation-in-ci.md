@@ -28,14 +28,23 @@ jobs:
   documentation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: DeterminateSystems/nix-installer-action@e50d5f73bfe71c2dd0aa4218de8f4afa59f8f81d # v16
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+        with:
+          determinate: false
       - name: Build the checked-out LDS source
         run: nix build .#default
       - name: Review the explicit documentation root
         shell: bash
         run: bash contrib/review-documentation-ci
 ```
+
+Both pinned actions use Node 24; checkout requires Actions Runner v2.327.1
+or newer, supplied by GitHub-hosted `ubuntu-latest`. The explicit
+`determinate: false` preserves this repository's upstream-Nix choice rather
+than taking the installer's newer Determinate-Nix default. Upstream Nix
+remains an available but unsupported installer configuration; this pin
+refresh does not migrate Nix distributions, change permissions or publish a release.
 
 The shell captures stdout and stderr separately **outside** the inspected
 root, without a pipeline or `|| true` that loses the command's status. Both
