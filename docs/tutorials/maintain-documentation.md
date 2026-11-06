@@ -266,3 +266,26 @@ printf 'Disposable project: %s\nPrivate review artifacts: %s\n' "$project" "$rev
 # After checking both values are the temporary directories created above:
 rm -rf -- "$project" "$review"
 ```
+
+## Maintainer check: replay this tutorial in CI
+
+The Linux CLI test `TestOfflineMaintenanceTutorial` executes the ten `sh`
+blocks above against the test-built binary; it does not maintain a second
+copy of their commands. The existing `make test` CI step runs it. Bash,
+Coreutils and Python 3 are included in the Nix development shell.
+
+The test keeps the project, reports, HOME and XDG configuration disposable
+and omits provider credentials. Its two PTY decisions are **test-only
+simulations**, sent separately after each full plan display. They do not
+authenticate a person, weaken the terminal gate, approve a real target or
+establish a pilot. The human instructions above still apply to real use.
+
+Assertions cover the fixture command, four stock outputs, the deliberately
+missing link and retained external skip, six exact evidence records, private
+authored assessment, the original-baseline update plan, all 154 replacement
+bytes, preservation of other collected files, final review and cleanup.
+To run just this check from the checkout:
+
+```bash
+nix develop --command go test ./internal/cli -run '^TestOfflineMaintenanceTutorial$' -count=1 -v
+```

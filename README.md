@@ -151,6 +151,11 @@ make fuzz         # bounded parser mutation smoke tests
 make hooks        # pre-commit, both stages
 ```
 
+On Linux, `make test` also executes the connected maintenance tutorial's exact
+shell blocks with the built CLI, isolated fixtures and test-only PTY decisions.
+The Nix development shell supplies Bash, Coreutils and Python 3. This replay
+guards guide/CLI drift; it is not real-target approval or pilot evidence.
+
 CI also runs `make fuzz`: three 10-second campaigns, two workers each, with
 inputs capped at 4 KiB and a one-minute test timeout per target. They exercise
 strict fact bundles, untrusted model update drafts, and Markdown/link/heading

@@ -163,3 +163,5 @@ never automatically rerun or roll back. Inspect the actual tree, recollect and
 make a **new** plan and review before another attempt. See
 [safety and scope](../explanation/safety-and-scope.md) and the
 [command reference](../reference/commands.md) for limits.
+For a stopped or uncertain run, follow the
+[recovery guide](recover-a-documentation-workflow.md) before any further write.

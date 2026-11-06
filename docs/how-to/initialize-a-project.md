@@ -119,6 +119,9 @@ parents or some files created, including a partial failed output; there is no
 rollback or automatic retry. Inspect actual state, make a new plan and obtain
 a new review before any further attempt. Use trusted, quiescent writers and
 ancestors; checks are not an atomic snapshot or hostile-writer isolation.
+The [recovery guide](recover-a-documentation-workflow.md) explains collisions,
+stale facts/plans and inspection of partial or unknown effects without cleanup
+or retry shortcuts.
 
 ## Optional explicit project templates
 

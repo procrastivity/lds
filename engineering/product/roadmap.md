@@ -164,9 +164,16 @@ documents the installed step and local rehearsal; no provider or artifact
 upload is involved. The
 [connected maintenance tutorial](../../docs/tutorials/maintain-documentation.md)
 walks one disposable fixture through offline init, review, authored assessment,
-separately confirmed existing-file update and final review. These are useful
-without a pilot, provider or native-harness acceptance wave. Pilot selection
-remains deferred; release inclusion is a separate decision.
+separately confirmed existing-file update and final review. Linux `make test`
+now executes its exact shell blocks with the built CLI, isolated HOME/XDG and
+test-only PTY decisions after the complete displays. It checks original and
+final diagnostics, exact evidence/replacement bytes and preservation; it does
+not authenticate human approval or establish a pilot. The
+[recovery guide](../../docs/how-to/recover-a-documentation-workflow.md) covers
+refusals, stale inputs and partial/uncertain effects without automatic retry,
+rollback or cleanup. These are useful without a pilot, provider or native-harness
+acceptance wave. Pilot selection remains deferred; release inclusion is a
+separate decision.
 
 ## Offline initialization: bounded local implementation
 

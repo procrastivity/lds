@@ -57,6 +57,9 @@ tutorial or deterministic plumbing.
   for consent-gated assisted drafting followed by a separate exact-plan review
   and human apply decision. The manual plumbing plan/apply route remains
   available. No real target is authorized by this guide.
+- [Recover a refused or interrupted write](how-to/recover-a-documentation-workflow.md)
+  — preserve evidence, inspect collisions/stale inputs and partial or uncertain
+  effects, then start a new baseline and review without automatic retry or cleanup.
 - [Reconcile two projects](how-to/reconcile-projects.md) — scan clean pinned
   snapshots, produce an offline or consent-gated assisted review report, and
   keep an explicit review journal separately.

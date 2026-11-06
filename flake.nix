@@ -72,6 +72,10 @@
             gnumake
             pre-commit
             shellcheck
+            # Execute the documented offline tutorial in the CLI tests.
+            bash
+            coreutils
+            python3
           ];
 
           # stderr, not stdout: `nix develop --command lds manifest
