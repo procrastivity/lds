@@ -7,13 +7,98 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/procrastivity/lds/internal/asset"
 )
 
 const renderFixtureDir = "../asset/testdata/adoption/greenfield"
+
+func FuzzFactBundle(f *testing.F) {
+	seed, err := os.ReadFile(filepath.Join(renderFixtureDir, "facts.json"))
+	if err != nil {
+		f.Fatal(err)
+	}
+	var baseline FactBundle
+	if err := json.Unmarshal(seed, &baseline); err != nil {
+		f.Fatal(err)
+	}
+	for i, data := range [][]byte{seed, {}, []byte(`{"Purpose":"a","Purpose":"b"}`), []byte("\xff"), []byte("\"\\\n\t"), []byte("café"), []byte("\u202e"), bytes.Repeat([]byte("x"), 4096)} {
+		f.Add(data, uint8(i))
+	}
+	f.Fuzz(func(t *testing.T, data []byte, mutation uint8) {
+		if len(data) > 4096 {
+			t.Skip()
+		}
+		if got, err := DecodeFactBundle(data); err == nil {
+			assertJSONPreserved(t, data, got)
+		}
+		// Every input also exercises successful parsing, not just random rejection.
+		// Quoting produces safe, nonempty ASCII while retaining arbitrary escapes.
+		want := baseline
+		want.Purpose = strconv.QuoteToASCII(string(data))
+		wire, err := json.Marshal(want)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := DecodeFactBundle(wire)
+		if err != nil || !reflect.DeepEqual(got, want) {
+			t.Fatalf("facts changed during decoding: %+v, %v", got, err)
+		}
+		if err := ValidateFactBundle(got); err != nil {
+			t.Fatalf("complete fixture assertions rejected: %v", err)
+		}
+		purpose, err := json.Marshal(want.Purpose)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var invalid []byte
+		switch mutation % 8 {
+		case 0:
+			invalid = append([]byte(`{"Purpose":"different",`), wire[1:]...)
+		case 1:
+			invalid = bytes.Replace(wire, []byte(`"Purpose":`), []byte(`"purpose":`), 1)
+		case 2:
+			invalid = bytes.Replace(wire, append([]byte(`"Purpose":`), purpose...), []byte(`"Purpose":null`), 1)
+		case 3:
+			invalid = append(wire, []byte(`{}`)...)
+		case 4:
+			invalid = bytes.Replace(wire, []byte(`"status":`), []byte(`"status":"approved","status":`), 1)
+		case 5:
+			invalid = append([]byte{0xff}, wire...)
+		case 6:
+			invalid = append([]byte(`{"unexpected":true,`), wire[1:]...)
+		case 7:
+			invalid = bytes.Replace(wire, []byte(`"Purpose":`+string(purpose)+`,`), nil, 1)
+		}
+		if _, err := DecodeFactBundle(invalid); err == nil {
+			t.Fatalf("invalid facts mutation %d accepted", mutation%8)
+		}
+	})
+}
+
+// Compare JSON values independently of the strict decoder: accepted input must
+// not silently drop unknown keys, change key case, or normalize null fields.
+func assertJSONPreserved(t *testing.T, input []byte, decoded any) {
+	t.Helper()
+	var before, after any
+	if !utf8.Valid(input) || json.Unmarshal(input, &before) != nil {
+		t.Fatal("accepted invalid JSON or raw UTF-8")
+	}
+	encoded, err := json.Marshal(decoded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(encoded, &after); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(before, after) {
+		t.Fatalf("accepted JSON changed: before=%#v after=%#v", before, after)
+	}
+}
 
 func TestRender_GreenfieldMatchesIndependentOutputs(t *testing.T) {
 	useIsolatedAssetDirectories(t)

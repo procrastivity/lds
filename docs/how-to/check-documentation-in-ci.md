@@ -29,9 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
-        with:
-          determinate: false
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
       - name: Build the checked-out LDS source
         run: nix build .#default
       - name: Review the explicit documentation root
@@ -39,12 +37,16 @@ jobs:
         run: bash contrib/review-documentation-ci
 ```
 
-Both pinned actions use Node 24; checkout requires Actions Runner v2.327.1
-or newer, supplied by GitHub-hosted `ubuntu-latest`. The explicit
-`determinate: false` preserves this repository's upstream-Nix choice rather
-than taking the installer's newer Determinate-Nix default. Upstream Nix
-remains an available but unsupported installer configuration; this pin
-refresh does not migrate Nix distributions, change permissions or publish a release.
+Checkout uses Node 24 and requires Actions Runner v2.327.1 or newer,
+supplied by GitHub-hosted `ubuntu-latest`. The Cachix installer is a composite
+Bash action supporting upstream Nix, with flakes enabled by default. It
+preserves this repository's upstream-Nix choice without relying on the
+previous installer's unsupported `determinate: false` configuration.
+
+Both repository workflows use full SHA pins. Dependabot proposes GitHub
+Actions updates monthly; review the SHA and matching version comment together
+and keep this example aligned with the workflows. Updates are proposals, not
+automatic merges or release authorization.
 
 The shell captures stdout and stderr separately **outside** the inspected
 root, without a pipeline or `|| true` that loses the command's status. Both

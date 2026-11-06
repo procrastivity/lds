@@ -147,8 +147,18 @@ local link and explains why repairing it is not semantic validation.
 ```
 direnv allow      # or: nix develop
 make check        # lint + test
+make fuzz         # bounded parser mutation smoke tests
 make hooks        # pre-commit, both stages
 ```
+
+CI also runs `make fuzz`: three 10-second campaigns, two workers each, with
+inputs capped at 4 KiB and a one-minute test timeout per target. They exercise
+strict fact bundles, untrusted model update drafts, and Markdown/link/heading
+review in disposable trees. JSON checks cover exact content, malformed shapes,
+and scope refusals; review checks retain known findings/skips and unchanged
+target bytes. Ordinary tests replay the seeds. These short campaigns supplement
+the larger-input boundary tests; they are not exhaustive parser verification.
+GitHub Actions pins receive monthly Dependabot update proposals for review.
 
 Version stamps come from release tags (`git describe --match 'v[0-9]*'`);
 pushing an annotated `vX.Y.Z` tag is the only human release action.

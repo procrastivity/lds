@@ -5,9 +5,86 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
+
+func FuzzUpdateDraft(f *testing.F) {
+	for i, data := range [][]byte{
+		[]byte(`{"schemaVersion":1,"edits":[],"questions":[]}`),
+		[]byte(`{"schemaVersion":1,"edits":[{"path":"README.md","after":"# Draft\n","rationale":"Review source","citations":["source.txt"]}],"questions":[]}`),
+		{},
+		[]byte("\xff"), []byte("\"\\\n\t"), []byte("café"), []byte("\u202e"), bytes.Repeat([]byte("x"), 4096),
+	} {
+		f.Add(data, uint8(i))
+	}
+	observed := AssessmentResult{Evidence: []AssessmentEvidence{
+		{Path: "README.md", Exists: true},
+		{Path: "docs/unselected.md", Exists: true},
+		{Path: "source.txt", Exists: true},
+		{Path: "missing.txt", Exists: false},
+	}}
+	selected := []string{"README.md"}
+	f.Fuzz(func(t *testing.T, data []byte, mutation uint8) {
+		if len(data) > 4096 {
+			t.Skip()
+		}
+		if got, err := DecodeUpdateDraft(observed, selected, data); err == nil {
+			assertJSONPreserved(t, data, got)
+			for _, edit := range got.Edits {
+				if edit.Path != "README.md" {
+					t.Fatal("accepted an unselected target")
+				}
+				for _, citation := range edit.Citations {
+					if citation != "README.md" && citation != "docs/unselected.md" && citation != "source.txt" {
+						t.Fatal("accepted an absent or uncaptured citation")
+					}
+				}
+			}
+		}
+		// Exercise valid full-file advice on every iteration, including escapes,
+		// then violate one scope, safety or JSON contract independently.
+		want := UpdateDraft{SchemaVersion: 1, Edits: []UpdateProposal{{
+			Path: "README.md", After: "# Draft\n\n" + strconv.QuoteToASCII(string(data)) + "\n",
+			Rationale: "Review source", Citations: []string{"source.txt"},
+		}}, Questions: []string{}}
+		wire, err := json.Marshal(want)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := DecodeUpdateDraft(observed, selected, wire)
+		if err != nil || !reflect.DeepEqual(got, want) {
+			t.Fatalf("model advice changed during decoding: %+v, %v", got, err)
+		}
+		switch mutation % 8 {
+		case 0:
+			want.Edits[0].Path = "docs/unselected.md"
+		case 1:
+			want.Edits[0].Citations = []string{"missing.txt"}
+		case 2:
+			want.Edits[0].After += "\u202e"
+		case 3:
+			want.Edits[0].After += "\x00"
+		case 4:
+			want.Edits = append(want.Edits, want.Edits[0])
+		case 5:
+			want.Questions = nil
+		case 6:
+			want.Edits[0].Citations = []string{"source.txt", "source.txt"}
+		}
+		invalid, err := json.Marshal(want)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if mutation%8 == 7 {
+			invalid = append([]byte(`{"schemaVersion":1,`), invalid[1:]...)
+		}
+		if _, err := DecodeUpdateDraft(observed, selected, invalid); err == nil {
+			t.Fatalf("invalid draft mutation %d accepted", mutation%8)
+		}
+	})
+}
 
 func TestUpdateDraftSelectionAndAsymmetricEvidence(t *testing.T) {
 	observed := AssessmentResult{Evidence: []AssessmentEvidence{

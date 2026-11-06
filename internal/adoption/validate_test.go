@@ -1,12 +1,99 @@
 package adoption
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"syscall"
 	"testing"
 )
+
+func FuzzReviewMarkdown(f *testing.F) {
+	for _, data := range [][]byte{
+		{},
+		[]byte("# Anchor\n# Anchor-1\n# Anchor\n"),
+		[]byte("```md\n[hidden](missing.md)\n```\n[ref][id]\n[id]: known.md#a-b\n"),
+		[]byte("# Café\n<a id=\"anchor\"></a>\n[x](#%FF)\n"),
+		[]byte("[escape](../../outside.md)\n[alias](alias.md#anchor)\n"),
+		[]byte("\\`[x](missing.md)\\`\n[image](<known.md#a-b>)\n"),
+		[]byte("\xff\x00\r\n"), bytes.Repeat([]byte("# Anchor\n"), 455),
+	} {
+		f.Add(data)
+	}
+	root, outside := f.TempDir(), f.TempDir()
+	if err := os.Mkdir(filepath.Join(root, "docs"), 0o755); err != nil {
+		f.Fatal(err)
+	}
+	for name, content := range map[string]string{
+		filepath.Join(outside, "sentinel.md"): "# Outside\n",
+		filepath.Join(root, "docs/known.md"):  "# A B\n## A B-1\n# A B\n",
+		filepath.Join(root, "README.md"): "[encoded](docs/known.md#a%2Db)\n" +
+			"[collision](docs/known.md#a-b-2)\n[absent](docs/known.md#absent)\n" +
+			"[missing](docs/missing.md)\n[external](https://example.invalid/)\n" +
+			"[escape](../outside.md)\n[alias](docs/alias.md)\n[input](docs/input.md#anchor)\n",
+	} {
+		if err := os.WriteFile(name, []byte(content), 0o600); err != nil {
+			f.Fatal(err)
+		}
+	}
+	alias := filepath.Join(root, "docs/alias.md")
+	sentinel := filepath.Join(outside, "sentinel.md")
+	if err := os.Symlink(sentinel, alias); err != nil {
+		f.Fatal(err)
+	}
+	f.Fuzz(func(t *testing.T, data []byte) {
+		if len(data) > 4096 {
+			t.Skip()
+		}
+		if err := os.WriteFile(filepath.Join(root, "docs/input.md"), data, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		before := snapshotRenderTarget(t, root)
+		inventory, validation, err := Review(root)
+		if !reflect.DeepEqual(before, snapshotRenderTarget(t, root)) {
+			t.Fatal("review changed target or linked sentinel bytes")
+		}
+		if target, err := os.Readlink(alias); err != nil || target != sentinel {
+			t.Fatal("review changed the symlink")
+		}
+		// Arbitrary links can produce filesystem errors (e.g. NAME_MAX).
+		// Even those runs must leave the disposable tree unchanged.
+		if err != nil {
+			if !errors.Is(err, syscall.ENAMETOOLONG) && !errors.Is(err, syscall.EINVAL) {
+				t.Fatalf("unexpected review error: %v", err)
+			}
+			return
+		}
+		if len(inventory.Files) != 3 {
+			t.Fatalf("inventory followed a symlink or lost a document: %+v", inventory.Files)
+		}
+		for _, file := range inventory.Files {
+			if file.Path == "docs/input.md" && (file.Size != len(data) || file.SHA256 != fmt.Sprintf("%x", sha256.Sum256(data))) {
+				t.Fatal("inventory did not preserve input byte identity")
+			}
+		}
+		findings, skips := map[int]string{}, map[int]string{}
+		for _, finding := range validation.Findings {
+			if finding.Path == "README.md" && finding.Line < 8 {
+				findings[finding.Line] = finding.Code
+			}
+		}
+		for _, skip := range validation.Skipped {
+			if skip.Source == "README.md" && skip.Line < 8 {
+				skips[skip.Line] = skip.Code
+			}
+		}
+		if !reflect.DeepEqual(findings, map[int]string{3: "validation.local-anchor-missing", 4: "validation.local-target-missing"}) ||
+			!reflect.DeepEqual(skips, map[int]string{5: "inventory.external-skipped", 6: "validation.unsafe-link-skipped", 7: "validation.unsafe-link-skipped"}) {
+			t.Fatalf("unrelated input changed supported checks or honest skips: findings=%v skips=%v", findings, skips)
+		}
+	})
+}
 
 func TestValidateLocalFilesAndHonestSkips(t *testing.T) {
 	root := t.TempDir()

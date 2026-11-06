@@ -14,7 +14,7 @@ LDFLAGS := -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DA
 # job, checks in full.
 SHELLCHECK_FILES := .envrc .agents/setup .agents/update-toolsmith .agents/update-wip contrib/check-commit-msg contrib/check-gofumpt contrib/release contrib/review-documentation-ci
 
-.PHONY: fmt lint test check hooks build cross-compile changelog release-notes
+.PHONY: fmt lint test fuzz check hooks build cross-compile changelog release-notes
 
 fmt:
 	gofumpt -w .
@@ -25,6 +25,12 @@ lint:
 
 test:
 	go test ./...
+
+# Bounded mutation smoke tests; ordinary `test` also runs their seed corpora.
+fuzz:
+	go test ./internal/adoption -run='^$$' -fuzz='^FuzzFactBundle$$' -fuzztime=10s -parallel=2 -timeout=1m
+	go test ./internal/adoption -run='^$$' -fuzz='^FuzzUpdateDraft$$' -fuzztime=10s -parallel=2 -timeout=1m
+	go test ./internal/adoption -run='^$$' -fuzz='^FuzzReviewMarkdown$$' -fuzztime=10s -parallel=2 -timeout=1m
 
 check: lint test
 
