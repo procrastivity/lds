@@ -12,12 +12,23 @@ status=0
 ./result/bin/lds review "$root" --json \
 	> "$capture/review.json" 2> "$capture/review.stderr" || status=$?
 render_status=0
-python3 - "$capture" <<'PY' || render_status=$?
+python3 - "$capture" "$status" <<'PY' || render_status=$?
+import collections
+import html
 import json
+import os
 import pathlib
 import sys
 
 capture = pathlib.Path(sys.argv[1])
+status = int(sys.argv[2])
+summary = ["## Documentation review", "", f"LDS exit status: **{status}**", ""]
+
+# HTML-escape JSON strings inside preformatted blocks: repository text must
+# not become Markdown links, HTML, mentions or workflow commands.
+def quoted(value):
+    return html.escape(json.dumps(value, ensure_ascii=True))
+
 # Prefix and JSON-escape untrusted text so it cannot become a workflow command.
 def show(label, value):
     print(label + " " + json.dumps(value, ensure_ascii=True))
@@ -25,6 +36,7 @@ def show(label, value):
 errors = (capture / "review.stderr").read_text(errors="replace")
 for line in errors.splitlines():
     show("LDS stderr:", line)
+render_error = None
 try:
     result = json.loads((capture / "review.json").read_text())
     if (result["schemaVersion"] != 1 or result["operation"] != "review"
@@ -52,8 +64,44 @@ try:
         print("No supported findings; unchecked areas are not passes.")
     for limit in limits:
         show("LIMIT:", limit)
+    summary += [f"**{len(files)} Markdown files · {len(findings)} findings · {len(skips)} skipped checks**", "",
+                "No findings means no supported missing targets, not complete or correct documentation.", ""]
+    if not files:
+        summary += ["**Empty scope: documentation completeness is not assessed.**", ""]
+    summary += ["### Findings", "", "<pre>"]
+    for finding in findings:
+        summary.append(f"{quoted(finding.get('path'))}:{quoted(finding.get('line'))} "
+                       f"[{quoted(finding.get('code'))}] {quoted(finding.get('message'))}")
+    if not findings:
+        summary.append("No supported missing targets observed; unchecked areas remain.")
+    summary += ["</pre>", "", "### Skipped checks by reason", "", "<pre>"]
+    counts = collections.Counter((quoted(skip.get("code")), quoted(skip.get("reason"))) for skip in skips)
+    for (code, reason), count in sorted(counts.items()):
+        summary.append(f"{count} × [{code}] {reason}")
+    if not skips:
+        summary.append("None reported by the bounded parser; see limitations below.")
+    summary += ["</pre>", "", "### Limitations (not verified)", "", "<pre>"]
+    summary += [quoted(limit) for limit in limits]
+    summary += ["</pre>", ""]
 except (OSError, UnicodeError, ValueError, KeyError, TypeError) as error:
     show("Cannot render review JSON:", str(error))
+    render_error = str(error)
+    summary += ["**No usable review result. Do not interpret this as a clean review.**", "",
+                "<pre>", quoted(render_error), "</pre>", ""]
+    if status == 0:
+        summary += ["LDS returned 0 without usable JSON; wrapper exit status is **4**.", ""]
+
+if summary_path := os.environ.get("GITHUB_STEP_SUMMARY"):
+    try:
+        path = pathlib.Path(summary_path).resolve()
+        if path.is_relative_to(pathlib.Path(os.environ["GITHUB_WORKSPACE"]).resolve()):
+            raise ValueError("GITHUB_STEP_SUMMARY must be outside the inspected root")
+        with path.open("a", encoding="utf-8") as output:
+            output.write("\n".join(summary))
+    except (OSError, ValueError) as error:
+        # Optional presentation failure must not mask LDS's review result.
+        show("Cannot write optional job summary:", str(error))
+if render_error is not None:
     sys.exit(1)
 PY
 printf 'LDS exit status: %s; renderer exit status: %s\n' "$status" "$render_status"

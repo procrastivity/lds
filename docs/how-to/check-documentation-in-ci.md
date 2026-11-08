@@ -56,6 +56,17 @@ inventory skips; it is not necessary to print those a second time.
 The small Python standard-library renderer checks the expected result shape;
 it is not a replacement for LDS or a complete JSON-schema validator.
 
+On GitHub Actions, the wrapper also appends a job summary through
+`GITHUB_STEP_SUMMARY`: file/finding/skip counts, file-and-line findings,
+skip counts grouped by code and reason, and explicit limitations. Repository
+text is JSON-escaped and HTML-escaped in preformatted blocks, not interpreted
+as links, markup or workflow commands. An unusable result is labeled as such,
+not presented as a clean review. The summary contains diagnostics, not full
+source packets. The original JSON and stderr captures remain unchanged.
+The summary path must be outside the inspected root; an unavailable or unsafe
+summary destination produces a log warning without changing the review exit.
+Local runs can omit `GITHUB_STEP_SUMMARY` and retain the same log/capture route.
+
 An early operational error can leave stdout empty or malformed. The renderer
 reports that problem and the captured stderr, but the wrapper still returns
 LDS's original **nonzero** status, rather than masking it as a JSON parse
@@ -96,12 +107,13 @@ For a local Linux rehearsal from the LDS checkout:
 nix build .#default
 umask 077
 scratch=$(mktemp -d)
-GITHUB_WORKSPACE="$PWD" RUNNER_TEMP="$scratch" bash contrib/review-documentation-ci
+GITHUB_WORKSPACE="$PWD" RUNNER_TEMP="$scratch" \
+  GITHUB_STEP_SUMMARY="$scratch/summary.md" bash contrib/review-documentation-ci
 ```
 
 The scratch directory must be outside the checkout. No GitHub event,
 terminal interaction or provider is needed. Keep the wrapper's exit status
-and inspect both captures, including skips; existing findings in the chosen
-checkout are evidence to review, not a reason to weaken the step. The wrapper
-never modifies the inspected documentation; the build produces its normal
+and inspect both captures and `summary.md`, including skips; existing findings
+in the chosen checkout are evidence to review, not a reason to weaken the step.
+The wrapper never modifies the inspected documentation; the build produces its normal
 `result` link separately.

@@ -160,8 +160,11 @@ counts and write/consent boundaries are unchanged. See the
 Repository CI runs the [review wrapper](../../contrib/review-documentation-ci)
 after its existing Nix build, preserving JSON, skips and actual exit statuses
 outside the inspected root. The [CI recipe](../../docs/how-to/check-documentation-in-ci.md)
-documents the installed step and local rehearsal; no provider or artifact
-upload is involved. The
+documents the installed step and local rehearsal; the wrapper now also emits
+an optional escaped GitHub job summary with findings, skip counts by reason
+and limitations, without changing raw captures or review exit policy. The test
+job adds a separate bounded full race-detector run alongside ordinary tests
+and parser fuzzing. No provider or artifact upload is involved. The
 [connected maintenance tutorial](../../docs/tutorials/maintain-documentation.md)
 walks one disposable fixture through offline init, review, authored assessment,
 separately confirmed existing-file update and final review. Linux `make test`
@@ -174,6 +177,17 @@ refusals, stale inputs and partial/uncertain effects without automatic retry,
 rollback or cleanup. These are useful without a pilot, provider or native-harness
 acceptance wave. Pilot selection remains deferred; release inclusion is a
 separate decision.
+
+A local, unpublished packaging rehearsal built the current committed runtime
+with an explicit `v0.0.0` rehearsal stamp through the existing cross-compile
+target. It verified Linux static linkage, both artifact checksums (including
+tamper rejection), version metadata, all twelve embedded asset hashes, four
+live flow readers, four read-only template renders and a disposable
+install/current/doctor/uninstall lifecycle. Release notes were previewed
+without creating a tag; rehearsal artifacts were removed. This is not a
+published release, native Darwin execution, native skill parity or pilot.
+Documentation workflows remain Linux-only. Cutting the initial release needs
+separate authorization after the final changes are committed and CI passes.
 
 ## Offline initialization: bounded local implementation
 

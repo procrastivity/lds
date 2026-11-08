@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -141,5 +143,136 @@ func TestReviewEmptyScopeAndUnsafeRoots(t *testing.T) {
 	}
 	if entries, err := os.ReadDir(root); err != nil || len(entries) != 0 {
 		t.Fatalf("empty or refused review wrote files: %v, %v", entries, err)
+	}
+}
+
+func TestReviewCIWrapperSummariesAndExitStatuses(t *testing.T) {
+	wrapper, err := filepath.Abs("../../contrib/review-documentation-ci")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name           string
+		exit, wantExit int
+		invalid        string
+	}{
+		{name: "clean"},
+		{name: "findings", exit: 1, wantExit: 1},
+		{name: "usage-empty", exit: 2, wantExit: 2, invalid: "empty"},
+		{name: "refused-malformed", exit: 3, wantExit: 3, invalid: "malformed"},
+		{name: "io-empty", exit: 4, wantExit: 4, invalid: "empty"},
+		{name: "false-success", wantExit: 4, invalid: "malformed"},
+		{name: "summary-disabled"},
+		{name: "summary-inside-root"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root, scratch, home := t.TempDir(), t.TempDir(), t.TempDir()
+			bin := filepath.Join(root, "result/bin/lds")
+			if err := os.MkdirAll(filepath.Dir(bin), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			// Simulate the reviewed command's public stdout/stderr/exit boundary,
+			// including failures that cannot reliably be induced via real I/O.
+			if err := os.WriteFile(bin, []byte("#!/usr/bin/env bash\ncat \"$CI_FIXTURE\"\nprintf '%s\\n' 'diagnostic <raw>' >&2\nexit \"$CI_EXIT\"\n"), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			findings, status := []adoption.Finding{}, "no-findings"
+			if tc.exit == 1 {
+				status = "findings"
+				findings = append(findings, adoption.Finding{Path: "docs/<img>.md", Line: 7, Code: "validation.local-target-missing", Message: "</pre><script>bad</script>\n::error::injected"})
+			}
+			payload, err := json.Marshal(map[string]any{
+				"schemaVersion": 1, "operation": "review", "targetRoot": root, "status": status,
+				"inventory": adoption.Inventory{Files: []adoption.File{{Path: "README.md"}, {Path: "docs/guide.md"}}},
+				"validation": adoption.Validation{Findings: findings, Skipped: []adoption.Skip{
+					{Code: "inventory.external-skipped", Reason: "external URL not fetched"},
+					{Code: "inventory.external-skipped", Reason: "external URL not fetched"},
+					{Code: "validation.fragment-skipped", Reason: "unsupported <heading>"},
+					{Code: "validation.fragment-skipped", Reason: "source-line reference"},
+				}},
+				"limitations": []string{"Prose accuracy is not assessed."},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			switch tc.invalid {
+			case "empty":
+				payload = nil
+			case "malformed":
+				payload = []byte("<unusable>")
+			}
+			fixture, summary := filepath.Join(scratch, "fixture.json"), filepath.Join(scratch, "summary.md")
+			if err := os.WriteFile(fixture, payload, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if tc.name == "summary-inside-root" {
+				summary = filepath.Join(root, "README.md")
+			} else if tc.name != "summary-disabled" {
+				if err := os.WriteFile(summary, []byte("Existing job notes.\n\n"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			cmd := exec.Command("bash", wrapper)
+			cmd.Dir = root
+			cmd.Env = []string{
+				"PATH=" + os.Getenv("PATH"), "HOME=" + home, "GITHUB_WORKSPACE=" + root,
+				"RUNNER_TEMP=" + scratch, "CI_FIXTURE=" + fixture, "CI_EXIT=" + strconv.Itoa(tc.exit),
+			}
+			if tc.name != "summary-disabled" {
+				cmd.Env = append(cmd.Env, "GITHUB_STEP_SUMMARY="+summary)
+			}
+			before := assessmentTree(t, root)
+			output, err := cmd.CombinedOutput()
+			code := 0
+			if err != nil {
+				exit, ok := err.(*exec.ExitError)
+				if !ok {
+					t.Fatal(err)
+				}
+				code = exit.ExitCode()
+			}
+			if code != tc.wantExit || !strings.Contains(string(output), fmt.Sprintf("LDS exit status: %d;", tc.exit)) {
+				t.Fatalf("lost original exit status: %d (%v), %s", code, err, output)
+			}
+			captures, err := filepath.Glob(filepath.Join(scratch, "lds-review.*/review.json"))
+			if err != nil || len(captures) != 1 {
+				t.Fatalf("missing external capture: %v (%v)", captures, err)
+			}
+			captured, err := os.ReadFile(captures[0])
+			if err != nil || string(captured) != string(payload) || assessmentTree(t, root) != before {
+				t.Fatal("wrapper changed raw JSON or wrote inside the inspected root")
+			}
+			if tc.name == "summary-disabled" || tc.name == "summary-inside-root" {
+				if _, err := os.Stat(summary); !os.IsNotExist(err) {
+					t.Fatalf("unexpected summary write: %v", err)
+				}
+				return
+			}
+			data, err := os.ReadFile(summary)
+			if err != nil {
+				t.Fatal(err)
+			}
+			text := string(data)
+			if !strings.HasPrefix(text, "Existing job notes.\n\n") || !strings.Contains(text, fmt.Sprintf("LDS exit status: **%d**", tc.exit)) {
+				t.Fatalf("summary lost existing notes or actual LDS status: %s", text)
+			}
+			if tc.invalid != "" {
+				if !strings.Contains(text, "No usable review result") || strings.Contains(text, "No findings means") {
+					t.Fatalf("unusable output presented as clean: %s", text)
+				}
+				return
+			}
+			for _, want := range []string{"2 Markdown files", "4 skipped checks", "2 × [&quot;inventory.external-skipped&quot;]", "1 × [&quot;validation.fragment-skipped&quot;] &quot;source-line reference&quot;", "external URL not fetched", "unsupported &lt;heading&gt;", "Prose accuracy is not assessed."} {
+				if !strings.Contains(text, want) {
+					t.Errorf("summary omitted %q: %s", want, text)
+				}
+			}
+			if tc.exit == 1 && (!strings.Contains(text, "&quot;docs/&lt;img&gt;.md&quot;:7") || !strings.Contains(text, "&lt;/pre&gt;&lt;script&gt;bad&lt;/script&gt;\\n::error::injected")) {
+				t.Fatalf("finding lost its location or safe display: %s", text)
+			}
+			if strings.Contains(text, "<script>") || strings.Contains(text, "\n::error::") {
+				t.Fatalf("untrusted finding became active markup or a workflow command: %s", text)
+			}
+		})
 	}
 }

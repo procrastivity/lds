@@ -33,6 +33,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
       - run: nix develop --command make test
+      - name: Race detector
+        timeout-minutes: 10
+        run: nix develop --command go test -race -count=1 ./...
       - name: Bounded parser fuzzing
         timeout-minutes: 5
         run: nix develop --command make fuzz

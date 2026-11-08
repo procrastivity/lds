@@ -163,11 +163,20 @@ review in disposable trees. JSON checks cover exact content, malformed shapes,
 and scope refusals; review checks retain known findings/skips and unchanged
 target bytes. Ordinary tests replay the seeds. These short campaigns supplement
 the larger-input boundary tests; they are not exhaustive parser verification.
+The test job also runs `go test -race -count=1 ./...` as a separate,
+ten-minute-bounded step; ordinary tests and fuzzing remain separate gates.
 GitHub Actions pins receive monthly Dependabot update proposals for review.
 
 Version stamps come from release tags (`git describe --match 'v[0-9]*'`);
 pushing an annotated `vX.Y.Z` tag is the only human release action.
 CHANGELOG.md is generated per release, never committed.
+An initial `v0.0.0` is supported when requested explicitly; `--patch` with no
+previous release instead selects `v0.0.1`. A packaging rehearsal may override
+Make's `VERSION`, `COMMIT` and `DATE` in disposable build output without
+creating a tag or publishing. Such a stamp does not establish a release.
+Release artifacts target Linux/amd64 and Darwin/arm64; the documentation
+inspection, facts, initialization and update workflows remain Linux-only.
+Cross-compiling Darwin does not verify native execution or add that support.
 
 ## Design of record
 
